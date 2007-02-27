@@ -285,9 +285,6 @@ int Webcam::getFrame(QImage *image)
 	int ret = 0;
 
 	// Dequeue a buffer.
-	memset(&buf, 0, sizeof buf);
-	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-	buf.memory = V4L2_MEMORY_MMAP;
 	ret = ioctl(dev, VIDIOC_DQBUF, &buf);
 	if (ret < 0) 
 	{
@@ -378,8 +375,6 @@ int Webcam::changeCtrl(int ctrl, int value)
 		} 
 	} else 
 	{
-	        memset (&control, 0, sizeof control);
-		control.id = CTRL;
 		control.value = value;
 		if (-1 == ioctl (dev, VIDIOC_S_CTRL, &control)) {
 #ifdef DEBUG
