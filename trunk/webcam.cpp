@@ -205,12 +205,12 @@ int Webcam::startStreaming()
 
 			
 	// Map the buffers. /
+	memset(&buf, 0, sizeof buf);
+	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	buf.memory = V4L2_MEMORY_MMAP;
 	for (i = 0; i < 2; i++)
 	{
-		memset(&buf, 0, sizeof buf);
 		buf.index = i; 
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
 		ret = ioctl(dev, VIDIOC_QUERYBUF, &buf);
 		if (ret < 0) {
 			KError("Unable to query buffer", errno);
@@ -229,10 +229,7 @@ int Webcam::startStreaming()
 	// Queue the buffers. /
 	for (i = 0; i < 2; i++)
 	{
-		memset(&buf, 0, sizeof buf);
 		buf.index = i;
-		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.memory = V4L2_MEMORY_MMAP;
 		ret = ioctl(dev, VIDIOC_QBUF, &buf);
 		if (ret < 0) 
 		{
