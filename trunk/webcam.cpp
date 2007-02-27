@@ -1,0 +1,451 @@
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/select.h>
+
+#include <linux/videodev.h>
+#include <uvcvideo.h>
+
+#include <QtGui>
+#include <QApplication>
+#include <QMainWindow>
+#include <QImage>
+#include <QPixmap>
+#include <QLabel>
+#include <QSocketNotifier>
+
+#include "webcam.h"
+#include "huff_tab.h"
+#include "merror.h"
+
+
+Webcam::Webcam()
+{
+	isStreaming = false;
+	dev = 0;
+	isOpened = false;
+	imageNotifier = 0;
+	allocated = false;
+}
+
+Webcam::~Webcam()
+{
+	close();
+}
+
+void Webcam::close()
+{
+	stopStreaming();
+	::close(dev);
+
+	delete imageNotifier;
+	imageNotifier = 0;
+	isOpened = false;
+	allocated = false;
+}
+
+int Webcam::open(char *devFile)
+{
+	struct v4l2_capability cap;
+	int ret;
+	char str[256];
+
+	if (isOpened)
+		close();
+
+	dev = ::open(devFile, O_RDWR);
+	if (dev < 0) 
+	{
+		strcpy(str, "Error Opening ");
+		KError(strcat(str, devFile), errno);
+		return EXIT_FAILURE;
+	}
+
+        memset(&cap, 0, sizeof cap);
+        ret = ioctl(dev, VIDIOC_QUERYCAP, &cap);
+        if (ret < 0) 
+	{
+		strcpy(str, "Error querying capabilities for ");
+		KError(strcat(str, devFile), errno);
+                return EXIT_FAILURE;
+	}
+
+	if ((cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) == 0) 
+	{
+		strcpy(str, "Error checking caps for ");
+		KError(strcat(str, devFile), errno);
+                return -EINVAL;
+	}
+	isOpened = true;
+
+	imageNotifier = new QSocketNotifier(dev, QSocketNotifier::Read);
+	imageNotifier->setEnabled(false);
+	connect(imageNotifier, SIGNAL(activated(int)), this, SIGNAL(imageReady()));
+	return EXIT_SUCCESS;
+}
+
+QList<int> Webcam::getFormatList()
+{
+	QList<int> formatList;
+	int ret;
+	struct v4l2_fmtdesc fmtList;
+	memset(&fmtList, 0, sizeof fmtList);
+	fmtList.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	int i = 0;
+
+	do
+	{
+		fmtList.index = i;
+		if ((ret = ioctl(dev, VIDIOC_ENUM_FMT, &fmtList)) < 0)
+			break;
+		else
+		{
+			formatList.append((int) fmtList.pixelformat);
+			printf("Format supported : %s\n", fmtList.description);
+		}
+		i++;
+	}
+	while (ret != EINVAL);
+	return formatList;
+}
+
+int Webcam::setFormat(unsigned int width, unsigned int height)
+{
+	int ret;
+	int i = 0;
+	QList<int> formatList;
+
+	if(isStreaming)
+		return -1;
+	formatList = getFormatList();
+
+	memset(&fmt, 0, sizeof fmt);
+	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	fmt.fmt.pix.width = width;
+	fmt.fmt.pix.height = height;
+	fmt.fmt.pix.field = V4L2_FIELD_ANY;
+//	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
+	fmt.fmt.pix.pixelformat = formatList.at(i);
+
+	while (ioctl(dev, VIDIOC_S_FMT, &fmt) < 0)
+	{
+		KError("Error while setting format", errno);
+		i++;
+		if(i >= formatList.size())
+			return EXIT_FAILURE;
+		fmt.fmt.pix.pixelformat = formatList.at(i);
+	}
+	return EXIT_SUCCESS;
+}
+
+int Webcam::streamOff()
+{
+	int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	int ret;
+	
+	if(!isStreaming)
+		return -1;
+	
+	ret = ioctl(dev, VIDIOC_STREAMOFF, &type);
+	if (ret < 0) 
+	{
+		KError("Unable to stop capture", errno);
+		return EXIT_FAILURE;
+	}
+	isStreaming = false;
+	return EXIT_SUCCESS;
+}
+
+int Webcam::startStreaming()
+{
+	int i, ret;
+
+	if (!isOpened)
+		return -1;
+
+	if ((ret = setFormat(currentWidth(), currentHeight())) != 0)
+	{
+		printf("set format error : %d\n", ret);
+		return EXIT_FAILURE;
+	}
+
+	//Allocate buffers 
+	if (!allocated)
+	{
+		memset(&rb, 0, sizeof rb);
+		rb.count = 2;
+		rb.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		rb.memory = V4L2_MEMORY_MMAP;
+	
+		ret = ioctl(dev, VIDIOC_REQBUFS, &rb);
+		if (ret < 0) 
+		{
+			KError("Unable to allocate buffers", errno);
+			return EXIT_FAILURE;
+		}
+		allocated = true;
+	}
+
+			
+	// Map the buffers. /
+	for (i = 0; i < 2; i++)
+	{
+		memset(&buf, 0, sizeof buf);
+		buf.index = i; 
+		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		buf.memory = V4L2_MEMORY_MMAP;
+		ret = ioctl(dev, VIDIOC_QUERYBUF, &buf);
+		if (ret < 0) {
+			KError("Unable to query buffer", errno);
+			return EXIT_FAILURE;
+		}
+		
+		mem[i] = (uchar *) mmap(0, buf.length, PROT_READ, MAP_SHARED, dev, buf.m.offset);
+		if (mem[i] == MAP_FAILED) {
+			KError("Unable to map buffer", errno);
+			return EXIT_FAILURE;
+		}
+		bufLength = buf.length;
+		mmaped = true;
+	}
+
+	// Queue the buffers. /
+	for (i = 0; i < 2; i++)
+	{
+		memset(&buf, 0, sizeof buf);
+		buf.index = i;
+		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		buf.memory = V4L2_MEMORY_MMAP;
+		ret = ioctl(dev, VIDIOC_QBUF, &buf);
+		if (ret < 0) 
+		{
+			KError("Unable to queue buffer", errno);
+			return EXIT_FAILURE;
+		}
+	}
+
+	// Start streaming.
+	ret = ioctl(dev, VIDIOC_STREAMON, &buf.type);
+	if (ret < 0) 
+	{
+		KError("Unable to start capture", errno);
+		return EXIT_FAILURE;
+	}
+	
+	imageNotifier->setEnabled(true);
+	isStreaming = true;
+	return EXIT_SUCCESS;
+}
+
+int Webcam::stopStreaming()
+{
+	if(!isStreaming)
+		return -1;
+	
+	imageNotifier->setEnabled(false);
+	
+	if (munmap(mem[0], bufLength) == -1)
+	{
+		printf("Webcam::stopStreaming : munmap 0 failed. errno = %d\n", errno);
+	}
+
+	if (munmap(mem[1], bufLength) == -1)
+	{
+		printf("Webcam::stopStreaming : munmap 1 failed. errno = %d\n", errno);
+	}
+	else
+		mmaped = false;
+
+	if(streamOff() == 0)
+	{
+		isStreaming = false;
+		printf(" * Succesful Stopped\n");
+	}
+	else
+		imageNotifier->setEnabled(true);
+	return EXIT_SUCCESS;
+}
+
+int Webcam::getFrame(QImage *image)
+{
+	int ret = 0;
+
+	// Dequeue a buffer.
+	memset(&buf, 0, sizeof buf);
+	buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+	buf.memory = V4L2_MEMORY_MMAP;
+	ret = ioctl(dev, VIDIOC_DQBUF, &buf);
+	if (ret < 0) 
+	{
+		KError("Unable to dequeue buffer", errno);
+		return EXIT_FAILURE;
+	}
+
+	// Save the image.
+	uchar huffBuf[buf.bytesused + 420];
+	
+	if (addHuffmanTables(mem[buf.index], huffBuf, (int) buf.bytesused) == EXIT_SUCCESS)
+		image->loadFromData(huffBuf, buf.bytesused+420);
+	
+	// Requeue the buffer.
+	ret = ioctl(dev, VIDIOC_QBUF, &buf);
+	if (ret < 0) 
+	{
+		KError("Unable to requeue buffer", errno);
+		return EXIT_FAILURE;
+	}
+	if(!imageNotifier->isEnabled())
+		imageNotifier->setEnabled(true);
+	
+	return EXIT_SUCCESS;
+}
+
+int Webcam::changeCtrl(int ctrl, int value)
+{
+	struct v4l2_queryctrl queryctrl;
+	struct v4l2_control control;
+	
+	if(!isOpened) // At the begining of the function.
+	{
+		return -1;
+	}
+/*
+ * ctrl values :
+ * 	0 : Saturation
+ * 	1 : Power line Frequency (néons)
+ * 	2 : Brightness
+ * 	3 : Contrast
+ * 	4 : Sharpness
+ */
+	__u32 CTRL;
+	switch(ctrl)
+	{
+		case 0: 
+		{
+			CTRL = V4L2_CID_SATURATION;
+			break;
+		}
+		case 1: 
+		{
+			CTRL = V4L2_CID_POWER_LINE_FREQUENCY;
+			break;
+		}
+		case 2: 
+		{
+			CTRL = V4L2_CID_BRIGHTNESS;
+			break;
+		}
+		case 3: 
+		{
+			CTRL = V4L2_CID_CONTRAST;
+			break;
+		}
+		case 4: 
+		{
+			CTRL = V4L2_CID_SHARPNESS;
+			break;
+		}
+		default:
+		{
+			break;
+		}
+	}
+
+	memset (&queryctrl, 0, sizeof queryctrl);
+	queryctrl.id = CTRL;
+	if (-1 == ioctl (dev, VIDIOC_QUERYCTRL, &queryctrl)) 
+	{
+	        if (errno != EINVAL) 
+		{
+#ifdef DEBUG
+			perror ("VIDIOC_QUERYCTRL");
+#endif
+			return EXIT_FAILURE;
+		} 
+	} else 
+	{
+	        memset (&control, 0, sizeof control);
+		control.id = CTRL;
+		control.value = value;
+		if (-1 == ioctl (dev, VIDIOC_S_CTRL, &control)) {
+#ifdef DEBUG
+			perror ("VIDIOC_S_CTRL");
+#endif
+			return EXIT_FAILURE;
+        	}
+	}
+	return EXIT_SUCCESS;
+}
+
+int Webcam::currentWidth()
+{
+	return (int) fmt.fmt.pix.width;
+}
+
+int Webcam::currentHeight()
+{
+	return (int) fmt.fmt.pix.height;
+}
+
+int Webcam::defaultCtrlVal(unsigned int control)
+{
+	struct v4l2_queryctrl queryctrl;
+	char *ctrl;
+	
+	if(!isOpened)
+	{
+		return -1;
+	}
+/*
+ * ctrl values :
+ * 	0 : Saturation
+ * 	1 : Power line Frequency (néons)
+ * 	2 : Brightness
+ * 	3 : Contrast
+ * 	4 : Sharpness
+ */
+	
+	memset(&queryctrl, 0, sizeof queryctrl);
+	switch(control){
+		case 0 : {
+			ctrl = "Saturation";
+			queryctrl.id = V4L2_CID_SATURATION;
+			break;
+		}
+		case 1 : {
+			ctrl = "Powerline Frequecy";
+			queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
+			break;
+		}
+		case 2 : {
+			ctrl = "Brightness";
+			queryctrl.id = V4L2_CID_BRIGHTNESS;
+			break;
+		}
+		case 3 : {
+			ctrl = "Contrast";
+			queryctrl.id = V4L2_CID_CONTRAST;
+			break;
+		}
+		case 4 : {
+			ctrl = "Sharpness";
+			queryctrl.id = V4L2_CID_SHARPNESS;
+			break;
+		}
+	}
+
+char str[128];
+	if (-1 == ioctl(dev, VIDIOC_QUERYCTRL, &queryctrl))
+	{
+		strcpy(str, "Unable to set control ");
+		KError(strcat(str, ctrl), errno);
+		return EXIT_FAILURE;
+	}
+
+	return (unsigned int) queryctrl.default_value;
+}
+
