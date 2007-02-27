@@ -1,1 +1,12 @@
-TODO : README
+To compile, please use the Kapture.pro file :
+	qmake -makefile
+and a correct Makefile will be generated.
+
+You must have QT 4.2 installed to use this software.
+The files 
+	uvc_compat.h
+	uvcvideo.h
+must be replaced by the ones of the uvcvideo driver you use.
+( http://linux-uvc.berlios.de/ )
+
+Have fun !
