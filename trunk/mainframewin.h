@@ -1,3 +1,16 @@
+/*
+ *      mainframewin.h -- Kapture
+ *
+ *      Copyright (C) 2006-2007
+ *          Detlev Casanova (detlev.casanova@gmail.com)
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ */
+
 #ifndef MAINFRAMEWIN_H
 #define MAINFRAMEWIN_H
 
@@ -17,38 +30,6 @@ public:
 	int posCurX;
 	int posCurY;
 	Ui::mainFrameWin ui;
-//	QPixmap zoomAtCursor(int xCurPos, int yCurPos, QImage imageToZoomIn);
-
-public slots:
-//	void getImage();
-//	void changeFormat(const QString & itemSelected);
-//	void getDeviceCapabilities();
-//	void startStopVideo();
-//	void savePhoto();
-//	void crStartStop();
-//	void colorChanged();
-//	void showColorReplaced();
-//	void satChanged();
-//	void freqChanged();
-//	void brightChanged();
-//	void contChanged();
-//	void sharpChanged();
-//	void treatFrame();
-//	int showZoom();
-//	void keepZoomerTimeOut();
-	
-private:
-//	Webcam *camera;
-
-/*	QTimer waitCamera;
-	QTimer keepZoomer;
-	bool isCapturing;
-	bool crIsActivated;
-	QImage mainImageSav;
-	QImage crImage;
-	bool imageSaved;
-	QImage imageFromCamera;
-*/
 };
 
 #endif // MAINFRAMEWIN_H

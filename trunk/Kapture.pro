@@ -4,7 +4,7 @@
 
 TEMPLATE = app
 TARGET += 
-DEPENDPATH += . test2 test3 tests
+DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
