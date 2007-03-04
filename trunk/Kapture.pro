@@ -8,9 +8,9 @@ DEPENDPATH += .
 INCLUDEPATH += .
 
 # Input
-HEADERS += huff_tab.h kapturewin.h mainframewin.h mouselabel.h webcam.h merror.h
+HEADERS += imageConvert.h kapturewin.h mainframewin.h mouselabel.h webcam.h merror.h
 FORMS += kapturewin.ui mainframewin.ui crframewin.ui
-SOURCES += huff_tab.cpp \
+SOURCES += imageConvert.cpp \
            kapturewin.cpp \
            main.cpp \
            mouselabel.cpp \

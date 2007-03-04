@@ -1,5 +1,5 @@
 /*
- *      huff_tab.cpp -- Kapture
+ *      imageConvert.cpp -- Kapture
  *
  *      Copyright (C) 2006-2007
  *          Detlev Casanova (detlev.casanova@gmail.com)
@@ -15,6 +15,26 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <QImage>
+#include <QColor>
+
+#undef MIN
+#undef MAX
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
+
+#define YUV2RGB(y,u,v,r,g,b) \
+	(r) = ( ( (y) << 8 ) 			   + 359 * ( (v) - 128 ) ) >> 8; \
+	(g) = ( ( (y) << 8 ) -  88 * ( (u) - 128 ) - 183 * ( (v) - 128 ) ) >> 8; \
+	(b) = ( ( (y) << 8 ) + 456 * ( (u) - 128 ) 			 ) >> 8
+
+#define STORERGB(r,g,b) \
+	r  = MAX(0, MIN(255, (r))); \
+	g  = MAX(0, MIN(255, (g))); \
+	b  = MAX(0, MIN(255, (b)))
+
+#define MEAN(a,b)\
+	(a + b) / 2
 
 unsigned char jpeg_dht[0x1a4] = {
     0xff, 0xc4, 0x01, 0xa2,
@@ -52,14 +72,14 @@ unsigned char jpeg_dht[0x1a4] = {
     0xf9, 0xfa
 };
 
-int addHuffmanTables(unsigned char *frame, unsigned char *outframe, unsigned int buf_size)
+int mjpegToJpeg(unsigned char *inFrame, unsigned char *outFrame, unsigned int bufSize)
 {
 	unsigned int j = 0, has_dht = 0;
 
-	outframe[0] = frame[0];
-	outframe[1] = frame[1];
+	outFrame[0] = inFrame[0];
+	outFrame[1] = inFrame[1];
 	
-	if((frame[0] != 0xff) && (frame[1] != 0xd8))
+	if((inFrame[0] != 0xff) && (inFrame[1] != 0xd8))
 	{
 		printf("Not a JPEG nor MJPEG file \nExiting.\n");
 		return EXIT_FAILURE;
@@ -69,7 +89,7 @@ int addHuffmanTables(unsigned char *frame, unsigned char *outframe, unsigned int
 	
 	while (has_dht == 0)
 	{
-		if (frame[pos] != 0xff)
+		if (inFrame[pos] != 0xff)
 		{
 #ifdef DEBUG
 			printf("This isn't a valid JPEG file.\n");
@@ -77,21 +97,21 @@ int addHuffmanTables(unsigned char *frame, unsigned char *outframe, unsigned int
 			return EXIT_FAILURE;
 		}
 			
-		if (frame[pos+1] == 0xc4)
+		if (inFrame[pos+1] == 0xc4)
 		{
 			has_dht = 1;
 		}
-		else if (frame[pos+1] == 0xda) // Add the huffman tables here...
+		else if (inFrame[pos+1] == 0xda) // Add the huffman tables here...
 		{
 			has_dht = 0;
 			break;
 		}
 
 		// Skip to the next marker
-		size = (frame[pos+2] << 8) + frame[pos+3];
+		size = (inFrame[pos+2] << 8) + inFrame[pos+3];
 		for (j = 0; j < size + 2; j++)
 		{
-			outframe[pos + j] = frame[pos + j];
+			outFrame[pos + j] = inFrame[pos + j];
 		}
 		pos = pos + size + 2;
 	}
@@ -102,23 +122,85 @@ int addHuffmanTables(unsigned char *frame, unsigned char *outframe, unsigned int
 	{
 		for ( ; j < 420 ; j++)
 		{
-			outframe[pos + j] = jpeg_dht[j];
+			outFrame[pos + j] = jpeg_dht[j];
 		}
 		
-		for ( ; pos < buf_size ; pos++)
+		for ( ; pos < bufSize ; pos++)
 		{
-			outframe[pos + 420] = frame[pos];
+			outFrame[pos + 420] = inFrame[pos];
 		}
 
 	}
 	else
 	{
-		for ( ; pos < buf_size ; pos++)
+		for ( ; pos < bufSize ; pos++)
 		{
-			outframe[pos] = frame[pos];
+			outFrame[pos] = inFrame[pos];
 		}
 	}
 	
 	return EXIT_SUCCESS;
+}
+
+/*int yuvToJpeg(unsigned char *inFrame, unsigned char *outFrame, int width, int height)*/
+int yuvToJpeg(unsigned char *inFrame, QImage *outFrame, int width, int height)
+{
+	
+	QImage *image = new QImage(width, height, QImage::Format_RGB32);
+	const int size = width*height;
+	int y, u, v, y2, u2, v2, r, g, b;
+	int i = 2;
+	int j = 4;
+	int k = 0;
+	int w = 1, h = 0;
+
+	y = inFrame[0];
+	u = inFrame[1];
+	y2 = inFrame[2];
+	v = inFrame[3];
+
+	YUV2RGB(y, u, v, r, g, b);
+	STORERGB(r, g, b);
+	image->setPixel(w, h, qRgb(r, g, b));
+	
+	while(i <= size/2)
+	{
+		u2  = inFrame[j+1];
+		v2   = inFrame[j+3];
+		YUV2RGB(y2, MEAN(u, u2), MEAN(v, v2), r, g, b);
+		STORERGB(r, g, b);
+		
+		if (w == width)
+		{
+			w = 0;
+			h++;
+		}
+		image->setPixel(w, h, qRgb(r, g, b));
+		w++;
+		
+		y  = inFrame[j+0];
+		y2 = inFrame[j+2];
+		u = u2;
+		v = v2;
+
+		YUV2RGB(y, u, v, r, g, b);
+		STORERGB(r, g, b);
+		
+		if (w == width)
+		{
+			w = 0;
+			h++;
+		}
+		image->setPixel(w, h, qRgb(r, g, b));
+		w++;
+
+		i++;
+		j+=4;
+	}
+
+	//image->save("image.png", "PNG", 100);
+	*outFrame = image->copy(QRect(0, 0, width, height));
+	image->~QImage();
+	return 0;
 }
 

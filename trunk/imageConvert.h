@@ -1,5 +1,5 @@
 /*
- *      huff_tab.h -- Kapture
+ *      imaeConvert.h -- Kapture
  *
  *      Copyright (C) 2006-2007
  *          Detlev Casanova (detlev.casanova@gmail.com)
@@ -11,5 +11,7 @@
  *
  */
 
-int addHuffmanTables(unsigned char *frame, unsigned char *outframe, unsigned int buf_size);
+int mjpegToJpeg(unsigned char *inFrame, unsigned char *outFrame, unsigned int bufSize);
+//int   yuvToJpeg(unsigned char *inFrame, unsigned char *outFrame, int width, int height);
+int   yuvToJpeg(unsigned char *inFrame, QImage *outFrame, int width, int height);
 

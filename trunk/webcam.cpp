@@ -32,7 +32,7 @@
 #include <QSocketNotifier>
 
 #include "webcam.h"
-#include "huff_tab.h"
+#include "imageConvert.h"
 #include "merror.h"
 
 
@@ -126,7 +126,7 @@ QList<int> Webcam::getFormatList()
 	return formatList;
 }
 
-int Webcam::setFormat(unsigned int width, unsigned int height)
+int Webcam::setFormat(unsigned int width, unsigned int height, int pixelformat)
 {
 	int ret;
 	int i = 0;
@@ -141,8 +141,10 @@ int Webcam::setFormat(unsigned int width, unsigned int height)
 	fmt.fmt.pix.width = width;
 	fmt.fmt.pix.height = height;
 	fmt.fmt.pix.field = V4L2_FIELD_ANY;
-//	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
-	fmt.fmt.pix.pixelformat = formatList.at(i);
+//	fmt.fmt.pix.pixelformat = pixelformat;
+/*	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
+	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
+*/	fmt.fmt.pix.pixelformat = formatList.at(i);
 
 	while (ioctl(dev, VIDIOC_S_FMT, &fmt) < 0)
 	{
@@ -293,10 +295,17 @@ int Webcam::getFrame(QImage *image)
 	}
 
 	// Save the image.
-	uchar huffBuf[buf.bytesused + 420];
-	
-	if (addHuffmanTables(mem[buf.index], huffBuf, (int) buf.bytesused) == EXIT_SUCCESS)
-		image->loadFromData(huffBuf, buf.bytesused+420);
+	uchar jpegBuf1[buf.bytesused + 420];
+	if (fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG)
+	{
+		if (mjpegToJpeg(mem[buf.index], jpegBuf1, (int) buf.bytesused) == EXIT_SUCCESS)
+			image->loadFromData(jpegBuf1, buf.bytesused+420);
+	}
+
+	if (fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUYV)
+	{
+		yuvToJpeg(mem[buf.index], image, currentWidth(), currentHeight());
+	}
 	
 	// Requeue the buffer.
 	ret = ioctl(dev, VIDIOC_QBUF, &buf);

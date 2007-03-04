@@ -31,7 +31,7 @@ public:
 	void close();
 	int open(char *devFile);
 	QList<int> getFormatList();
-	int setFormat(unsigned int width, unsigned int height);
+	int setFormat(unsigned int width, unsigned int height, int pixelformat=V4L2_PIX_FMT_MJPEG);
 	int streamOff();
 	int stopStreaming();
 	int getFrame(QImage *image);
