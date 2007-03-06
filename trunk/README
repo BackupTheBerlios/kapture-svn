@@ -9,4 +9,6 @@ The files
 must be replaced by the ones of the uvcvideo driver you use.
 ( http://linux-uvc.berlios.de/ )
 
+The Makefile will be soon replaced by a CMakeFile
+
 Have fun !
