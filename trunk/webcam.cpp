@@ -29,6 +29,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QLabel>
+#include <QSize>
 #include <QSocketNotifier>
 
 #include "webcam.h"
@@ -101,7 +102,7 @@ int Webcam::open(char *devFile)
 	return EXIT_SUCCESS;
 }
 
-QList<int> Webcam::getFormatList()
+QList<int> Webcam::getFormatList(QList<QString> *description)
 {
 	QList<int> formatList;
 	int ret;
@@ -117,8 +118,9 @@ QList<int> Webcam::getFormatList()
 			break;
 		else
 		{
-			formatList.append((int) fmtList.pixelformat);
-			printf("Format supported : %s\n", fmtList.description);
+			formatList.append((int)fmtList.pixelformat);
+			description->append((char*)fmtList.description);
+			printf("Format supported : %s\n", description->at(i).toLatin1().constData());
 		}
 		i++;
 	}
@@ -126,33 +128,46 @@ QList<int> Webcam::getFormatList()
 	return formatList;
 }
 
+QList<QSize> Webcam::getSizesList()
+{
+	int i = 0;
+	QList<QSize> rSizes;
+	QSize tmp;
+	struct v4l2_frmsizeenum sizes;
+	memset(&sizes, 0, sizeof sizes);
+	sizes.pixel_format = currentPixelFormat();
+	sizes.index = i;
+	while(ioctl(dev, VIDIOC_ENUM_FRAMESIZES, &sizes) != -1)
+	{
+		tmp.setWidth((int)sizes.discrete.width);
+		tmp.setHeight((int)sizes.discrete.height);
+		printf("Supported size : %dx%d\n", (int)sizes.discrete.width, (int)sizes.discrete.height);
+		rSizes.append(tmp);
+		i++;
+		sizes.index = i;
+	}
+
+}
+
 int Webcam::setFormat(unsigned int width, unsigned int height, int pixelformat)
 {
 	int ret;
 	int i = 0;
-	QList<int> formatList;
 
 	if(isStreaming)
 		return -1;
-	formatList = getFormatList();
 
 	memset(&fmt, 0, sizeof fmt);
 	fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	fmt.fmt.pix.width = width;
 	fmt.fmt.pix.height = height;
 	fmt.fmt.pix.field = V4L2_FIELD_ANY;
-//	fmt.fmt.pix.pixelformat = pixelformat;
-/*	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_MJPEG;
-	fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-*/	fmt.fmt.pix.pixelformat = formatList.at(i);
-
-	while (ioctl(dev, VIDIOC_S_FMT, &fmt) < 0)
+	fmt.fmt.pix.pixelformat = pixelformat;
+	if (ioctl(dev, VIDIOC_S_FMT, &fmt) < 0)
 	{
 		KError("Error while setting format", errno);
 		i++;
-		if(i >= formatList.size())
-			return EXIT_FAILURE;
-		fmt.fmt.pix.pixelformat = formatList.at(i);
+		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 }
@@ -182,7 +197,7 @@ int Webcam::startStreaming()
 	if (!isOpened)
 		return -1;
 
-	if ((ret = setFormat(currentWidth(), currentHeight())) != 0)
+	if ((ret = setFormat(currentWidth(), currentHeight(), currentPixelFormat())) != 0)
 	{
 		printf("set format error : %d\n", ret);
 		return EXIT_FAILURE;
@@ -403,6 +418,11 @@ int Webcam::currentWidth()
 int Webcam::currentHeight()
 {
 	return (int) fmt.fmt.pix.height;
+}
+
+int Webcam::currentPixelFormat()
+{
+	return (int) fmt.fmt.pix.pixelformat;
 }
 
 int Webcam::defaultCtrlVal(unsigned int control)

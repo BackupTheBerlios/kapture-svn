@@ -132,13 +132,16 @@ void KaptureWin::getDeviceCapabilities()
 		if(waitCamera.isActive())
 			waitCamera.stop();
 
+		formatList = camera->getFormatList(&formatName);
+		for (int i = 0; i < 2 ; i++)
+			this->ui.comboBoxFormat->addItem(formatName.at(i));
 	
 		if(fctExecuted != 0)
 			printf("\n");
 		
 		printf(" * Device is [default] : /dev/video0\n");
 		
-		if(camera->setFormat(0, 0) == EXIT_SUCCESS)
+		if(camera->setFormat(0, 0, formatList.at(0)) == EXIT_SUCCESS)
 		{
 			printf(" * Minimal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
 			sprintf(formatString, "%dx%d (Minimal)", camera->currentWidth(), camera->currentHeight() );
@@ -152,7 +155,7 @@ void KaptureWin::getDeviceCapabilities()
 			return;
 		}
 
-		if (camera->setFormat(33000, 33000) == EXIT_SUCCESS)
+		if (camera->setFormat(33000, 33000, formatList.at(0)) == EXIT_SUCCESS)
 		{
 			printf(" * Maximal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
 			sprintf(formatString, "%dx%d (Maximal)", camera->currentWidth(), camera->currentHeight() );
@@ -166,7 +169,7 @@ void KaptureWin::getDeviceCapabilities()
 			return;
 		}
 		
-		if (camera->setFormat(320, 240) == EXIT_SUCCESS)
+		if (camera->setFormat(320, 240, formatList.at(0)) == EXIT_SUCCESS)
 		{
 			printf(" * Set Default format to : %dx%d\n", camera->currentWidth(), camera->currentHeight());
 			sprintf(formatString, "%dx%d", camera->currentWidth(), camera->currentHeight() );
@@ -179,6 +182,7 @@ void KaptureWin::getDeviceCapabilities()
 			waitCamera.start(2000);
 			return;
 		}
+		camera->getSizesList();
 
 		ui.comboBoxSize->setCurrentIndex( ui.comboBoxSize->count()-1 );
 					
@@ -192,7 +196,8 @@ void KaptureWin::getDeviceCapabilities()
 		 * 
 		 */
 		
-		connect(ui.comboBoxSize, SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeFormat(const QString &) ) );
+		connect(ui.comboBoxSize, SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeSize(const QString &) ) ); //Slot must be changeSize()
+		connect(ui.comboBoxFormat, SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeFormat(const QString &) ) ); //Slot must be changeFormat()
 	}
 	else
 	{
@@ -218,7 +223,7 @@ void KaptureWin::getDeviceCapabilities()
 	fctExecuted++;
 }
 
-void KaptureWin::changeFormat(const QString & itemSelected)
+void KaptureWin::changeSize(const QString & itemSelected)
 {
 	/* 
 	 * TODO:Review the structure of this function
@@ -228,7 +233,7 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 	const char *l_text;
 	char checkCar;
 	unsigned int newWidth = 0, newHeight = 0;
-	l_text = itemSelected.toAscii().constData();
+	l_text = itemSelected.toLatin1().constData();
 	printf(" * Selected Format : %s\n", l_text);
 	sscanf(l_text, "%d%c%d", &newWidth, &checkCar, &newHeight);
 	if (newWidth > 320 && newHeight > 240)
@@ -246,7 +251,7 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 		camera->stopStreaming();
 		if(checkCar == 'x')
 		{
-			if ((ret = camera->setFormat(newWidth, newHeight)) == EXIT_FAILURE)
+			if ((ret = camera->setFormat(newWidth, newHeight, camera->currentPixelFormat())) == EXIT_FAILURE)
 			{
 				printf("***An error occured while setting format...Ret = %d\n", ret);
 				mfw->ui.mainFrameLabel->setText("A problem occured while setting format. Check the device.");
@@ -266,7 +271,7 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 	{
 		if(checkCar == 'x')
 		{
-			if ((ret = camera->setFormat(newWidth, newHeight)) == EXIT_FAILURE)
+			if ((ret = camera->setFormat(newWidth, newHeight, camera->currentPixelFormat())) == EXIT_FAILURE)
 			{
 				printf("***An error occured while setting format...Ret = %d\n", ret);
 				mfw->ui.mainFrameLabel->setText("A problem occured while setting format. Check the device.");
@@ -280,6 +285,49 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 			}
 		}
 	}
+}
+
+void KaptureWin::changeFormat(const QString & itemSelected)
+{
+	ui.comboBoxSize->disconnect(SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeSize(const QString &) ));
+	bool wasStreaming = false;
+	int el = ui.comboBoxFormat->currentIndex();
+	int lastWidth =  camera->currentWidth() ;
+	int lastHeight = camera->currentHeight();
+	ui.comboBoxSize->clear();
+
+	if (camera->isStreaming)
+	{
+		startStopVideo();
+		wasStreaming = true;
+	}
+	
+	if (camera->setFormat(0, 0, formatList.at(el)) == EXIT_SUCCESS)
+	{
+		printf(" * Minimal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
+		sprintf(formatString, "%dx%d (Minimal)", camera->currentWidth(), camera->currentHeight() );
+		this->ui.comboBoxSize->addItem(formatString);
+	}
+
+	if (camera->setFormat(33000, 33000, formatList.at(el)) == EXIT_SUCCESS)
+	{
+		printf(" * Maximal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
+		sprintf(formatString, "%dx%d (Maximal)", camera->currentWidth(), camera->currentHeight() );
+		this->ui.comboBoxSize->addItem(formatString);
+	}
+	
+	if (camera->setFormat(lastWidth, lastHeight, formatList.at(el)) == EXIT_SUCCESS)
+	{
+		printf(" * Reset format to : %dx%d\n", camera->currentWidth(), camera->currentHeight());
+		sprintf(formatString, "%dx%d", camera->currentWidth(), camera->currentHeight() );
+		this->ui.comboBoxSize->addItem(formatString);
+	}
+	ui.comboBoxSize->setCurrentIndex(2);
+	
+	if (wasStreaming)
+		startStopVideo();
+	connect(ui.comboBoxSize, SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeSize(const QString &) ) ); //Slot must be changeFormat()
+	
 }
 
 void KaptureWin::startStopVideo()
@@ -606,56 +654,6 @@ void KaptureWin::contChanged()
 void KaptureWin::sharpChanged()
 {
 	camera->changeCtrl(4, ui.sharpManualValueBox->value());
-}
-
-void KaptureWin::treatFrame()
-{
-	//Support for this goodie to implement
-	int i=0, j=0, a=1;
-	int height = crImage.height();
-	int width  = crImage.width();
-	
-	for (i = 0 ; i < width; i++)
-	{
-		for (j = 0 ; j < height; j++)
-		{
-			if (qRgb(0, 0, 128) == crImage.pixel(i,j))
-			{
-				printf(" * Found a blue Pixel at %dx%d\n", i,j);
-				crImage.setPixel(i,j,qRgb(0, 255, 0));
-				if (j+a < height)
-				{
-					while (crImage.pixel(i,j+a) == qRgb(0, 0, 255))
-					{
-						if (j+a < height)
-							crImage.setPixel(i,j+a,qRgb(0, 255, 0));
-						printf(" * Found a blue pixel at %dx%d (2)\n", i, j+a);
-						a++;
-					}
-				}
-				else if (j+a == height)
-				{
-					while (crImage.pixel(i,j-a) == qRgb(0, 0, 255))
-					{
-						if (j-a > 0)
-							crImage.setPixel(i,j+a,qRgb(0, 255, 0));
-						printf(" * Found a blue pixel at %dx%d (2)\n", i, j+a);
-						a++;
-					}
-				}
-			}
-		}
-	}
-//	ui.foundFrameLabel->setPixmap(QPixmap::fromImage(crImage));
-	
-	/*
-	 * Has to treat the crImage : 
-	 * 	
-	 * 	* check for lines in the crImage
-	 * 	* draw the processus of search in foundFrameLabel
-	 * 	* result the coordonées of the start and end of lines
-	 * 	
-	 */ 
 }
 
 void KaptureWin::closeEvent(QCloseEvent *event)

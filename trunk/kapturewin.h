@@ -32,9 +32,12 @@ public:
 	void mError(int ret);
 	int posCurX;
 	int posCurY;
+	QList<int> formatList;
+	QList<QString> formatName;
 
 public slots:
 	void getImage();
+	void changeSize(const QString & itemSelected);
 	void changeFormat(const QString & itemSelected);
 	void getDeviceCapabilities();
 	void startStopVideo();
@@ -47,7 +50,6 @@ public slots:
 	void brightChanged();
 	void contChanged();
 	void sharpChanged();
-	void treatFrame();
 	int showZoom();
 	void keepZoomerTimeOut();
 	

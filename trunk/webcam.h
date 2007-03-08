@@ -29,14 +29,16 @@ public:
 	~Webcam();
 	
 	void close();
-	int open(char *devFile);
-	QList<int> getFormatList();
+	int  open(char *devFile);
+	QList<int>   getFormatList(QList<QString> *description);
+	QList<QSize> getSizesList();
 	int setFormat(unsigned int width, unsigned int height, int pixelformat=V4L2_PIX_FMT_MJPEG);
 	int streamOff();
 	int stopStreaming();
 	int getFrame(QImage *image);
 	int currentWidth();
 	int currentHeight();
+	int currentPixelFormat();
 	int changeCtrl(int ctrl, int value);
 	int defaultCtrlVal(unsigned int control);
 	

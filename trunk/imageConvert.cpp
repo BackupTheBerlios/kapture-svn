@@ -142,7 +142,6 @@ int mjpegToJpeg(unsigned char *inFrame, unsigned char *outFrame, unsigned int bu
 	return EXIT_SUCCESS;
 }
 
-/*int yuvToJpeg(unsigned char *inFrame, unsigned char *outFrame, int width, int height)*/
 int yuvToJpeg(unsigned char *inFrame, QImage *outFrame, int width, int height)
 {
 	
@@ -198,7 +197,6 @@ int yuvToJpeg(unsigned char *inFrame, QImage *outFrame, int width, int height)
 		j+=4;
 	}
 
-	//image->save("image.png", "PNG", 100);
 	*outFrame = image->copy(QRect(0, 0, width, height));
 	image->~QImage();
 	return 0;
