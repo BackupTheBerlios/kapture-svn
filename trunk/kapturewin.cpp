@@ -132,8 +132,11 @@ void KaptureWin::getDeviceCapabilities()
 		if(waitCamera.isActive())
 			waitCamera.stop();
 
+		ui.comboBoxFormat->clear();
+		ui.comboBoxSize->clear();
+
 		formatList = camera->getFormatList(&formatName);
-		for (int i = 0; i < 2 ; i++)
+		for (int i = 0; i < formatList.size() ; i++)
 			this->ui.comboBoxFormat->addItem(formatName.at(i));
 	
 		if(fctExecuted != 0)
@@ -141,47 +144,24 @@ void KaptureWin::getDeviceCapabilities()
 		
 		printf(" * Device is [default] : /dev/video0\n");
 		
-		if(camera->setFormat(0, 0, formatList.at(0)) == EXIT_SUCCESS)
+		camera->setFormat(0, 0, formatList.at(0));
+		QList<QSize> sizes = camera->getSizesList();
+		bool modified = false;
+		for (int i = 0; i < sizes.size(); i++)
 		{
-			printf(" * Minimal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
-			sprintf(formatString, "%dx%d (Minimal)", camera->currentWidth(), camera->currentHeight() );
+			sprintf(formatString, "%dx%d", sizes.at(i).width(), sizes.at(i).height() );
 			this->ui.comboBoxSize->addItem(formatString);
+			if (sizes.at(i).width() == 320 && sizes.at(i).height() == 240)
+			{
+				this->ui.comboBoxSize->setCurrentIndex(i);
+				camera->setFormat(320, 240, formatList.at(ui.comboBoxFormat->currentIndex()));
+				modified = true;
+			}
 		}
-		else
-		{
-			printf("Error while detecting the device. Retrying...\n");
-			camera->close();
-			waitCamera.start(2000);
-			return;
-		}
+		if(!modified)
+			// I set the first frame size if the default size doesn't exist with the first format
+			changeSize(this->ui.comboBoxSize->itemText(0));
 
-		if (camera->setFormat(33000, 33000, formatList.at(0)) == EXIT_SUCCESS)
-		{
-			printf(" * Maximal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
-			sprintf(formatString, "%dx%d (Maximal)", camera->currentWidth(), camera->currentHeight() );
-			this->ui.comboBoxSize->addItem(formatString);
-		}
-		else
-		{
-			printf("Error while detecting the device. Retrying...\n");
-			camera->close();
-			waitCamera.start(2000);
-			return;
-		}
-		
-		if (camera->setFormat(320, 240, formatList.at(0)) == EXIT_SUCCESS)
-		{
-			printf(" * Set Default format to : %dx%d\n", camera->currentWidth(), camera->currentHeight());
-			sprintf(formatString, "%dx%d", camera->currentWidth(), camera->currentHeight() );
-			this->ui.comboBoxSize->addItem(formatString);
-		}
-		else
-		{
-			printf("Error while detecting the device. Retrying...\n");
-			camera->close();
-			waitCamera.start(2000);
-			return;
-		}
 		camera->getSizesList();
 
 		ui.comboBoxSize->setCurrentIndex( ui.comboBoxSize->count()-1 );
@@ -290,18 +270,20 @@ void KaptureWin::changeSize(const QString & itemSelected)
 void KaptureWin::changeFormat(const QString & itemSelected)
 {
 	ui.comboBoxSize->disconnect(SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeSize(const QString &) ));
-	bool wasStreaming = false;
-	int el = ui.comboBoxFormat->currentIndex();
-	int lastWidth =  camera->currentWidth() ;
+	bool wasStreaming = false, modified = false;
+	int lastWidth  = camera->currentWidth();
 	int lastHeight = camera->currentHeight();
-	ui.comboBoxSize->clear();
 
+	ui.comboBoxSize->clear();
+	printf(" * Changing format to %s\n", itemSelected.toLatin1().constData());
 	if (camera->isStreaming)
 	{
 		startStopVideo();
 		wasStreaming = true;
 	}
-	
+/*
+ * Is going to be replaced by the QList<QSize> getSizesList()
+ *
 	if (camera->setFormat(0, 0, formatList.at(el)) == EXIT_SUCCESS)
 	{
 		printf(" * Minimal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
@@ -322,7 +304,23 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 		sprintf(formatString, "%dx%d", camera->currentWidth(), camera->currentHeight() );
 		this->ui.comboBoxSize->addItem(formatString);
 	}
-	ui.comboBoxSize->setCurrentIndex(2);
+ */
+	camera->setFormat(lastWidth, lastHeight, formatList.at(ui.comboBoxFormat->currentIndex()));
+	QList<QSize> sizes = camera->getSizesList();
+	for (int i = 0; i < sizes.size(); i++)
+	{
+		sprintf(formatString, "%dx%d", sizes.at(i).width(), sizes.at(i).height() );
+		this->ui.comboBoxSize->addItem(formatString);
+		if (sizes.at(i).width() == lastWidth && sizes.at(i).height() == lastHeight)
+		{
+			this->ui.comboBoxSize->setCurrentIndex(i);
+			camera->setFormat(lastWidth, lastHeight, formatList.at(ui.comboBoxFormat->currentIndex()));
+			modified = true;
+		}
+	}
+	if(!modified)
+		// I set the best little frame size if the last size doesn't still exists with the new format 
+		changeSize(this->ui.comboBoxSize->itemText(0));
 	
 	if (wasStreaming)
 		startStopVideo();

@@ -120,7 +120,6 @@ QList<int> Webcam::getFormatList(QList<QString> *description)
 		{
 			formatList.append((int)fmtList.pixelformat);
 			description->append((char*)fmtList.description);
-			printf("Format supported : %s\n", description->at(i).toLatin1().constData());
 		}
 		i++;
 	}
@@ -141,11 +140,11 @@ QList<QSize> Webcam::getSizesList()
 	{
 		tmp.setWidth((int)sizes.discrete.width);
 		tmp.setHeight((int)sizes.discrete.height);
-		printf("Supported size : %dx%d\n", (int)sizes.discrete.width, (int)sizes.discrete.height);
 		rSizes.append(tmp);
 		i++;
 		sizes.index = i;
 	}
+	return rSizes;
 
 }
 
