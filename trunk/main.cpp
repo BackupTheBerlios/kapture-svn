@@ -10,8 +10,6 @@
  *      (at your option) any later version.
  *
  */
-
-#ifdef linux
 #include <QtGui/QApplication>
 #include <QtGui/QMainWindow>
 #include <QFrame>
@@ -26,10 +24,3 @@ int main(int argc, char **argv)
 	app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()) );
 	return app.exec();
 }
-#else
-int main(int argc, char **argv)
-{
-	printf("This is a GNU/Linux only software.\nSorry.");
-	return -1;
-}
-#endif
