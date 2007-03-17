@@ -6,9 +6,18 @@ TEMPLATE = app
 TARGET += 
 DEPENDPATH += .
 INCLUDEPATH += .
+QT += xml network
 
 # Input
-HEADERS += imageConvert.h kapturewin.h mainframewin.h mouselabel.h webcam.h merror.h
+HEADERS += imageConvert.h \
+	   kapturewin.h \
+	   mainframewin.h \
+	   mouselabel.h \
+	   webcam.h \
+	   merror.h \
+	   xmpp.h \
+	   xmlHandler.h \
+	   xmlElement.h
 FORMS += kapturewin.ui mainframewin.ui crframewin.ui
 SOURCES += imageConvert.cpp \
            kapturewin.cpp \
@@ -16,4 +25,7 @@ SOURCES += imageConvert.cpp \
            mouselabel.cpp \
            webcam.cpp \
 	   mainframewin.cpp \
-	   merror.cpp
+	   merror.cpp \
+	   xmpp.cpp \
+	   xmlHandler.cpp \
+	   xmlElement.cpp
