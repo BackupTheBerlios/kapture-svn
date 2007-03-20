@@ -62,7 +62,7 @@ void Webcam::close()
 	allocated = false;
 }
 
-int Webcam::open(char *devFile)
+int Webcam::open(const char *devFile)
 {
 	struct v4l2_capability cap;
 	int ret;
@@ -150,7 +150,6 @@ QList<QSize> Webcam::getSizesList()
 
 int Webcam::setFormat(unsigned int width, unsigned int height, int pixelformat)
 {
-	int ret;
 	int i = 0;
 
 	if(isStreaming)

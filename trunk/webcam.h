@@ -29,7 +29,7 @@ public:
 	~Webcam();
 	
 	void close();
-	int  open(char *devFile);
+	int  open(const char *devFile);
 	QList<int>   getFormatList(QList<QString> *description);
 	QList<QSize> getSizesList();
 	int setFormat(unsigned int width, unsigned int height, int pixelformat=V4L2_PIX_FMT_MJPEG);
