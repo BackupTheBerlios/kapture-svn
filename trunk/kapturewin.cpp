@@ -19,6 +19,7 @@
 #include "kapturewin.h"
 #include "mainframewin.h"
 #include "webcam.h"
+#include "xmpp.h"
 
 /*
  * This Software is at a developpement state.
@@ -26,15 +27,11 @@
  * You can use, modify or redistribute it.
  *
  * FIXME:
- * 	- Improve frame rate (slower after resizing....) [seems to be corrected]
- * 	- [...]
- *
- * TODO:
- * 	- Implement support for YUV.
- * 	- Add more goodies (B&W, ...)
- * 	- Add support for more controls (Pan-tilts,...)
  * 	- Add comments in the code.
  * 	- The timer can be replaced by Dbus (Qt >= 4.2)
+ * TODO:
+ * 	- Add more goodies (B&W, ...)
+ * 	- Add support for more controls (Pan-tilts,...)
  */
 
 int result = 0;
@@ -46,11 +43,18 @@ KaptureWin::KaptureWin()
 	: QMainWindow()
 {
 	int i = 0;
-	while(i < qApp->arguments().size())
+	otherVideoDevice = false;
+	for( ;i < qApp->arguments().size(); i++)
 	{
 		printf("Element %i = %s\n", i, qApp->arguments().at(i).toLatin1().constData());
-		i++;
+		if (qApp->arguments().at(i) == QString("-d"))
+		{
+			otherVideoDevice = true;
+			videoDevice = qApp->arguments().at(i + 1);
+		}
 	}
+	if (!otherVideoDevice)
+		videoDevice = QString("/dev/video0");
 	int defaultSat, defaultFreq, defaultBright, defaultCont, defaultSharp;	
 
 	crIsActivated = false;
@@ -92,7 +96,6 @@ KaptureWin::KaptureWin()
 	connect(&keepZoomer,    SIGNAL(timeout () ), this, SLOT(keepZoomerTimeOut()) );
 	connect(camera,    	SIGNAL(imageReady () ), this, SLOT(getImage() ));
 	connect(ui.crButton,	SIGNAL(clicked () ), this, SLOT(crStartStop() ) );
-//	connect(ui.treatBtn,	SIGNAL(clicked () ), this, SLOT(treatFrame() ) );
 	
 	connect(ui.satManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( satChanged()) );
 	connect(ui.freqBox,		SIGNAL(stateChanged (int) ), this, SLOT( freqChanged()) );
@@ -100,9 +103,9 @@ KaptureWin::KaptureWin()
 	connect(ui.contManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( contChanged()) );
 	connect(ui.sharpManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( sharpChanged()) );
 	
-	connect(ui.redSlider,   SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged(/*int*/) ));
-	connect(ui.greenSlider, SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged(/*int*/) ));
-	connect(ui.blueSlider,  SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged(/*int*/) ));
+	connect(ui.redSlider,   SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
+	connect(ui.greenSlider, SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
+	connect(ui.blueSlider,  SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
 
 }
 
@@ -127,7 +130,8 @@ void KaptureWin::mError(int ret)
 
 void KaptureWin::getDeviceCapabilities()
 {
-	if (!(result = camera->open("/dev/video0")))
+	int selected;
+	if (!(result = camera->open(videoDevice.toLatin1().constData())))
 	{
 		if(waitCamera.isActive())
 			waitCamera.stop();
@@ -142,7 +146,7 @@ void KaptureWin::getDeviceCapabilities()
 		if(fctExecuted != 0)
 			printf("\n");
 		
-		printf(" * Device is [default] : /dev/video0\n");
+		printf(" * Device is%s: %s\n", otherVideoDevice ? " [default] " : " ", videoDevice.toLatin1().constData());
 		
 		camera->setFormat(0, 0, formatList.at(0));
 		QList<QSize> sizes = camera->getSizesList();
@@ -153,19 +157,23 @@ void KaptureWin::getDeviceCapabilities()
 			this->ui.comboBoxSize->addItem(formatString);
 			if (sizes.at(i).width() == 320 && sizes.at(i).height() == 240)
 			{
-				this->ui.comboBoxSize->setCurrentIndex(i);
+				selected = i;
 				camera->setFormat(320, 240, formatList.at(ui.comboBoxFormat->currentIndex()));
 				modified = true;
 			}
 		}
+		// I set the first frame size if the default size doesn't exist with the first format
 		if(!modified)
-			// I set the first frame size if the default size doesn't exist with the first format
-			changeSize(this->ui.comboBoxSize->itemText(0));
+		{
+			changeSize(ui.comboBoxSize->itemText(0));
+			ui.comboBoxSize->setCurrentIndex(0);
+
+		}
+		else
+			ui.comboBoxSize->setCurrentIndex(selected);
 
 		camera->getSizesList();
 
-		ui.comboBoxSize->setCurrentIndex( ui.comboBoxSize->count()-1 );
-					
 		ui.btnPhoto->setEnabled(true);
 		ui.btnVideo->setEnabled(true);
 		ui.comboBoxSize->setEnabled(true);
@@ -176,8 +184,8 @@ void KaptureWin::getDeviceCapabilities()
 		 * 
 		 */
 		
-		connect(ui.comboBoxSize, SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeSize(const QString &) ) ); //Slot must be changeSize()
-		connect(ui.comboBoxFormat, SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeFormat(const QString &) ) ); //Slot must be changeFormat()
+		connect(ui.comboBoxSize, SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeSize(const QString &) ) );
+		connect(ui.comboBoxFormat, SIGNAL( currentIndexChanged(const QString &) ), this, SLOT(changeFormat(const QString &) ) );
 	}
 	else
 	{
@@ -187,7 +195,7 @@ void KaptureWin::getDeviceCapabilities()
 			ui.btnPhoto->setEnabled(false);
 			ui.btnVideo->setEnabled(false);
 			ui.comboBoxSize->setEnabled(false);
-			printf(" * No webcam pluged in (unable to open /dev/video0)\n");
+			printf(" * No webcam pluged in (unable to open %s)\n", videoDevice.toLatin1().constData());
 			printf(" * Waiting for you .");
 			fflush(stdout);
 			mfw->ui.mainFrameLabel->setText("No Webcam found !\n");
@@ -318,8 +326,8 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 			modified = true;
 		}
 	}
+	// I set the best little frame size if the last size doesn't still exists with the new format 
 	if(!modified)
-		// I set the best little frame size if the last size doesn't still exists with the new format 
 		changeSize(this->ui.comboBoxSize->itemText(0));
 	
 	if (wasStreaming)
@@ -342,7 +350,7 @@ void KaptureWin::startStopVideo()
 	else
 	{
 		if (!camera->isOpened)
-			camera->open("/dev/video0");
+			camera->open(videoDevice.toLatin1().constData());
 
 		ret = camera->startStreaming();
 		if (ret == EXIT_FAILURE)
@@ -656,7 +664,7 @@ void KaptureWin::sharpChanged()
 
 void KaptureWin::closeEvent(QCloseEvent *event)
 {
-	printf(" * Exiting...\n");
+	printf("\n * Exiting...\n");
 	if (camera->isStreaming)
 		startStopVideo();
 	camera->close();
