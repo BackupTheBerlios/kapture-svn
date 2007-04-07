@@ -1,0 +1,47 @@
+<ui version="4.0" >
+ <class>mainFrameWin</class>
+ <widget class="QMainWindow" name="mainFrameWin" >
+  <property name="windowModality" >
+   <enum>Qt::NonModal</enum>
+  </property>
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Main Video</string>
+  </property>
+  <property name="toolButtonStyle" >
+   <enum>Qt::ToolButtonIconOnly</enum>
+  </property>
+  <property name="animated" >
+   <bool>false</bool>
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <widget class="MouseLabel" native="1" name="mainFrameLabel" >
+    <property name="geometry" >
+     <rect>
+      <x>0</x>
+      <y>0</y>
+      <width>320</width>
+      <height>240</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MouseLabel</class>
+   <extends>QWidget</extends>
+   <header>mouselabel.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
