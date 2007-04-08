@@ -42,11 +42,10 @@ QImage *imageZoomed = new QImage(60,60,QImage::Format_RGB32);
 KaptureWin::KaptureWin()
 	: QMainWindow()
 {
-	//Xmpp *jabberAccount = new Xmpp("cazou-test@jabber.org");
 	Xmpp *jabberAccount = new Xmpp("test1@localhost");
 	connect(jabberAccount,SIGNAL(needUserName()), SLOT(setXmppUserName()));
 	if (jabberAccount->connected())
-		jabberAccount->auth("CD4DDE","Kapture");
+		jabberAccount->auth("azerty","Kapture");
 /*
  * The above is commented while I'm testing xmpp.
  */
