@@ -1,9 +1,8 @@
 #include "tlsHandler.h"
 #include <QList>
 
-TlsHandler::TlsHandler(int fd)
+TlsHandler::TlsHandler()
 {
-	// Negotiate TLS.
 	SSL_library_init();
 	SSL_load_error_strings();
 
@@ -13,7 +12,7 @@ TlsHandler::TlsHandler(int fd)
 	rbio = BIO_new( BIO_s_mem() );
 	wbio = BIO_new( BIO_s_mem() );
 	SSL_set_bio(ssl, rbio, wbio);
-	//SSL_set_fd(ssl, fd);
+	BIO_set_write_buf_size(wbio, 17408);
 }
 
 TlsHandler::~TlsHandler()
@@ -23,31 +22,35 @@ TlsHandler::~TlsHandler()
 
 bool TlsHandler::connect()
 {
-/*
- * With QList, I can remove the first element and the other ones are
- * automatically deplaced.
- * That's important to have a "FIFO" (First In, First Out) for incoming data.
-
-	QList<int> list;
-	int a;
-	list << 1 << 2 << 3 << 4 << 5;
-	a = list.takeFirst();
-	printf(" * First was %d and now is = %d\n", a, list.at(0));
-*/
 	printf(" ! Unable to proceed (yet).\n");
-	return false;
-/*
-	void *buffer;
+
+	QByteArray buffer;
 	state = Connecting;
-	do
+	while ((ret = SSL_connect(ssl)) < 0)
 	{
-		ret = SSL_connect(ssl);
 		error = SSL_get_error(ssl, ret);
-		printf(" * SSL want to read or write data !\n");
-		if (!tlsIn.isEmpty())
+		if (error == SSL_ERROR_WANT_WRITE)
 		{
-			printf("write : %s", tlsIn.constData());
-			BIO_puts(rbio, tlsIn.takeFirst.constData());
+			printf(" * SSL want to write data !\n");
+			return false;
+		}
+		
+		if (error == SSL_ERROR_WANT_READ)
+		{
+			printf(" * Data avaible to read !\n");
+			// Read from wbio
+			bufSize = BIO_pending(wbio);
+			printf("bufSize = %d\n", bufSize);
+			buffer.resize(bufSize);
+			BIO_read(wbio, buffer.data(), bufSize);
+			printf("Writing : %d chars : '%s'\n", buffer.count() , buffer.data());
+			//emit tlsDataAvaible(buffer.data(), bufSize);
+			return false;
+		}
+		/*if (!tlsIn.isEmpty())
+		{
+			printf("write : %s", tlsIn[0].constData());
+			BIO_puts(rbio, tlsIn.takeFirst().constData());
 		}
 		else
 		{
@@ -55,20 +58,14 @@ bool TlsHandler::connect()
 			printf("buffer = %s\n", (char*) buffer);
 		}
 		return false;
+		*/
 	}
-	while (error == SSL_ERROR_WANT_READ || error == SSL_ERROR_WANT_WRITE);
-*/
-/*	
-	if (error == SSL_ERROR_WANT_WRITE)
-	{
-		printf(" * SSL want to write data !\n");
-		return false;
-	}
-*/
+	
+
 	return true;
 }
 
-void TlsHandler::setTlsIncoming(QByteArray data)
+void TlsHandler::setTlsIncoming(QByteArray &data)
 {
 /*
 	void *buffer;

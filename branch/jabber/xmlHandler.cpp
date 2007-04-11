@@ -14,52 +14,23 @@ XmlHandler::~XmlHandler()
 bool XmlHandler::startElement(const QString &namespaceURI, const QString &localName,
 			  const QString &qName, const QXmlAttributes &attributes)
 {
-	/*
-	 * It seems that it *MUST* use a QDomDocument...
-	 * Only 1 root element !
-	 */
-	elem = doc.createElement(qName);
-	doc.appendChild(elem);
-	for(int i = 0; i < attributes.count(); i++)
-	{
-		elem.setAttribute(attributes.qName(i), attributes.value(i));
-	}
-	//elements.append(elem);
-	printf(" * %s\n", doc.toString().toLatin1().constData());
+	tEvent newEvent;
+	newEvent.name = qName;
+	newEvent.openingTag = true;
+	events.append(newEvent);
 	depht++;
-	/*if (qName == QString("stream:stream"))
-		hasStreamTag = true;
-	
-	if (qName == QString("stream:features"))
-		hasFeaturesTag = true;
-	
-	if (qName == QString("proceed"))
-		hasProceedTag = true;
-	
-	if (qName == QString("starttls"))
-		hasStarttlsTag = true;
-	if (hasStarttlsTag && qName == QString("required"))
-		tlsRequired = true;
-	
-	if (qName == QString("failure"))
-		error = true;
-	*/
-
-
-	if(xmlTree.length() == 0)
-	{
-		printf(" * WARNING : DATA NOT SET !!!!\n");
-		return false;
-	}
-
 	return true;
 }
 
 bool XmlHandler::endElement(const QString &namespaceURI, const QString &localName,
 			const QString &qName)
 {
+	tEvent newEvent;
+	newEvent.name = qName;
+	newEvent.openingTag = false;
+	events.append(newEvent);
 	depht--;
-	domNode.setNodeValue(xmlTree);
+	//domNode.setNodeValue(xmlTree);
 
 	if (depht == 0)
 		error = true;
@@ -69,10 +40,7 @@ bool XmlHandler::endElement(const QString &namespaceURI, const QString &localNam
 
 bool XmlHandler::characters(const QString &str)
 {
-	QDomText textNode;
-	textNode.setData(str);
-	elem.appendChild(textNode);
-	//elements.last().appendChild(textNode);
+	events.last().text = str;
 	return true;
 }
 
@@ -82,34 +50,10 @@ bool XmlHandler::fatalError(const QXmlParseException &exception)
 	return true;
 }
 
-void XmlHandler::setData(QByteArray data)
+QList<XmlHandler::tEvent> XmlHandler::getEvents()
 {
-	xmlTree = QString(data.constData());
-	hasStreamTag = false;
-	hasFeaturesTag = false;
-	hasProceedTag = false;
+	QList<XmlHandler::tEvent> returnEvents = events;
+	events.clear();
+	return returnEvents;
 }
-
-QDomNode XmlHandler::getQDomNode()
-{
-	return domNode;
-}
-
-QDomDocument XmlHandler::getDocument()
-{
-	QDomDocument returnDoc = doc;
-	doc.clear();
-	return returnDoc;
-}
-
-QString XmlHandler::getStartElementTag()
-{
-	return startElementTag;
-}
-
-/*QList<QDomElement> XmlHandler::results()
-{
-	return elements;
-}
-*/
 

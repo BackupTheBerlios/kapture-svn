@@ -25,6 +25,7 @@ public:
 
 public slots:
 	void dataReceived();
+	void sendDataFromTls(void *buffer, int bufSize);
 
 signals:
 	void messageReceived(/*QString message, QString from, QString to, QString type, QString id*/);
@@ -68,7 +69,9 @@ private:
 	bool authenticated;
 	tState state;
 	TlsHandler *tls;
-	void doSomething(QDomElement elem);
+	QList<XmlHandler::tEvent> events;
+	void doSomething(XmlHandler::tEvent elem);
+	bool ready;
 };
 
 #endif //XMPP_H

@@ -4,14 +4,18 @@
 #include <openssl/ssl.h>
 #include <QByteArray>
 #include <QList>
+#include <QtCore>
 
-class TlsHandler
+class TlsHandler: public QObject
 {
+	Q_OBJECT
 public:
-	TlsHandler(int fd);
+	TlsHandler();
 	~TlsHandler();
 	bool connect();
-	void setTlsIncoming(QByteArray data);
+	void setTlsIncoming(QByteArray &data);
+	QList<void*> toSend;
+	int bufSize;
 
 private:	
 	int ret, error;
@@ -24,6 +28,8 @@ private:
 	{
 		Connecting
 	} state;
+signals:
+	void tlsDataAvaible(void *buffer, int bufSize);
 
 };
 

@@ -45,7 +45,7 @@ KaptureWin::KaptureWin()
 	Xmpp *jabberAccount = new Xmpp("test1@localhost");
 	connect(jabberAccount,SIGNAL(needUserName()), SLOT(setXmppUserName()));
 	if (jabberAccount->connected())
-		jabberAccount->auth("azerty","Kapture");
+		jabberAccount->auth("123456789","Kapture");
 /*
  * The above is commented while I'm testing xmpp.
  */

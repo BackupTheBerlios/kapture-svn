@@ -23,41 +23,22 @@ public:
 	bool characters(const QString &str);
 	bool fatalError(const QXmlParseException &exception);
 	// MUST be called to set the stream data and to allow the creation of xmlTree.
-	void setData(QByteArray data);
 	stanza s;
 	QString nameSpace; // Not used but will certainly be....
-	//QDomDocument getQDomDocument();
-	QDomNode getQDomNode();
-	QDomNode errorNode;
-	QString getStartElementTag();
-	bool hasStreamTag;
-	bool hasFeaturesTag;
-	bool hasProceedTag;
-	bool hasStarttlsTag;
-	bool tlsRequired;
 	bool error;
-	QList<QDomElement> elements;
-	QDomElement elem;
-	QDomDocument getDocument();
-	/*struct tEvent 
+	struct tEvent 
 	{
-		char *name;
-	};*/
-	/*
-	 * Replace tEvent by a QDomNode or QDomSomething.
-	 */
-	//QList<tEvent> events;
+		QString name;
+		QString text;
+		bool openingTag;
+	};
+	QList<tEvent> events;
+	QList<tEvent> getEvents();
 
 private:
-	QList<QString> tags; // List al tags received in the stream (check that the stream is valid)
-	QString xmlTree; // The received Stream
-	QDomNode domNode; // Used to handle the stream
 	QString err; 
 	int errLine;
 	int depht; //depht of the xml stream;
-	bool waitForMechanism;
-	QString startElementTag;
-	QDomDocument doc;
 	
 };
 

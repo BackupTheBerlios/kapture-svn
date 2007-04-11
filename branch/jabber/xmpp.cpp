@@ -31,6 +31,7 @@ Xmpp::Xmpp(QString jid)
 	authenticated = false;
 	tlsStarted = false;
 	handler = new XmlHandler();
+	ready = true;
 }
 
 /*
@@ -53,82 +54,6 @@ int Xmpp::auth(char *password, char *ressource)
 	state = waitStream;
 	sendData(firstXml);
 
-/*	
-	QString mess;
-	QByteArray data;
-	QXmlInputSource xmlSource;
-	QXmlSimpleReader xml;
-	xmlHandler *handler = new xmlHandler();
-			<stream:stream xmlns:stream="http://etherx.jabber.org/fhfjfhgfjfh" xmlns:xmlns="http://etherx.jabber.org/streams" version="1.0" to="jabber.org" />	
-	mess = QString("<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version=\"1.0\">").arg(server);
-	sendData(mess);
-	data = readData();
-	printf(" * Answer 1 : %s\n", data.constData());
-	
-	// Analyse the answer.	
-	handler->setData(data);
-	xmlSource.setData(data);
-	xml.setContentHandler(handler);
-	if (xml.parse(xmlSource))
-		printf(" * Parsing OK (SAX).\n");
-	
-	//emit needUserName();*/
-	/*
-	 * After this signal is emitted, a call to continueLoginAfterUserName()
-	 * MUST be done after setting the correct username.
-	 * It is the same as in Iris Library.
-	 * 
-	 * Maybe that's not very usefull here but it can be usefull to inform
-	 * about errors that occurs during the connection or inform about the
-	 * state of the client when something has happened (new presence,
-	 * new message,...)
-	 *
-	 * A state machine should be used :
-	 * - I wait a stream tag
-	 * 	-> received : I wait a STARTTLS
-	 * 		-> received : I send a proceed (or something ;))
-	 * 			-> ...
-	 * 		-> not received : Error
-	 * 	-> not received : Error
-	 *
-	 * The return 0 is needed to stop the function here.
-	 */
-	//return 0;
-	/*
-	mess = QString("<iq type='get' to='%1' id='auth_1'>\
-			<query xmlns='jabber:iq:auth'>\
-			<username>%2</username>\
-			</query></iq>").arg(server).arg(username);
-
-	sendData(mess);
-	data = readData();
-	printf(" * Answer 2 : %s\n", data.constData());
-	handler->setData(data);
-	xmlSource.setData(data);
-	xml.setContentHandler(handler);
-	if (xml.parse(xmlSource))
-		printf(" * Parsing OK (SAX).\n");
-
-	mess = QString("<iq type='set' id='auth_2' to='%1'>\
-		<query xmlns='jabber:iq:auth'>\
-		<username>%2</username>\
-		<password>%3</password>\
-		<resource>%4</resource>\
-		</query>\
-		</iq>").arg(server).arg(username).arg(password).arg(ressource);
-	sendData(mess);
-	data = readData();
-	printf(" * Answer 3 : %s\n", data.constData());
-	handler->setData(data);
-	xmlSource.setData(data);
-	xml.setContentHandler(handler);
-	if (xml.parse(xmlSource))
-		printf(" * Parsing OK (SAX).\n");
-
-	authenticated = true;
-	if (authenticated)
-		connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
-	*/
 	return 0;
 }
 
@@ -174,80 +99,52 @@ void Xmpp::dataReceived()
 	QXmlInputSource xmlSource;
 	QXmlSimpleReader xml;
 	
-	printf("\n * Data avaible !\n");
+//	printf("\n * Data avaible !\n");
 	data = tcpSocket->readAll();
-	printf(" * Data : %s\n", data.constData());
+//	printf(" * Data : %s\n", data.constData());
 	/*
 	 * I'm not using the readData function above. 
 	 * See the readData function for details.
 	 */
-	handler->elements.clear();
-	handler->setData(data);
+
+	/*
+	 * Here's what I do :
+	 * I first give data to the handler and it parses it.
+	 * Next, I get elements from the parser.
+	 * Those are tElem type (a typedef)
+	 */
+	
+	events.clear();
 	xmlSource.setData(data);
 	xml.setContentHandler(handler);
 	
 	if (xml.parse(xmlSource))
-		printf(" * Parsing OK (SAX).\n");
-	/*elems = handler->elements;
-	for(int i = 0; i < elems.count(); i++)
-	{
-		printf(" * %s\n", elems.at(i).toDocument().toString().toLatin1().constData());
-		doSomething(elems.at(i));
-	}*/
-	QDomDocument Doc;
-	QDomNode node;
-	QList<QDomNode> nodes;
-	/*Doc.setContent(data, false);
-	printf(" * Value = %s\n", Doc.toString().toLatin1().constData());
-	*/
-	Doc = handler->getDocument();
-	QDomNodeList childNodes = Doc.childNodes();
-	printf(" ^ %d Child nodes.\n", childNodes.count());
-	node = Doc.firstChild();
-	while(!node.isNull())
-	{
-		printf(" * tagName of this node : %s\n", node.toElement().tagName().toLatin1().constData());
-		nodes.append(node);
-		/*if (!node.firstChild().isNull())
-			node = node.firstChild();
-		else
-		*/	
-		if (!node.nextSibling().isNull())
-			node = node.nextSibling();
-		else
-			break;
-	}
-	printf(" * %d childs\n", nodes.count());
+		//printf(" * Parsing OK (SAX).\n");
+	
+	events = handler->getEvents();
 
-	/*
-	 * 				==> NOTHING WORKS. <==
-	 *
-	 * By the way, the handler seems to be the bes solution.
-	 */
-
-	// Only the first Child is present !!!!
-	for (int i = 0; i < nodes.count(); i++)
+	for (int i = 0; i < events.count(); i++)
 	{
-		doSomething(nodes.at(i).toElement());
+		doSomething(events.at(i));
 	}
 
 }
 
-void Xmpp::doSomething(QDomElement elem)
+void Xmpp::doSomething(XmlHandler::tEvent elem) // FIXME: elem -> event
 {
 	switch (state)
 	{
 		case waitStream:
-			if (elem.tagName() == QString("stream:stream"))
+			if (elem.name == QString("stream:stream"))
 			{
 				printf(" * Ok, received the stream tag.\n");
 				state = waitFeatures;
 			}
 			else
-				printf(" ! Didn't receive the stream ! \n");
+			//	printf(" ! Didn't receive the stream ! \n");
 			break;
 		case waitFeatures:
-			if (elem.tagName() == QString("stream:features"))
+			if (elem.name == QString("stream:features"))
 			{
 				printf(" * Ok, received the features tag.\n");
 				if (!tls)
@@ -256,7 +153,7 @@ void Xmpp::doSomething(QDomElement elem)
 				//	state = waitSASLSTUFF;
 			}
 		case waitStartTls:
-			if (elem.tagName() == QString("starttls"))
+			if (elem.name == QString("starttls"))
 			{
 				printf(" * Ok, received the starttls tag.\n");
 				// Send starttls tag
@@ -265,7 +162,6 @@ void Xmpp::doSomething(QDomElement elem)
 				doc.appendChild(e);
 				e.setAttribute(QString("xmlns"), QString("urn:ietf:params:xml:ns:xmpp-tls"));
 				sendData(doc.toString());
-				
 				// Next state
 				state = waitProceed;
 				
@@ -275,26 +171,25 @@ void Xmpp::doSomething(QDomElement elem)
 			}
 			else
 			{
-				printf(" ! No STARTTLS.\n");
+				//printf(" ! No STARTTLS.\n");
 			}
 			break;
 		case waitProceed:
-			if (elem.tagName() == QString("proceed"))
+			if (elem.name == QString("proceed"))
 			{
-				printf(" * Ok, received the proceed tag.\n");
+				//printf(" * Ok, received the proceed tag.\n");
 				printf(" * Proceeding...\n * Enabling TLS connection.\n");
 				
 				state = isHandShaking;
-				tls = new TlsHandler(tcpSocket->socketDescriptor());
+				tls = new TlsHandler();
+				connect(tls, SIGNAL(tlsDataAvaible(void*, int)), this, SLOT(sendDataFromTls(void*, int)));
 				if(tls->connect())
 					state = waitStream;
 				else
 					sendData(QString("</stream:stream>")); //Maybe too hard for a so little fault....
-
 			}
 			else
-				printf(" ! Didn't receive the proceed tag ! \n");
-			
+				//printf(" ! Didn't receive the proceed tag ! \n");
 			break;
 		/*case isHandShaking:
 			printf("Give clear data\n");
@@ -304,5 +199,12 @@ void Xmpp::doSomething(QDomElement elem)
 		*/
 
 	}
+}
+
+void Xmpp::sendDataFromTls(void *buffer, int bufSize)
+{
+	//sendData(tls->toSend.takeFirst());
+	printf("Writing : %d chars : %s\n", bufSize, (char*)buffer);
+	tcpSocket->write((const char*)buffer, bufSize);
 }
 
