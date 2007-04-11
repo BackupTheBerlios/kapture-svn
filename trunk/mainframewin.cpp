@@ -16,6 +16,10 @@
 MainFrameWin::MainFrameWin()
 {
 	ui.setupUi(this);
+	connect(ui.rightBtn, SIGNAL(clicked()), this, SIGNAL(turnRightEvent()));
+	connect(ui.leftBtn, SIGNAL(clicked()), this, SIGNAL(turnLeftEvent()));
+	connect(ui.upBtn, SIGNAL(clicked()), this, SIGNAL(turnUpEvent()));
+	connect(ui.downBtn, SIGNAL(clicked()), this, SIGNAL(turnDownEvent()));
 }
 
 MainFrameWin::~MainFrameWin()

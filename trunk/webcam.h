@@ -40,7 +40,7 @@ public:
 	int currentHeight();
 	int currentPixelFormat();
 	int changeCtrl(int ctrl, int value);
-	int defaultCtrlVal(unsigned int control);
+	int defaultCtrlVal(unsigned int control, int &defaultValue);
 	
 	uchar *mem[2];
 	size_t bufLength;
@@ -55,6 +55,10 @@ signals:
 
 public slots:
 	int startStreaming();
+	void turnRight();
+	void turnLeft();
+	void turnUp();
+	void turnDown();
 
 private:
 	int dev;

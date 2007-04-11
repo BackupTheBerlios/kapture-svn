@@ -30,6 +30,12 @@ public:
 	int posCurX;
 	int posCurY;
 	Ui::mainFrameWin ui;
+
+signals:
+	void turnRightEvent();
+	void turnLeftEvent();
+	void turnUpEvent();
+	void turnDownEvent();
 };
 
 #endif // MAINFRAMEWIN_H

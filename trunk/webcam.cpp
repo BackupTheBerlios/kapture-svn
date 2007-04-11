@@ -349,6 +349,7 @@ int Webcam::changeCtrl(int ctrl, int value)
  * 	2 : Brightness
  * 	3 : Contrast
  * 	4 : Sharpness
+ * 	5 : Reset Pan/Tilt
  */
 	__u32 CTRL;
 	switch(ctrl)
@@ -378,6 +379,23 @@ int Webcam::changeCtrl(int ctrl, int value)
 			CTRL = V4L2_CID_SHARPNESS;
 			break;
 		}
+		/*
+		case 5:
+		{
+			CTRL = V4L2_CID_PAN_RELATIVE;
+			break;
+		}
+		case 6:
+		{
+			CTRL = V4L2_CID_TILT_RELATIVE;
+			break;
+		}
+		*/
+		case 5:
+		{
+			CTRL = V4L2_CID_PANTILT_RESET;
+			break;
+		}
 		default:
 		{
 			break;
@@ -385,6 +403,7 @@ int Webcam::changeCtrl(int ctrl, int value)
 	}
 
 	memset (&queryctrl, 0, sizeof queryctrl);
+	memset (&control, 0, sizeof control);
 	queryctrl.id = CTRL;
 	if (-1 == ioctl (dev, VIDIOC_QUERYCTRL, &queryctrl)) 
 	{
@@ -397,10 +416,12 @@ int Webcam::changeCtrl(int ctrl, int value)
 		} 
 	} else 
 	{
+		control.id = CTRL;
 		control.value = value;
 		if (-1 == ioctl (dev, VIDIOC_S_CTRL, &control)) {
 #ifdef DEBUG
-			perror ("VIDIOC_S_CTRL");
+			perror("VIDIOC_S_CTRL");
+			printf(" * Error while setting control\n");
 #endif
 			return EXIT_FAILURE;
         	}
@@ -423,14 +444,14 @@ int Webcam::currentPixelFormat()
 	return (int) fmt.fmt.pix.pixelformat;
 }
 
-int Webcam::defaultCtrlVal(unsigned int control)
+int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 {
 	struct v4l2_queryctrl queryctrl;
 	char *ctrl;
 	
 	if(!isOpened)
 	{
-		return -1;
+		return false;
 	}
 /*
  * ctrl values :
@@ -439,45 +460,175 @@ int Webcam::defaultCtrlVal(unsigned int control)
  * 	2 : Brightness
  * 	3 : Contrast
  * 	4 : Sharpness
+ * 	6 : Pan <->
+ * 	7 : Tilt |
  */
 	
 	memset(&queryctrl, 0, sizeof queryctrl);
 	switch(control){
-		case 0 : {
+		case 0 : 
+		{
 			ctrl = "Saturation";
 			queryctrl.id = V4L2_CID_SATURATION;
 			break;
 		}
-		case 1 : {
+		case 1 : 
+		{
 			ctrl = "Powerline Frequecy";
 			queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
 			break;
 		}
-		case 2 : {
+		case 2 : 
+		{
 			ctrl = "Brightness";
 			queryctrl.id = V4L2_CID_BRIGHTNESS;
 			break;
 		}
-		case 3 : {
+		case 3 : 
+		{
 			ctrl = "Contrast";
 			queryctrl.id = V4L2_CID_CONTRAST;
 			break;
 		}
-		case 4 : {
+		case 4 : 
+		{
 			ctrl = "Sharpness";
 			queryctrl.id = V4L2_CID_SHARPNESS;
 			break;
 		}
+		case 6:
+		{
+			ctrl = "Pan";
+			queryctrl.id = V4L2_CID_PAN_RELATIVE;
+			break;
+		}
+		case 7:
+		{
+			ctrl = "Tilt";
+			queryctrl.id = V4L2_CID_TILT_RELATIVE;
+			break;
+		}
 	}
 
-char str[128];
+	char str[128];
 	if (-1 == ioctl(dev, VIDIOC_QUERYCTRL, &queryctrl))
 	{
 		strcpy(str, "Unable to set control ");
+		printf("ERROR\n");
 		KError(strcat(str, ctrl), errno);
-		return EXIT_FAILURE;
+		return false;
 	}
 
-	return (unsigned int) queryctrl.default_value;
+	if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
+	{
+		printf ("Not supported.\n");
+		return false; //FLAG_NOT_SUPPORTED;
+	}
+	defaultValue = (int)queryctrl.default_value;
+
+	return true;
 }
 
+void Webcam::turnRight()
+{
+	struct v4l2_queryctrl queryctrl;
+	struct v4l2_control control;
+
+	memset (&queryctrl, 0, sizeof queryctrl);
+	memset (&control, 0, sizeof control);
+	queryctrl.id = V4L2_CID_PAN_RELATIVE;
+	if (-1 == ioctl (dev, VIDIOC_QUERYCTRL, &queryctrl)) 
+	{
+	        if (errno != EINVAL) 
+		{
+			perror ("VIDIOC_QUERYCTRL");
+			return;
+		} 
+	} else 
+	{
+		control.id = V4L2_CID_PAN_RELATIVE;
+		control.value = -320;
+		if (-1 == ioctl (dev, VIDIOC_S_CTRL, &control)) {
+			perror("VIDIOC_S_CTRL");
+			return;
+        	}
+	}
+}
+
+void Webcam::turnLeft()
+{
+	struct v4l2_queryctrl queryctrl;
+	struct v4l2_control control;
+
+	memset (&queryctrl, 0, sizeof queryctrl);
+	memset (&control, 0, sizeof control);
+	queryctrl.id = V4L2_CID_PAN_RELATIVE;
+	if (-1 == ioctl (dev, VIDIOC_QUERYCTRL, &queryctrl)) 
+	{
+	        if (errno != EINVAL) 
+		{
+			perror ("VIDIOC_QUERYCTRL");
+			return;
+		} 
+	} else 
+	{
+		control.id = V4L2_CID_PAN_RELATIVE;
+		control.value = 320;
+		if (-1 == ioctl (dev, VIDIOC_S_CTRL, &control)) {
+			perror("VIDIOC_S_CTRL");
+			return;
+        	}
+	}
+}
+
+void Webcam::turnUp()
+{
+	struct v4l2_queryctrl queryctrl;
+	struct v4l2_control control;
+	
+	memset (&queryctrl, 0, sizeof queryctrl);
+	memset (&control, 0, sizeof control);
+	queryctrl.id = V4L2_CID_TILT_RELATIVE;
+	if (-1 == ioctl (dev, VIDIOC_QUERYCTRL, &queryctrl)) 
+	{
+	        if (errno != EINVAL) 
+		{
+			perror ("VIDIOC_QUERYCTRL");
+			return;
+		} 
+	} else 
+	{
+		control.id = V4L2_CID_TILT_RELATIVE;
+		control.value = -320;
+		if (-1 == ioctl (dev, VIDIOC_S_CTRL, &control)) {
+			perror("VIDIOC_S_CTRL");
+			return;
+        	}
+	}
+}
+
+void Webcam::turnDown()
+{
+	struct v4l2_queryctrl queryctrl;
+	struct v4l2_control control;
+
+	memset (&queryctrl, 0, sizeof queryctrl);
+	memset (&control, 0, sizeof control);
+	queryctrl.id = V4L2_CID_TILT_RELATIVE;
+	if (-1 == ioctl (dev, VIDIOC_QUERYCTRL, &queryctrl)) 
+	{
+	        if (errno != EINVAL) 
+		{
+			perror ("VIDIOC_QUERYCTRL");
+			return;
+		} 
+	} else 
+	{
+		control.id = V4L2_CID_TILT_RELATIVE;
+		control.value = 320;
+		if (-1 == ioctl (dev, VIDIOC_S_CTRL, &control)) {
+			perror("VIDIOC_S_CTRL");
+			return;
+        	}
+	}
+}

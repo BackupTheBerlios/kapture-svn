@@ -42,6 +42,14 @@ QImage *imageZoomed = new QImage(60,60,QImage::Format_RGB32);
 KaptureWin::KaptureWin()
 	: QMainWindow()
 {
+	//Xmpp *jabberAccount = new Xmpp("cazou-test@jabber.org");
+//	Xmpp *jabberAccount = new Xmpp("test1@localhost");
+//	connect(jabberAccount,SIGNAL(needUserName()), SLOT(setXmppUserName()));
+//	if (jabberAccount->connected())
+//		jabberAccount->auth("","Kapture");
+/*
+ * The above is commented while I'm testing xmpp.
+ */
 	int i = 0;
 	otherVideoDevice = false;
 	for( ;i < qApp->arguments().size(); i++)
@@ -55,7 +63,7 @@ KaptureWin::KaptureWin()
 	}
 	if (!otherVideoDevice)
 		videoDevice = QString("/dev/video0");
-	int defaultSat, defaultFreq, defaultBright, defaultCont, defaultSharp;	
+	int defaultSat, defaultFreq, defaultBright, defaultCont, defaultSharp, defaultPan, defaultTilt;
 
 	crIsActivated = false;
 	ui.setupUi(this);
@@ -72,16 +80,26 @@ KaptureWin::KaptureWin()
 	camera = new Webcam();
 	getDeviceCapabilities(); // Open device and fill the param's comboBoxes (doesn't close it)
 
-	defaultSat = camera->defaultCtrlVal(0); // Saturation to default
-	defaultFreq = camera->defaultCtrlVal(1);  // Frequency to default
-	defaultBright =  camera->defaultCtrlVal(2);  // Brightness to default
-	defaultCont = camera->defaultCtrlVal(3);  // Contrast to default
-	defaultSharp = camera->defaultCtrlVal(4);  // Contrast to default
+	camera->defaultCtrlVal(0, defaultSat); // Saturation to default
+	camera->defaultCtrlVal(1, defaultFreq);  // Frequency to default
+	camera->defaultCtrlVal(2, defaultBright);  // Brightness to default
+	camera->defaultCtrlVal(3, defaultCont);  // Contrast to default
+	camera->defaultCtrlVal(4, defaultSharp);  // Sharp to default
+	panSupported = camera->defaultCtrlVal(6, defaultPan);  // Pan to default
+	if(panSupported)
+	{
+		camera->defaultCtrlVal(7, defaultTilt);  // Tilt to default
+		printf(" * Pan = %d\n * Tilt = %d\n", defaultPan, defaultTilt);
+	}
+
 	camera->changeCtrl(0, defaultSat); // Saturation to default
 	camera->changeCtrl(1, defaultFreq);  // Frequency to default
 	camera->changeCtrl(2, defaultBright);  // Brightness to default
 	camera->changeCtrl(3, defaultCont);  // Contrast to default
 	camera->changeCtrl(4, defaultSharp);  // Contrast to default
+	if (panSupported)
+		camera->changeCtrl(5, 3); // Reset to the center position
+	
 	ui.satManualValueBox->setValue(defaultSat);
 	ui.freqBox->setChecked((defaultFreq == 1) ? true : false);
 	ui.brightManualValueBox->setValue(defaultBright);
@@ -96,6 +114,20 @@ KaptureWin::KaptureWin()
 	connect(&keepZoomer,    SIGNAL(timeout () ), this, SLOT(keepZoomerTimeOut()) );
 	connect(camera,    	SIGNAL(imageReady () ), this, SLOT(getImage() ));
 	connect(ui.crButton,	SIGNAL(clicked () ), this, SLOT(crStartStop() ) );
+	if (panSupported)
+	{
+		connect(mfw, SIGNAL(turnRightEvent()), camera, SLOT(turnRight()));
+		connect(mfw, SIGNAL(turnLeftEvent()), camera, SLOT(turnLeft()));
+		connect(mfw, SIGNAL(turnDownEvent()), camera, SLOT(turnDown()));
+		connect(mfw, SIGNAL(turnUpEvent()), camera, SLOT(turnUp()));
+	}
+	else
+	{
+		mfw->ui.rightBtn->hide();
+		mfw->ui.leftBtn->hide();
+		mfw->ui.upBtn->hide();
+		mfw->ui.downBtn->hide();
+	}
 	
 	connect(ui.satManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( satChanged()) );
 	connect(ui.freqBox,		SIGNAL(stateChanged (int) ), this, SLOT( freqChanged()) );
@@ -671,3 +703,7 @@ void KaptureWin::closeEvent(QCloseEvent *event)
 	((QApplication*) this->parentWidget())->quit();
 }
 
+void KaptureWin::setXmppUserName()
+{
+	printf(" * I set the username................\n");
+}
