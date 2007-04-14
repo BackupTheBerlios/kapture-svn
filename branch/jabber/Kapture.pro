@@ -27,9 +27,11 @@ HEADERS += imageConvert.h \
            xmlHandler.h \
            xmpp.h \
 	   tlsHandler.h
+
 FORMS += crframewin.ui \
          kapturewin.ui \
          mainframewin.ui
+
 SOURCES += imageConvert.cpp \
            kapturewin.cpp \
            main.cpp \

@@ -43,7 +43,6 @@ KaptureWin::KaptureWin()
 	: QMainWindow()
 {
 	Xmpp *jabberAccount = new Xmpp("test1@localhost");
-	connect(jabberAccount,SIGNAL(needUserName()), SLOT(setXmppUserName()));
 	if (jabberAccount->connected())
 		jabberAccount->auth("123456789","Kapture");
 /*
