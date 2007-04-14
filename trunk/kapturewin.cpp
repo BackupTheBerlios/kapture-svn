@@ -19,7 +19,6 @@
 #include "kapturewin.h"
 #include "mainframewin.h"
 #include "webcam.h"
-#include "xmpp.h"
 
 /*
  * This Software is at a developpement state.
@@ -42,14 +41,6 @@ QImage *imageZoomed = new QImage(60,60,QImage::Format_RGB32);
 KaptureWin::KaptureWin()
 	: QMainWindow()
 {
-	//Xmpp *jabberAccount = new Xmpp("cazou-test@jabber.org");
-//	Xmpp *jabberAccount = new Xmpp("test1@localhost");
-//	connect(jabberAccount,SIGNAL(needUserName()), SLOT(setXmppUserName()));
-//	if (jabberAccount->connected())
-//		jabberAccount->auth("","Kapture");
-/*
- * The above is commented while I'm testing xmpp.
- */
 	int i = 0;
 	otherVideoDevice = false;
 	for( ;i < qApp->arguments().size(); i++)

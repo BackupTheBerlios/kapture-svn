@@ -18,15 +18,8 @@ HEADERS += imageConvert.h \
            kapturewin.h \
            mainframewin.h \
            merror.h \
-           meteoplugin.h \
            mouselabel.h \
-           stanza.h \
-           uvc_compat.h \
-           uvcvideo.h \
-           webcam.h \
-           xmlHandler.h \
-           xmpp.h \
-	   tlsHandler.h
+           webcam.h
 FORMS += crframewin.ui \
          kapturewin.ui \
          mainframewin.ui
@@ -35,10 +28,5 @@ SOURCES += imageConvert.cpp \
            main.cpp \
            mainframewin.cpp \
            merror.cpp \
-           meteoplugin.cpp \
            mouselabel.cpp \
-           stanza.cpp \
-           webcam.cpp \
-           xmlHandler.cpp \
-           xmpp.cpp \
-	   tlsHandler.cpp
+           webcam.cpp
