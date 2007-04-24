@@ -19,7 +19,12 @@ HEADERS += imageConvert.h \
            mainframewin.h \
            merror.h \
            mouselabel.h \
-           webcam.h
+           stanza.h \
+           webcam.h \
+           xmlHandler.h \
+           xmpp.h \
+	   tlsHandler.h 
+#	   event.h
 FORMS += crframewin.ui \
          kapturewin.ui \
          mainframewin.ui
@@ -29,4 +34,9 @@ SOURCES += imageConvert.cpp \
            mainframewin.cpp \
            merror.cpp \
            mouselabel.cpp \
-           webcam.cpp
+           stanza.cpp \
+           webcam.cpp \
+           xmlHandler.cpp \
+           xmpp.cpp \
+	   tlsHandler.cpp 
+#	   event.cpp

@@ -70,19 +70,6 @@
      </property>
     </widget>
    </widget>
-   <widget class="QPushButton" name="showMfwBtn" >
-    <property name="geometry" >
-     <rect>
-      <x>260</x>
-      <y>0</y>
-      <width>51</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Show</string>
-    </property>
-   </widget>
    <widget class="QGroupBox" name="groupBox_5" >
     <property name="geometry" >
      <rect>
@@ -1999,19 +1986,6 @@
      </property>
     </widget>
    </widget>
-   <widget class="QPushButton" name="crButton" >
-    <property name="geometry" >
-     <rect>
-      <x>70</x>
-      <y>30</y>
-      <width>181</width>
-      <height>21</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Activate Color Replacer</string>
-    </property>
-   </widget>
    <widget class="QPushButton" name="btnVideo" >
     <property name="geometry" >
      <rect>
@@ -2070,6 +2044,45 @@
     </property>
     <property name="sizeAdjustPolicy" >
      <enum>QComboBox::AdjustToContents</enum>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="showMfwBtn" >
+    <property name="geometry" >
+     <rect>
+      <x>260</x>
+      <y>0</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Show</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="crButton" >
+    <property name="geometry" >
+     <rect>
+      <x>70</x>
+      <y>30</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Activate Color Replacer</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="jabberBtn" >
+    <property name="geometry" >
+     <rect>
+      <x>260</x>
+      <y>30</y>
+      <width>51</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Jabber</string>
     </property>
    </widget>
   </widget>

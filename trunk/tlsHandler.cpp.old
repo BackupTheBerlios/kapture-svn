@@ -1,0 +1,84 @@
+#include "tlsHandler.h"
+
+#include <iostream>
+#include <QList>
+
+using namespace std;
+
+TlsHandler::TlsHandler()
+{
+	SSL_library_init();
+	SSL_load_error_strings();
+
+	// Trying TLSv1 methode
+	ctx = SSL_CTX_new( TLSv1_client_method() );
+	ssl = SSL_new(ctx);
+	rbio = BIO_new( BIO_s_mem() );
+	wbio = BIO_new( BIO_s_mem() );
+	SSL_set_bio(ssl, rbio, wbio);
+	BIO_set_write_buf_size(wbio, 17408);
+}
+
+TlsHandler::~TlsHandler()
+{
+
+}
+
+bool TlsHandler::connect()
+{
+	printf("Connect...\n");
+	fflush(stdout);
+	state = Connecting;
+	ret = SSL_connect(ssl);
+	if (ret < 0)
+	{
+		error = SSL_get_error(ssl, ret);
+		if (error == SSL_ERROR_WANT_WRITE)
+		{
+			printf(" * SSL want to write data !\n");
+			fflush(stdout);
+			return false;
+		}
+		
+		if (error == SSL_ERROR_WANT_READ)
+		{
+			readyRead();
+		}
+	}
+	else
+		return true;
+	return false;
+}
+
+void TlsHandler::newDataIncoming(QByteArray &data)
+{
+	printf("append\n");
+	fflush(stdout);
+	tlsIncomingData.append(data);
+	connect();
+}
+
+void TlsHandler::readyRead()
+{
+	QByteArray buffer;
+	/*if (tlsIncomingData.count() == 0)
+	{*/
+		// Read from wbio
+		int bufSize = BIO_pending(wbio); // Get size of data in the wbio
+		buffer.resize(bufSize);
+		int ret = BIO_read(wbio, buffer.data(), bufSize); // Put data in the buffer.
+		/*for (int i = 0; i <= bufSize; i++)
+			printf("0x%02hhx ", buffer.data()[i]);
+		printf("\n");*/
+		emit tlsDataAvaible(&buffer, bufSize);
+		connect();
+	/*}
+	else
+	{
+		printf("read");
+		QByteArray data = tlsIncomingData.takeFirst();
+		SSL_write(ssl, data.data(), data.size());
+		fflush(stdout);
+	}*/
+}
+
