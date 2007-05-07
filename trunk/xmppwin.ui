@@ -1,0 +1,131 @@
+<ui version="4.0" >
+ <class>xmppWin</class>
+ <widget class="QMainWindow" name="xmppWin" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>310</width>
+    <height>430</height>
+   </rect>
+  </property>
+  <property name="minimumSize" >
+   <size>
+    <width>310</width>
+    <height>430</height>
+   </size>
+  </property>
+  <property name="maximumSize" >
+   <size>
+    <width>310</width>
+    <height>430</height>
+   </size>
+  </property>
+  <property name="baseSize" >
+   <size>
+    <width>310</width>
+    <height>430</height>
+   </size>
+  </property>
+  <property name="windowTitle" >
+   <string>Kapture : xmpp window - alpha</string>
+  </property>
+  <widget class="QWidget" name="centralwidget" >
+   <widget class="QTableView" name="tableView" >
+    <property name="geometry" >
+     <rect>
+      <x>0</x>
+      <y>40</y>
+      <width>311</width>
+      <height>391</height>
+     </rect>
+    </property>
+    <property name="frameShape" >
+     <enum>QFrame::Box</enum>
+    </property>
+    <property name="frameShadow" >
+     <enum>QFrame::Sunken</enum>
+    </property>
+    <property name="selectionMode" >
+     <enum>QAbstractItemView::SingleSelection</enum>
+    </property>
+    <property name="selectionBehavior" >
+     <enum>QAbstractItemView::SelectRows</enum>
+    </property>
+    <property name="showGrid" >
+     <bool>false</bool>
+    </property>
+    <property name="gridStyle" >
+     <enum>Qt::SolidLine</enum>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="jid" >
+    <property name="geometry" >
+     <rect>
+      <x>0</x>
+      <y>10</y>
+      <width>113</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Full Jid</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="password" >
+    <property name="geometry" >
+     <rect>
+      <x>110</x>
+      <y>10</y>
+      <width>113</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Password</string>
+    </property>
+    <property name="frame" >
+     <bool>true</bool>
+    </property>
+    <property name="echoMode" >
+     <enum>QLineEdit::Password</enum>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="jabberConnect" >
+    <property name="geometry" >
+     <rect>
+      <x>240</x>
+      <y>0</y>
+      <width>51</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Online</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="jabberDisconnect" >
+    <property name="geometry" >
+     <rect>
+      <x>240</x>
+      <y>20</y>
+      <width>51</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Offline</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>jid</tabstop>
+  <tabstop>password</tabstop>
+  <tabstop>jabberConnect</tabstop>
+  <tabstop>jabberDisconnect</tabstop>
+  <tabstop>tableView</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
