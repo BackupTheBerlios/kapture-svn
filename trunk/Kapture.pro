@@ -23,11 +23,16 @@ HEADERS += imageConvert.h \
            webcam.h \
            xmlHandler.h \
            xmpp.h \
-	   tlsHandler.h 
-#	   event.h
+	   tlsHandler.h \
+	   event.h \
+	   xmppwin.h \
+	   rosterModel.h \
+	   chatwin.h
 FORMS += crframewin.ui \
          kapturewin.ui \
-         mainframewin.ui
+         mainframewin.ui \
+	 xmppwin.ui \
+	 chatwin.ui
 SOURCES += imageConvert.cpp \
            kapturewin.cpp \
            main.cpp \
@@ -38,5 +43,8 @@ SOURCES += imageConvert.cpp \
            webcam.cpp \
            xmlHandler.cpp \
            xmpp.cpp \
-	   tlsHandler.cpp 
-#	   event.cpp
+	   tlsHandler.cpp \ 
+	   event.cpp \
+	   xmppwin.cpp \
+	   rosterModel.cpp \
+	   chatwin.cpp

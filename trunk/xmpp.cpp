@@ -1,41 +1,38 @@
 #include <QtXml>
 #include <QDomDocument>
-//#include <openssl/ssl.h>
-//#include <qca.h>
 
 #include "xmpp.h"
-//#include "xmlHandler.h"
 
 
 /*
  * Establish connection to the server.
  */
-Xmpp::Xmpp(QString jid)
+Xmpp::Xmpp(QString jid, QString pServer)
 {
-	timeOut = 30000; // Default timeout set to 5 seconds
+	timeOut = 5000; // Default timeout set to 5 seconds
 	tcpSocket = new QTcpSocket();
 	username = jid.split('@').at(0);
 	server = jid.split('@').at(1);
-
-	tcpSocket->connectToHost(server, 5222);
-	if (tcpSocket->waitForConnected(timeOut))
+	if (personnalServer == "")
 	{
-		printf(" * Connected to %s!\n", server.toLatin1().constData());
-		isConnected = true;
+		usePersonnalServer = false;
 	}
 	else
 	{
-		printf(" * Not connected ! (Unable to connect to %s)\n", server.toLatin1().constData());
-		isConnected = false;
+		usePersonnalServer = true;
+		personnalServer = pServer;
 	}
-	authenticated = false;
+
 	handler = new XmlHandler();
+	authenticated = false;
 	isTlsing = false;
 	tlsDone = false;
 	saslDone = false;
 	needBind = false;
 	needSession = false;
 	jidDone = false;
+	connect(tcpSocket, SIGNAL(connected()), this, SLOT(start()));
+	stanza = new Stanza();
 }
 
 /*
@@ -43,23 +40,42 @@ Xmpp::Xmpp(QString jid)
  */
 Xmpp::~Xmpp()
 {
+	//FIXME: Do it with a stanza class.
+	QDomDocument d("");
+	QDomElement e = d.createElement("presence");
+	e.setAttribute("type", "unavaible");
+	QDomElement s = d.createElement("satuts");
+	QDomText t = d.createTextNode("Logged out");
+	
+	s.appendChild(t);
+	e.appendChild(s);
+	d.appendChild(e);
+	
+	sendData(d.toString().toLatin1());
 	tcpSocket->close();
 }
 
 /*
- * Authenticates the user to the server.
+ * Start the authentication process to the server.
  */
-int Xmpp::auth(QString pass, QString res)
+void Xmpp::auth(QString pass, QString res)
 {
+	if (!usePersonnalServer)
+		tcpSocket->connectToHost(server, 5222);
+	else
+		tcpSocket->connectToHost(personnalServer, 5222);
+		
 	password = pass;
 	resource = res;
+}
+
+void Xmpp::start()
+{
 	QString firstXml = QString("<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version=\"1.0\">").arg(server);
 	//printf(" * toSend = %s\n", firstXml.toLatin1().constData()); 
 	connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	state = waitStream;
 	sendData(QByteArray(firstXml.toLatin1()));
-
-	return 0;
 }
 
 /*
@@ -102,9 +118,9 @@ QByteArray Xmpp::readData()
 		return QByteArray();
 }
 
-bool Xmpp::connected()
+bool Xmpp::connectedToServer()
 {
-	return isConnected;
+	return isConnectedToServer;
 }
 
 void Xmpp::dataReceived()
@@ -134,26 +150,40 @@ void Xmpp::processXml(QByteArray data)
 	
 	printf(" * Data : %s\n", data.constData());
 
-	xmlSource.setData(data);
-	xml.setContentHandler(handler);
-	
-	handler->setData(data);
-	
-	xml.parse(xmlSource);
-	//	printf(" * Parsing OK (SAX).\n");
-	
-	events += handler->getEvents();
-
-	while (!events.isEmpty())
+	if (state < active)
 	{
-		processEvent(events.takeFirst());
+		xmlSource.setData(data);
+		xml.setContentHandler(handler);
+		
+		handler->setData(data);
+		
+		xml.parse(xmlSource);
+		//	printf(" * Parsing OK (SAX).\n");
+		
+		events += handler->getEvents();
+	
+		while (!events.isEmpty())
+		{
+			processEvent(events.takeFirst());
+		}
+	}
+	else
+	{
+		printf("Create Stanza\n");
+		/*
+		 * Maybe stanza should be public. So XmppWin could directly connect to Stanza.
+		 * It wil avoid having a lot of signals trough Xmpp 
+		 * (Xmpp -> Stanza -> Xmpp -> XmppWin -> [chatWindow]) should become
+		 * (Xmpp -> Stanza -> XmppWin)
+		 */
+		stanza->setData(data);
 	}
 	data.clear();
 }
 
 void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 {
-	printf("Elem = %s\n", elem.name.toLatin1().constData());
+	//printf("Elem = %s\n", elem.name.toLatin1().constData());
 	switch (state)
 	{
 		case waitStream:
@@ -233,7 +263,7 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 					plainMech = true;
 					printf(" * Ok, PLAIN mechanism supported\n");
 					
-					// Send auth method.
+					// Sstartauth method.
 					QDomDocument doc("");
 					QDomElement e = doc.createElement("auth");
 					doc.appendChild(e);
@@ -252,7 +282,7 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 			{
 				printf(" * Ok, SASL established.\n");
 				saslDone = true;
-				auth(password, resource);
+				start();
 			}
 			if (elem.name == QString("failure"))
 			{
@@ -302,7 +332,6 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 		case waitSession:
 			if (elem.name == QString("iq"))
 			{
-				//Stanza *st = new Stanza(elem.node);
 				if (elem.attributes.value("type") == "result")
 				{
 					printf(" * Connection is now active !\n");
@@ -315,6 +344,7 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 					sendData(doc.toString().toLatin1());
 					
 					state = active;
+					emit connected(); 
 
 				}
 				else
@@ -398,4 +428,36 @@ void Xmpp::tlsIsConnected()
 	QString firstXml = QString("<?xml version='1.0'?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version='1.0'>").arg(server);
 	//printf(" * toSend = %s\n", firstXml.toLatin1().constData()); 
 	sendData(QByteArray(firstXml.toLatin1()));
+}
+
+void Xmpp::getRoster()
+{
+	QDomDocument d("");
+	QDomElement e = d.createElement("iq");
+	e.setAttribute("from", username + "@" + server + "/" + resource);
+	e.setAttribute("type", "get");
+	e.setAttribute("id", "roster_1");
+	QDomElement q = d.createElement("query");
+	q.setAttribute("xmlns", "jabber:iq:roster");
+	e.appendChild(q);
+	d.appendChild(e);
+
+	sendData(d.toString().toLatin1());
+}
+
+void Xmpp::sendMessage(QString to, QString message)
+{
+	QDomDocument d("");
+	QDomElement e = d.createElement("message");
+	e.setAttribute("from", username + "@" + server + "/" + resource);
+	e.setAttribute("to", to);
+	e.setAttribute("type", "chat"); // The only one supported for now.
+	QDomElement b = d.createElement("body");
+	QDomText t = d.createTextNode(message);
+
+	b.appendChild(t);
+	e.appendChild(b);
+	d.appendChild(e);
+
+	sendData(d.toString().toLatin1());
 }

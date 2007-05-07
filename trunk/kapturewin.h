@@ -20,6 +20,7 @@
 
 #include "ui_kapturewin.h"
 #include "mainframewin.h"
+#include "xmppwin.h"
 #include "webcam.h"
 
 class KaptureWin : public QMainWindow
@@ -53,12 +54,12 @@ public slots:
 	void sharpChanged();
 	int showZoom();
 	void keepZoomerTimeOut();
-	void setXmppUserName();
-	
+	void showJabberWin();
 private:
 	Ui::kaptureWin ui;
 	Webcam *camera;
 	MainFrameWin *mfw;
+	XmppWin *xw;
 
 	QTimer waitCamera;
 	QTimer keepZoomer;
@@ -72,6 +73,7 @@ private:
 	void closeEvent(QCloseEvent *event);
 	QString videoDevice;
 	bool otherVideoDevice;
+	bool xmppWinCreated;
 };
 
 #endif // KAPTUREWIN_H

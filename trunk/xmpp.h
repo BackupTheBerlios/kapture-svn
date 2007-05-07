@@ -18,35 +18,33 @@ class Xmpp : public QObject
 {
 	Q_OBJECT
 public: 
-	Xmpp(QString jid);
+	Xmpp(QString jid, QString pServer="");
 	~Xmpp();
-	int auth(QString password, QString resource);
-	bool connected();
+	void auth(QString password, QString resource);
+	bool connectedToServer();
 	QList<QDomElement> elems;
+	Stanza *stanza;
+	void getRoster();
+	void sendMessage(QString to, QString message);
+	//void logOut();
+
 
 public slots:
 	void dataReceived();
 	void sendDataFromTls();
 	void clearDataReceived();
 	void tlsIsConnected();
+	void start();
 
 signals:
-	void messageReceived(/*QString message, QString from, QString to, QString type, QString id*/);
-	void presenceChanged(/*QString from, QString to, QString type, QString status, QString id*/);
-	void askVersion(/*QString from, QString id*/);
-	void needUserName();
-	/* 
-	 * Etc...
-	 * See http://psi-im.org/wiki/Iris_Library/ 
-	 */
+	void messageReceived();
+	void presenceChanged();
+	void connected();
 
 private:	
 	int sendData(QByteArray mess);
 	QByteArray readData();
 	QTcpSocket *tcpSocket;
-	/*
-	 * See if char cannot be QString.
-	 */
 	QString server;
 	QString username;
 	int timeOut;
@@ -56,6 +54,8 @@ private:
 	bool plainMech; // if it is true, server supports PLAIN login.
 	bool needBind;
 	bool needSession;
+	bool usePersonnalServer;
+	QString personnalServer;
 
 	XmlHandler *handler;
 	struct rooster
@@ -67,7 +67,7 @@ private:
 	};
 	enum State 
 	{
-		waitStream,
+		waitStream = 0,
 		waitFeatures,
 		waitStartTls,
 		waitProceed,
@@ -83,7 +83,7 @@ private:
 		active
 	};
 	QList<rooster> roosterList;
-	bool isConnected;
+	bool isConnectedToServer;
 	bool authenticated;
 	State state;
 	TlsHandler *tls;

@@ -56,8 +56,8 @@ KaptureWin::KaptureWin()
 		if (qApp->arguments().at(i) == QString("-jonly"))
 		{
 			Xmpp *jabberAccount = new Xmpp("linux@localhost");
-			if (jabberAccount->connected())
-				jabberAccount->auth("pass","Kapture");
+			if (jabberAccount->connectedToServer())
+				jabberAccount->auth("CD4DDE","Kapture");
 			return;
 		}
 	}
@@ -66,6 +66,7 @@ KaptureWin::KaptureWin()
 	int defaultSat, defaultFreq, defaultBright, defaultCont, defaultSharp, defaultPan, defaultTilt;
 
 	crIsActivated = false;
+	xmppWinCreated = false;
 	ui.setupUi(this);
 	ui.crBox->hide();
 	fctExecuted = 0;
@@ -138,6 +139,9 @@ KaptureWin::KaptureWin()
 	connect(ui.redSlider,   SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
 	connect(ui.greenSlider, SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
 	connect(ui.blueSlider,  SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
+
+	// Xmpp part
+	connect(ui.jabberBtn, 	SIGNAL(clicked()), this, SLOT(showJabberWin()));
 
 }
 
@@ -321,30 +325,6 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 		startStopVideo();
 		wasStreaming = true;
 	}
-/*
- * Is going to be replaced by the QList<QSize> getSizesList()
- *
-	if (camera->setFormat(0, 0, formatList.at(el)) == EXIT_SUCCESS)
-	{
-		printf(" * Minimal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
-		sprintf(formatString, "%dx%d (Minimal)", camera->currentWidth(), camera->currentHeight() );
-		this->ui.comboBoxSize->addItem(formatString);
-	}
-
-	if (camera->setFormat(33000, 33000, formatList.at(el)) == EXIT_SUCCESS)
-	{
-		printf(" * Maximal format : %dx%d\n", camera->currentWidth(), camera->currentHeight());
-		sprintf(formatString, "%dx%d (Maximal)", camera->currentWidth(), camera->currentHeight() );
-		this->ui.comboBoxSize->addItem(formatString);
-	}
-	
-	if (camera->setFormat(lastWidth, lastHeight, formatList.at(el)) == EXIT_SUCCESS)
-	{
-		printf(" * Reset format to : %dx%d\n", camera->currentWidth(), camera->currentHeight());
-		sprintf(formatString, "%dx%d", camera->currentWidth(), camera->currentHeight() );
-		this->ui.comboBoxSize->addItem(formatString);
-	}
- */
 	camera->setFormat(lastWidth, lastHeight, formatList.at(ui.comboBoxFormat->currentIndex()));
 	QList<QSize> sizes = camera->getSizesList();
 	for (int i = 0; i < sizes.size(); i++)
@@ -703,7 +683,12 @@ void KaptureWin::closeEvent(QCloseEvent *event)
 	((QApplication*) this->parentWidget())->quit();
 }
 
-void KaptureWin::setXmppUserName()
+void KaptureWin::showJabberWin()
 {
-	printf(" * I set the username................\n");
+	if (!xmppWinCreated)
+	{
+		xw = new XmppWin();
+		xmppWinCreated = true;
+	}
+	xw->show();
 }
