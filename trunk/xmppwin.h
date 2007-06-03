@@ -17,6 +17,7 @@ public slots:
 	void newMessage();
 	void newIq();
 	void sendMessage(QString to, QString message);
+	void startChat(QString to);
 
 private:
 	Ui::xmppWin ui;

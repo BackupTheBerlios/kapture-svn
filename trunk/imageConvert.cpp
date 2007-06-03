@@ -144,13 +144,11 @@ int mjpegToJpeg(unsigned char *inFrame, unsigned char *outFrame, unsigned int bu
 
 int yuvToJpeg(unsigned char *inFrame, QImage *outFrame, int width, int height)
 {
-	
 	QImage *image = new QImage(width, height, QImage::Format_RGB32);
 	const int size = width*height;
 	int y, u, v, y2, u2, v2, r, g, b;
 	int i = 2;
 	int j = 4;
-	int k = 0;
 	int w = 1, h = 0;
 
 	y = inFrame[0];

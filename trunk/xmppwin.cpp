@@ -45,7 +45,6 @@ void XmppWin::jabberConnect()
 	client = new Xmpp(jid);
 	connect(client, SIGNAL(connected()), this, SLOT(clientConnected()));
 	// Must also manage error signals....
-	printf("bhou !");
 	client->auth(ui.password->text(), resource);
 }
 
@@ -64,6 +63,8 @@ void XmppWin::clientConnected()
 	
 	QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
 	client->getRoster();
+	connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
+	client->setPresence();
 }
 
 void XmppWin::newPresence()
@@ -83,7 +84,7 @@ void XmppWin::newMessage()
 		if (chatWinList.at(i)->windowTitle() == mFrom)
 		{
 			found = true;
-			chatWinList.at(i)->ui.discutionText->insertPlainText(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
+			chatWinList.at(i)->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
 		}
 	}
 	
@@ -111,4 +112,9 @@ void XmppWin::newIq()
 void XmppWin::sendMessage(QString to, QString message)
 {
 	client->sendMessage(to, message);
+}
+
+void XmppWin::startChat(QString to)
+{
+	// Start Chat with "to" if it isn't done yet.
 }

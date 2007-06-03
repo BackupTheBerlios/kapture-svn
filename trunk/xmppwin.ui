@@ -31,7 +31,7 @@
    <string>Kapture : xmpp window - alpha</string>
   </property>
   <widget class="QWidget" name="centralwidget" >
-   <widget class="QTableView" name="tableView" >
+   <widget class="MouseTableView" name="tableView" >
     <property name="geometry" >
      <rect>
       <x>0</x>

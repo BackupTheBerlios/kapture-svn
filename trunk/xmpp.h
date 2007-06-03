@@ -26,6 +26,7 @@ public:
 	Stanza *stanza;
 	void getRoster();
 	void sendMessage(QString to, QString message);
+	void setPresence(QString show = "", QString status = "");
 	//void logOut();
 
 

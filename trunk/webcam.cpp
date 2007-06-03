@@ -521,7 +521,7 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 
 	if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
 	{
-		printf ("Not supported.\n");
+		printf ("Pan & Tilt not supported.\n");
 		return false; //FLAG_NOT_SUPPORTED;
 	}
 	defaultValue = (int)queryctrl.default_value;

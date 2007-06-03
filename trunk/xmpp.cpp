@@ -336,13 +336,13 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 				{
 					printf(" * Connection is now active !\n");
 					//emit connected;
-					QDomDocument doc("");
-					QDomElement e = doc.createElement("presence");
 					
-					doc.appendChild(e);
-
-					sendData(doc.toString().toLatin1());
-					
+					/*
+					 * Presence must be sent after getting the roster
+					 * so we already have the contacts to assign their presence
+					 * when receiving presence stanza's wich come after
+					 * setting the first presence.
+					 */
 					state = active;
 					emit connected(); 
 
@@ -443,6 +443,22 @@ void Xmpp::getRoster()
 	d.appendChild(e);
 
 	sendData(d.toString().toLatin1());
+}
+
+void Xmpp::setPresence(QString show, QString status)
+{
+	if (show == "" && status == "")
+	{
+		// Send initial presence.
+		QDomDocument doc("");
+		QDomElement e = doc.createElement("presence");
+
+		doc.appendChild(e);
+
+		sendData(doc.toString().toLatin1());
+
+	}
+
 }
 
 void Xmpp::sendMessage(QString to, QString message)
