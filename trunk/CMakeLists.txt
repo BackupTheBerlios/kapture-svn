@@ -1,7 +1,7 @@
 PROJECT(Kapture)
 
 # Set it to your uvcvideo header files location
-SET(UVC_INCLUDE /path/to/uvcvideo )
+SET(UVC_INCLUDE /home/detlev/include )
 
 # Do not modify this !!!
 IF(${UVC_INCLUDE} MATCHES /path/to/uvcvideo)

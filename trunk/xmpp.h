@@ -18,7 +18,7 @@ class Xmpp : public QObject
 {
 	Q_OBJECT
 public: 
-	Xmpp(QString jid, QString pServer="");
+	Xmpp(QString jid, QString pServer="", QString pPort="5222");
 	~Xmpp();
 	void auth(QString password, QString resource);
 	bool connectedToServer();
@@ -57,6 +57,7 @@ private:
 	bool needSession;
 	bool usePersonnalServer;
 	QString personnalServer;
+	int port;
 
 	XmlHandler *handler;
 	struct rooster

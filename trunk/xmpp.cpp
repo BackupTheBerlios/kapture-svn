@@ -7,13 +7,14 @@
 /*
  * Establish connection to the server.
  */
-Xmpp::Xmpp(QString jid, QString pServer)
+Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
 {
+	//printf("New client created : %s, %s, %s.\n", jid.toLatin1().constData(), pServer.toLatin1().constData(), pPort.toLatin1().constData());
 	timeOut = 5000; // Default timeout set to 5 seconds
 	tcpSocket = new QTcpSocket();
 	username = jid.split('@').at(0);
 	server = jid.split('@').at(1);
-	if (personnalServer == "")
+	if (pServer == "")
 	{
 		usePersonnalServer = false;
 	}
@@ -22,6 +23,8 @@ Xmpp::Xmpp(QString jid, QString pServer)
 		usePersonnalServer = true;
 		personnalServer = pServer;
 	}
+
+	port = pPort.toInt();
 
 	handler = new XmlHandler();
 	authenticated = false;
@@ -61,9 +64,9 @@ Xmpp::~Xmpp()
 void Xmpp::auth(QString pass, QString res)
 {
 	if (!usePersonnalServer)
-		tcpSocket->connectToHost(server, 5222);
+		tcpSocket->connectToHost(server, port);
 	else
-		tcpSocket->connectToHost(personnalServer, 5222);
+		tcpSocket->connectToHost(personnalServer, port);
 		
 	password = pass;
 	resource = res;
@@ -128,7 +131,7 @@ void Xmpp::dataReceived()
 	QByteArray data;
 	QString mess;
 	
-	//printf("\n * Data avaible !\n");
+	printf("\n * Data avaible !\n");
 	data = tcpSocket->readAll();
 
 	if (state == isHandShaking || tlsDone)

@@ -42,7 +42,7 @@ void XmppWin::jabberConnect()
 		resource = fullJid.split('/').at(1);
 	}
 	
-	client = new Xmpp(jid);
+	client = new Xmpp(jid, ui.serverEdit->text(), ui.portEdit->text());
 	connect(client, SIGNAL(connected()), this, SLOT(clientConnected()));
 	// Must also manage error signals....
 	client->auth(ui.password->text(), resource);
@@ -63,8 +63,6 @@ void XmppWin::clientConnected()
 	
 	QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
 	client->getRoster();
-	connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
-	client->setPresence();
 }
 
 void XmppWin::newPresence()
@@ -81,7 +79,7 @@ void XmppWin::newMessage()
 	bool found = false;
 	for (int i = 0; i < chatWinList.count(); i++)
 	{
-		if (chatWinList.at(i)->windowTitle() == mFrom)
+		if (chatWinList.at(i)->contactNode() == mFrom)
 		{
 			found = true;
 			chatWinList.at(i)->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
@@ -91,7 +89,7 @@ void XmppWin::newMessage()
 	if (!found)
 	{
 		ChatWin *cw = new ChatWin();
-		cw->setWindowTitle(mFrom);
+		cw->setContactNode(mFrom);
 		cw->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
 		connect(cw, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
 		cw->show();
@@ -106,6 +104,8 @@ void XmppWin::newIq()
 		Model *m = new Model();
 		m->setData(client->stanza->getContacts());
 		ui.tableView->setModel(m);
+		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
+		client->setPresence();
 	}
 }
 
@@ -117,4 +117,23 @@ void XmppWin::sendMessage(QString to, QString message)
 void XmppWin::startChat(QString to)
 {
 	// Start Chat with "to" if it isn't done yet.
+	printf("Start Chat with \"to\" if it isn't done yet.\n");
+	
+	bool found = false;
+	for (int i = 0; i < chatWinList.count(); i++)
+	{
+		if (chatWinList.at(i)->contactNode() == to)
+		{
+			found = true;
+		}
+	}
+	
+	if (!found)
+	{
+		ChatWin *cw = new ChatWin();
+		cw->setContactNode(to);
+		connect(cw, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
+		cw->show();
+		chatWinList.append(cw);
+	}
 }
