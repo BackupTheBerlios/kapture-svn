@@ -4,6 +4,10 @@ ChatWin::ChatWin()
 {
 	ui.setupUi(this);
 	connect(ui.sendBtn, SIGNAL(clicked()), this, SLOT(message()));
+	hasResource = false;
+	ui.sendBtn->setEnabled(false);
+	connect(ui.messageLine, SIGNAL(textChanged(QString)), this, SLOT(composing(QString)));
+	connect(ui.messageLine, SIGNAL(returnPressed()), this, SLOT(message()));
 }
 
 ChatWin::~ChatWin()
@@ -13,22 +17,20 @@ ChatWin::~ChatWin()
 
 void ChatWin::message()
 {
-	emit sendMessage(cNode, ui.messageLine->text());
+	printf("Send message to '%s' '%s' '%s'\n", cNode.toLatin1().constData(), "/", cResource.toLatin1().constData());
+	if(hasResource)
+		emit sendMessage(cNode + "/" + cResource, ui.messageLine->text());
+	else
+		emit sendMessage(cNode, ui.messageLine->text());
+
 	ui.discutionText->insertHtml(QString("<font color='blue'>You said : </font><br>%1<br>").arg(ui.messageLine->text()));
 	ui.messageLine->clear();
+	ui.sendBtn->setEnabled(false);
 }
 
 void ChatWin::setContactNode(QString n)
 {
-	cNode = n; // Todo : I must split adress and ressource.
-	
-	/*
-	 * When I start a chat, I do not have the ressource of the contact.
-	 * I have it only when he answers. So, I must split those 2 things
-	 * to be able to assign the ressource only after having the first
-	 * response instead of creating a new window.
-	 */
-
+	cNode = n;
 	setWindowTitle(cNode);
 }
 
@@ -40,10 +42,24 @@ QString ChatWin::contactNode()
 void ChatWin::setContactResource(QString r)
 {
 	if (!hasResource)
+	{
 		cResource = r;
+		setWindowTitle(cNode + '/' + cResource);
+	}
 }
 
 QString ChatWin::contactResource()
 {
 	return cResource;
+}
+
+void ChatWin::composing(QString text)
+{
+	if (text.length() > 0)
+		ui.sendBtn->setEnabled(true);
+	else
+		ui.sendBtn->setEnabled(false);
+	/*
+	 * has to tell the server that client is composing
+	 */
 }

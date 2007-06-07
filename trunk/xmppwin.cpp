@@ -79,10 +79,12 @@ void XmppWin::newMessage()
 	bool found = false;
 	for (int i = 0; i < chatWinList.count(); i++)
 	{
-		if (chatWinList.at(i)->contactNode() == mFrom)
+		if (chatWinList.at(i)->contactNode() == mFrom.split('/').at(0))
 		{
 			found = true;
+			chatWinList.at(i)->setContactResource(mFrom.split('/').at(1));
 			chatWinList.at(i)->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
+			chatWinList.at(i)->show();
 		}
 	}
 	
@@ -117,7 +119,7 @@ void XmppWin::sendMessage(QString to, QString message)
 void XmppWin::startChat(QString to)
 {
 	// Start Chat with "to" if it isn't done yet.
-	printf("Start Chat with \"to\" if it isn't done yet.\n");
+	// printf("Start Chat with \"to\" if it isn't done yet.\n");
 	
 	bool found = false;
 	for (int i = 0; i < chatWinList.count(); i++)

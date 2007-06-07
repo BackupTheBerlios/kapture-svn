@@ -17,6 +17,7 @@ public:
 
 public slots:
 	void message();
+	void composing(QString);
 
 private:
 	QString cNode; // Contact's Node
