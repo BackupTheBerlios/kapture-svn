@@ -17,7 +17,6 @@ ChatWin::~ChatWin()
 
 void ChatWin::message()
 {
-	printf("Send message to '%s' '%s' '%s'\n", cNode.toLatin1().constData(), "/", cResource.toLatin1().constData());
 	if(hasResource)
 		emit sendMessage(cNode + "/" + cResource, ui.messageLine->text());
 	else
@@ -63,3 +62,4 @@ void ChatWin::composing(QString text)
 	 * has to tell the server that client is composing
 	 */
 }
+

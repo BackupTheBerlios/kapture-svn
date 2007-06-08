@@ -21,7 +21,9 @@
 #include <sys/select.h>
 
 #include <linux/videodev.h>
+#ifdef USE_UVCVIDEO
 #include <uvcvideo.h>
+#endif //USE_UVCVIDEO
 
 #include <QtGui>
 #include <QApplication>
@@ -129,6 +131,7 @@ QList<int> Webcam::getFormatList(QList<QString> *description)
 
 QList<QSize> Webcam::getSizesList()
 {
+#ifdef USE_UVCVIDEO
 	int i = 0;
 	QList<QSize> rSizes;
 	QSize tmp;
@@ -145,8 +148,19 @@ QList<QSize> Webcam::getSizesList()
 		sizes.index = i;
 	}
 	return rSizes;
+#else
+	QList<QSize> rSizes;
+	QSize tmp;
 
+	tmp.setWidth(320);
+	tmp.setHeight(240);
+	
+	rSizes << tmp;
+
+	return rSizes;
+#endif
 }
+
 
 int Webcam::setFormat(unsigned int width, unsigned int height, int pixelformat)
 {
@@ -333,7 +347,7 @@ int Webcam::getFrame(QImage *image)
 	return EXIT_SUCCESS;
 }
 
-int Webcam::changeCtrl(int ctrl, int value)
+int Webcam::changeCtrl(int ctrl, int value) // an enum for formats and reorganisation would be great...
 {
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
@@ -359,11 +373,13 @@ int Webcam::changeCtrl(int ctrl, int value)
 			CTRL = V4L2_CID_SATURATION;
 			break;
 		}
+#ifdef USE_UVCVIDEO
 		case 1: 
 		{
 			CTRL = V4L2_CID_POWER_LINE_FREQUENCY;
 			break;
 		}
+#endif
 		case 2: 
 		{
 			CTRL = V4L2_CID_BRIGHTNESS;
@@ -374,28 +390,18 @@ int Webcam::changeCtrl(int ctrl, int value)
 			CTRL = V4L2_CID_CONTRAST;
 			break;
 		}
+#ifdef USE_UVCVIDEO
 		case 4: 
 		{
 			CTRL = V4L2_CID_SHARPNESS;
 			break;
 		}
-		/*
-		case 5:
-		{
-			CTRL = V4L2_CID_PAN_RELATIVE;
-			break;
-		}
-		case 6:
-		{
-			CTRL = V4L2_CID_TILT_RELATIVE;
-			break;
-		}
-		*/
 		case 5:
 		{
 			CTRL = V4L2_CID_PANTILT_RESET;
 			break;
 		}
+#endif
 		default:
 		{
 			break;
@@ -472,12 +478,14 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 			queryctrl.id = V4L2_CID_SATURATION;
 			break;
 		}
+#ifdef USE_UVCVIDEO
 		case 1 : 
 		{
 			ctrl = "Powerline Frequecy";
 			queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
 			break;
 		}
+#endif
 		case 2 : 
 		{
 			ctrl = "Brightness";
@@ -490,6 +498,7 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 			queryctrl.id = V4L2_CID_CONTRAST;
 			break;
 		}
+#ifdef USE_UVCVIDEO
 		case 4 : 
 		{
 			ctrl = "Sharpness";
@@ -508,6 +517,7 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 			queryctrl.id = V4L2_CID_TILT_RELATIVE;
 			break;
 		}
+#endif
 	}
 
 	char str[128];
@@ -531,6 +541,7 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 
 void Webcam::turnRight()
 {
+#ifdef USE_UVCVIDEO
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 
@@ -553,10 +564,12 @@ void Webcam::turnRight()
 			return;
         	}
 	}
+#endif
 }
 
 void Webcam::turnLeft()
 {
+#ifdef USE_UVCVIDEO
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 
@@ -579,10 +592,12 @@ void Webcam::turnLeft()
 			return;
         	}
 	}
+#endif
 }
 
 void Webcam::turnUp()
 {
+#ifdef USE_UVCVIDEO
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 	
@@ -605,10 +620,12 @@ void Webcam::turnUp()
 			return;
         	}
 	}
+#endif
 }
 
 void Webcam::turnDown()
 {
+#ifdef USE_UVCVIDEO
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 
@@ -631,4 +648,6 @@ void Webcam::turnDown()
 			return;
         	}
 	}
+#endif
 }
+

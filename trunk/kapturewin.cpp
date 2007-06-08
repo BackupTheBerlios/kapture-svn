@@ -82,9 +82,10 @@ KaptureWin::KaptureWin()
 	getDeviceCapabilities(); // Open device and fill the param's comboBoxes (doesn't close it)
 
 	camera->defaultCtrlVal(0, defaultSat); // Saturation to default
-	camera->defaultCtrlVal(1, defaultFreq);  // Frequency to default
 	camera->defaultCtrlVal(2, defaultBright);  // Brightness to default
 	camera->defaultCtrlVal(3, defaultCont);  // Contrast to default
+#ifdef USE_UVCVIDEO
+	camera->defaultCtrlVal(1, defaultFreq);  // Frequency to default
 	camera->defaultCtrlVal(4, defaultSharp);  // Sharp to default
 	panSupported = camera->defaultCtrlVal(6, defaultPan);  // Pan to default
 	if(panSupported)
@@ -92,20 +93,25 @@ KaptureWin::KaptureWin()
 		camera->defaultCtrlVal(7, defaultTilt);  // Tilt to default
 		printf(" * Pan = %d\n * Tilt = %d\n", defaultPan, defaultTilt);
 	}
+#endif
 
 	camera->changeCtrl(0, defaultSat); // Saturation to default
-	camera->changeCtrl(1, defaultFreq);  // Frequency to default
 	camera->changeCtrl(2, defaultBright);  // Brightness to default
 	camera->changeCtrl(3, defaultCont);  // Contrast to default
+#ifdef USE_UVCVIDEO
+	camera->changeCtrl(1, defaultFreq);  // Frequency to default
 	camera->changeCtrl(4, defaultSharp);  // Contrast to default
 	if (panSupported)
 		camera->changeCtrl(5, 3); // Reset to the center position
-	
+#endif
+
 	ui.satManualValueBox->setValue(defaultSat);
-	ui.freqBox->setChecked((defaultFreq == 1) ? true : false);
 	ui.brightManualValueBox->setValue(defaultBright);
 	ui.contManualValueBox->setValue(defaultCont);
+#ifdef USE_UVCVIDEO
+	ui.freqBox->setChecked((defaultFreq == 1) ? true : false);
 	ui.sharpManualValueBox->setValue(defaultSharp);
+#endif
 
 	crImage = QImage(320, 240, QImage::Format_RGB32);
 	
@@ -115,6 +121,7 @@ KaptureWin::KaptureWin()
 	connect(&keepZoomer,    SIGNAL(timeout () ), this, SLOT(keepZoomerTimeOut()) );
 	connect(camera,    	SIGNAL(imageReady () ), this, SLOT(getImage() ));
 	connect(ui.crButton,	SIGNAL(clicked () ), this, SLOT(crStartStop() ) );
+#ifdef USE_UVCVIDEO
 	if (panSupported)
 	{
 		connect(mfw, SIGNAL(turnRightEvent()), camera, SLOT(turnRight()));
@@ -123,6 +130,7 @@ KaptureWin::KaptureWin()
 		connect(mfw, SIGNAL(turnUpEvent()), camera, SLOT(turnUp()));
 	}
 	else
+#endif
 	{
 		mfw->ui.rightBtn->hide();
 		mfw->ui.leftBtn->hide();
@@ -131,10 +139,12 @@ KaptureWin::KaptureWin()
 	}
 	
 	connect(ui.satManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( satChanged()) );
-	connect(ui.freqBox,		SIGNAL(stateChanged (int) ), this, SLOT( freqChanged()) );
 	connect(ui.brightManualValueBox,SIGNAL(valueChanged (int) ), this, SLOT( brightChanged()) );
 	connect(ui.contManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( contChanged()) );
+#ifdef USE_UVCVIDEO
+	connect(ui.freqBox,		SIGNAL(stateChanged (int) ), this, SLOT( freqChanged()) );
 	connect(ui.sharpManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( sharpChanged()) );
+#endif
 	
 	connect(ui.redSlider,   SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
 	connect(ui.greenSlider, SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
@@ -654,11 +664,6 @@ void KaptureWin::satChanged(/*int ctrl, int value*/)
 	camera->changeCtrl(0, ui.satManualValueBox->value());
 }
 
-void KaptureWin::freqChanged()
-{
-	camera->changeCtrl(1, ui.freqBox->isChecked() ? 1 : 2);
-}
-
 void KaptureWin::brightChanged()
 {
 	camera->changeCtrl(2, ui.brightManualValueBox->value());
@@ -667,6 +672,11 @@ void KaptureWin::brightChanged()
 void KaptureWin::contChanged()
 {
 	camera->changeCtrl(3, ui.contManualValueBox->value());
+}
+
+void KaptureWin::freqChanged()
+{
+	camera->changeCtrl(1, ui.freqBox->isChecked() ? 1 : 2);
 }
 
 void KaptureWin::sharpChanged()

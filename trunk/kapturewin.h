@@ -48,9 +48,9 @@ public slots:
 	void colorChanged();
 	void showColorReplaced();
 	void satChanged();
-	void freqChanged();
 	void brightChanged();
 	void contChanged();
+	void freqChanged();
 	void sharpChanged();
 	int showZoom();
 	void keepZoomerTimeOut();

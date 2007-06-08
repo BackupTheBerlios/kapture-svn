@@ -1,13 +1,11 @@
 To compile, use CMake.
-You must specify the location of the headers files of the linux uvcvideo
-driver in CMakeList.txt, even if you don't use this driver. (http://linux-uvc.berlios.de/)
+To have a fully featured application, run
+	cmake -DUVCVIDEO=/path/to/uvcvideo /path/to/Kapture/sources 
 
-[ALTERNATIVE]
-To compile, please use the Kapture.pro file :
-	qmake -makefile
-and a correct Makefile will be generated.
+If you do not have nor use the uvcvideo driver, you will miss some features.
+Download it at http://linux-uvc.berlios.de/
 
-You must have QT 4.2 installed to use this software.
+You must have QT <= 4.2 installed to use this software.
 You now also must have OpenSSL installed.
 
 Have fun !

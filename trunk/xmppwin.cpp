@@ -84,6 +84,10 @@ void XmppWin::newMessage()
 			found = true;
 			chatWinList.at(i)->setContactResource(mFrom.split('/').at(1));
 			chatWinList.at(i)->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
+			if (!chatWinList.at(i)->isActiveWindow())
+			{
+				chatWinList.at(i)->activateWindow();
+			}
 			chatWinList.at(i)->show();
 		}
 	}

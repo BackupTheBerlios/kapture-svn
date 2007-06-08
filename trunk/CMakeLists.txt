@@ -1,12 +1,13 @@
 PROJECT(Kapture)
 
-# Set it to your uvcvideo header files location
-SET(UVC_INCLUDE /path/to/uvcvideo )
-
-# Do not modify this !!!
-IF(${UVC_INCLUDE} MATCHES /path/to/uvcvideo)
-	MESSAGE(" ! WARNING UVC_INCLUDE DIR IS STILL AT IT'S DEFAULT VALUE.")
-ENDIF(${UVC_INCLUDE} MATCHES /path/to/uvcvideo)
+if(UVCVIDEO)
+	MESSAGE(" * Using UVCVIDEO driver.")
+	SET(UVC_INCLUDE ${UVCVIDEO})
+	ADD_DEFINITIONS(-DUSE_UVCVIDEO)
+else (UVCVIDEO)
+	MESSAGE(" * Not Using UVCVIDEO driver.")
+	MESSAGE(" * If you want to, re-run cmake -D UVCVIDEO=/path/to/uvcvideo/path/toKapture/source .")
+ENDIF(UVCVIDEO)
 
 FIND_PACKAGE(Qt4 REQUIRED)
 
