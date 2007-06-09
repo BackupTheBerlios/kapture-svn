@@ -11,9 +11,22 @@ Model::~Model()
 	
 }
 
-void Model::setData(QStringList n)
+void Model::setData(QList<Nodes> n)
 {
 	nodes = n;
+}
+
+void Model::setData(QModelIndex index, QString value)
+{
+	switch(index.column())
+	{
+		case 0:
+			nodes[index.row()].node = value;
+			break;
+		case 1:
+			nodes[index.row()].state = value;
+			break;
+	}
 }
 
 QVariant Model::data(const QModelIndex &index, int role) const
@@ -31,9 +44,9 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	{
 		switch(index.column())
 		{
-			case 0: return nodes[index.row()];
-		/*	case 1: return files[index.row()].split(' ')[1];
-			case 2: return QVariant();*/
+			case 0: return nodes[index.row()].node;
+			case 1: return nodes[index.row()].state;
+			/*case 2: return QVariant();*/
 			default : return QVariant();
 		}
 	}
@@ -54,8 +67,8 @@ QVariant Model::headerData(int section, Qt::Orientation orientation, int role) c
 		switch(section)
 		{
 			case 0: return tr("Contacts");
-			/*case 1: return tr("Download date");
-			case 2: return tr("Printed");*/
+			case 1: return tr("State");
+			/*case 2: return tr("Printed");*/
 			default: return QVariant();
 		}
 	}
@@ -79,6 +92,6 @@ int Model::rowCount(const QModelIndex &parent) const
 int Model::columnCount(const QModelIndex &parent) const
 {
 	// There will be more than 1 column
-	return 1;
+	return 2;
 }
 

@@ -18,7 +18,7 @@ QT4_WRAP_UI(Kapture_UIS_H ${Kapture_UIS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(Kapture_OBJECTS xmppwin.h kapturewin.h webcam.h mainframewin.h xmpp.h
-tlsHandler.h stanza.h rosterModel.h chatwin.h mousetableview.h)
+tlsHandler.h stanza.h rosterModel.h rosterDelegate.h chatwin.h mousetableview.h)
 QT_WRAP_CPP(Kapture MOC_FILES ${Kapture_OBJECTS})
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${UVC_INCLUDE} ${QT_INCLUDE_DIR} ${QT_QTNETWORK_INCLUDE_DIR} ${QT_QTXML_INCLUDE_DIR})
@@ -28,8 +28,8 @@ LINK_LIBRARIES(${SSL_LIBRARY} ${QT_LIBRARIES} ${QT_QTNETWORK_LIBRARIES}
 
 SET(Kapture_SRCS main.cpp imageConvert.cpp kapturewin.cpp
 mainframewin.cpp merror.cpp mouselabel.cpp webcam.cpp xmppwin.cpp xmpp.cpp
-tlsHandler.cpp xmlHandler.cpp event.cpp stanza.cpp rosterModel.cpp chatwin.cpp
-mousetableview.cpp)
+tlsHandler.cpp xmlHandler.cpp event.cpp stanza.cpp rosterModel.cpp
+rosterDelegate.cpp chatwin.cpp mousetableview.cpp)
 
 ADD_EXECUTABLE(Kapture ${Kapture_SRCS} ${Kapture_UIS_H} ${MOC_FILES})
 target_link_libraries(Kapture ${QT_LIBRARIES})

@@ -1,6 +1,10 @@
+#ifndef XMPPWIN_H
+#define XMPPWIN_H
+
 #include "ui_xmppwin.h"
 #include "xmpp.h"
 #include "chatwin.h"
+#include "rosterModel.h"
 
 class XmppWin : public QMainWindow
 {
@@ -18,9 +22,13 @@ public slots:
 	void newIq();
 	void sendMessage(QString to, QString message);
 	void startChat(QString to);
+	void error(Xmpp::ErrorType);
 
 private:
 	Ui::xmppWin ui;
 	Xmpp *client;
 	QList<ChatWin*> chatWinList;
+	QList<Model::Nodes> nodes;
+	Model *m;
 };
+#endif

@@ -12,8 +12,10 @@ Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
 	//printf("New client created : %s, %s, %s.\n", jid.toLatin1().constData(), pServer.toLatin1().constData(), pPort.toLatin1().constData());
 	timeOut = 5000; // Default timeout set to 5 seconds
 	tcpSocket = new QTcpSocket();
+	connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connexionError(QAbstractSocket::SocketError)));
 	username = jid.split('@').at(0);
 	server = jid.split('@').at(1);
+
 	if (pServer == "")
 	{
 		usePersonnalServer = false;
@@ -44,17 +46,20 @@ Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
 Xmpp::~Xmpp()
 {
 	//FIXME: Do it with a stanza class.
-	QDomDocument d("");
-	QDomElement e = d.createElement("presence");
-	e.setAttribute("type", "unavaible");
-	QDomElement s = d.createElement("satuts");
-	QDomText t = d.createTextNode("Logged out");
-	
-	s.appendChild(t);
-	e.appendChild(s);
-	d.appendChild(e);
-	
-	sendData(d.toString().toLatin1());
+	if (state == active)
+	{
+		QDomDocument d("");
+		QDomElement e = d.createElement("presence");
+		e.setAttribute("type", "unavaible");
+		QDomElement s = d.createElement("satuts");
+		QDomText t = d.createTextNode("Logged out");
+
+		s.appendChild(t);
+		e.appendChild(s);
+		d.appendChild(e);
+
+		sendData(d.toString().toLatin1());
+	}
 	tcpSocket->close();
 }
 
@@ -479,4 +484,30 @@ void Xmpp::sendMessage(QString to, QString message)
 	d.appendChild(e);
 
 	sendData(d.toString().toLatin1());
+}
+
+void Xmpp::connexionError(QAbstractSocket::SocketError socketError)
+{
+	switch (socketError)
+	{
+		case QAbstractSocket::HostNotFoundError:
+			printf(" ! Error = Host not found !\n");
+			emit error(HostNotFound);
+/*
+ * If there is this error, xmppwin should destroy this object and construct a new one
+ * with the correct data.
+ */
+			break;
+		case QAbstractSocket::NetworkError:
+			printf(" ! Network error ! Will reconnect in 30 seconds.\n");
+			//emit error(NetworkIsDown);
+			/*must try to reconnect itself....*/
+			break;
+		default:
+			printf(" ! An Unknown error occured. Sorry.\n");
+	}
+	printf("Error code : %d\n", (int)socketError);
+
+
+	/* must reinitialize data....*/
 }

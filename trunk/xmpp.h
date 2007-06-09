@@ -28,6 +28,11 @@ public:
 	void sendMessage(QString to, QString message);
 	void setPresence(QString show = "", QString status = "");
 	//void logOut();
+	enum ErrorType
+	{
+		HostNotFound = 0,
+		NetworkIsDown
+	};
 
 
 public slots:
@@ -36,11 +41,13 @@ public slots:
 	void clearDataReceived();
 	void tlsIsConnected();
 	void start();
+	void connexionError(QAbstractSocket::SocketError socketError);
 
 signals:
 	void messageReceived();
 	void presenceChanged();
 	void connected();
+	void error(Xmpp::ErrorType);
 
 private:	
 	int sendData(QByteArray mess);

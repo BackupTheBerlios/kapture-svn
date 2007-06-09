@@ -1,5 +1,4 @@
 #include <QMessageBox>
-#include <QItemDelegate>
 
 #include "xmppwin.h"
 #include "rosterModel.h"
@@ -21,6 +20,9 @@ XmppWin::~XmppWin()
 
 void XmppWin::jabberConnect()
 {
+	ui.jabberConnect->setEnabled(false);
+	ui.jabberDisconnect->setEnabled(true);
+	
 	QString fullJid = ui.jid->text();
 	QString jid;
 	QString resource;
@@ -44,13 +46,22 @@ void XmppWin::jabberConnect()
 	
 	client = new Xmpp(jid, ui.serverEdit->text(), ui.portEdit->text());
 	connect(client, SIGNAL(connected()), this, SLOT(clientConnected()));
+	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	// Must also manage error signals....
 	client->auth(ui.password->text(), resource);
 }
 
 void XmppWin::jabberDisconnect()
 {
+	ui.jabberConnect->setEnabled(true);
+	ui.jabberDisconnect->setEnabled(false);
 	delete client;
+	//ui.tableView->reset();
+	for (int i = 0; i < nodes.count(); i++)
+	{
+		m->setData(m->index(i, 1), "unavaible");
+	}
+	
 }
 
 void XmppWin::clientConnected()
@@ -67,7 +78,22 @@ void XmppWin::clientConnected()
 
 void XmppWin::newPresence()
 {
+	int i;
 	
+	QString pFrom = client->stanza->getFrom();
+	QString pTo = client->stanza->getTo();
+	QString pType = client->stanza->getType();
+
+	for (i = 0; i < nodes.count(); i++)
+	{
+		if (nodes[i].node == pFrom.split('/')[0])
+		{
+			break;
+		}
+	}
+
+	m->setData(m->index(i, 1), pType);
+	ui.tableView->update(m->index(i, 1));
 }
 
 void XmppWin::newMessage()
@@ -107,8 +133,19 @@ void XmppWin::newIq()
 {
 	if (client->stanza->getId() == "roster_1")
 	{
-		Model *m = new Model();
-		m->setData(client->stanza->getContacts());
+		m = new Model();
+		nodes.clear();
+		
+		Model::Nodes node;
+		QStringList l;
+		l = client->stanza->getContacts();
+		for (int i = 0; i < l.count(); i++)
+		{
+			node.node = l.at(i);
+			node.state = "Offline";
+			nodes << node;
+		}
+		m->setData(nodes);
 		ui.tableView->setModel(m);
 		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
 		client->setPresence();
@@ -141,5 +178,22 @@ void XmppWin::startChat(QString to)
 		connect(cw, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
 		cw->show();
 		chatWinList.append(cw);
+	}
+}
+
+void XmppWin::error(Xmpp::ErrorType e)
+{
+	// Still a lot of errors to manage...
+	// Errors from the authentification process.
+
+	QErrorMessage *dlg = new QErrorMessage();
+	switch (e)
+	{
+	case Xmpp::HostNotFound:
+		dlg->showMessage("An error occured while connecting : \nHost not found.");
+		delete client;
+		break;
+	default :
+		dlg->showMessage("An unknown error occured while connecting.");
 	}
 }

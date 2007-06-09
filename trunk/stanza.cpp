@@ -234,9 +234,7 @@ void Stanza::setupIq(QDomElement s)
 				for (int i = 0; i < items.count(); i++)
 				{
 					contacts << items.at(i).toElement().attribute("jid");
-					printf("New Roster contact : %s (", contacts[i].toLatin1().constData());
-					if (items.at(i).toElement().attribute("subscription") == "both")
-						printf("subscription : both)\n");
+					printf("New Roster contact : %s (subscription : %s)\n", contacts[i].toLatin1().constData(), items.at(i).toElement().attribute("subscription").toLatin1().constData());
 				}
 			}
 		}
@@ -278,6 +276,11 @@ QStringList Stanza::getContacts()
 QString Stanza::getId()
 {
 	return id;
+}
+
+QString Stanza::getType()
+{
+	return type;
 }
 
 void Stanza::setType(QString s)

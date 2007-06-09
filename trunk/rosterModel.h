@@ -10,7 +10,13 @@ class Model : public QAbstractTableModel
 public:
 	Model(QObject *parent = 0);
 	~Model();
-	void setData(QStringList n);
+	struct Nodes
+	{
+		QString node;
+		QString state;
+	};
+	void setData(QList<Nodes> n);
+	void setData(QModelIndex index, QString value);
 	QVariant data(const QModelIndex &index, int role) const;
 	Qt::ItemFlags flags(const QModelIndex &index) const;
 	QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
@@ -19,6 +25,6 @@ public:
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
 private:
-	QStringList nodes;
+	QList<Nodes> nodes;
 };
 #endif
