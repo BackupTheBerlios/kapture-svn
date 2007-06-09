@@ -6,7 +6,7 @@ if(UVCVIDEO)
 	ADD_DEFINITIONS(-DUSE_UVCVIDEO)
 else (UVCVIDEO)
 	MESSAGE(" * Not Using UVCVIDEO driver.")
-	MESSAGE(" * If you want to, re-run cmake -D UVCVIDEO=/path/to/uvcvideo/path/toKapture/source .")
+	MESSAGE(" * If you want to, re-run cmake -D UVCVIDEO=/path/to/uvcvideo /path/to/Kapture/source")
 ENDIF(UVCVIDEO)
 
 FIND_PACKAGE(Qt4 REQUIRED)
