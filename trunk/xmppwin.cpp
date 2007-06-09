@@ -79,21 +79,31 @@ void XmppWin::clientConnected()
 void XmppWin::newPresence()
 {
 	int i;
-	
 	QString pFrom = client->stanza->getFrom();
 	QString pTo = client->stanza->getTo();
 	QString pType = client->stanza->getType();
 
+	QString fromNode;
+	if(pFrom.split('/').count() == 0)
+		return;
+	if(pFrom.split('/').count() == 1)
+		fromNode = pFrom;
+	if(pFrom.split('/').count() == 2)
+		fromNode = pFrom.split('/').at(0);
+
+	printf("Looking for %s\n", fromNode.toLatin1().constData());
 	for (i = 0; i < nodes.count(); i++)
 	{
-		if (nodes[i].node == pFrom.split('/')[0])
+		if (nodes[i].node == fromNode)
 		{
+			if (pType == "unavaible")
+				m->setData(m->index(i, 1), "Offline");
+			if (pType == "avaible")
+				m->setData(m->index(i, 1), "Online");
+			ui.tableView->update(m->index(i, 1));
 			break;
 		}
 	}
-
-	m->setData(m->index(i, 1), pType);
-	ui.tableView->update(m->index(i, 1));
 }
 
 void XmppWin::newMessage()
