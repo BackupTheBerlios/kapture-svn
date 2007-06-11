@@ -17,14 +17,17 @@ ChatWin::~ChatWin()
 
 void ChatWin::message()
 {
-	if(hasResource)
-		emit sendMessage(cNode + "/" + cResource, ui.messageLine->text());
-	else
-		emit sendMessage(cNode, ui.messageLine->text());
+	if (ui.messageLine->text() != "")
+	{
+		if(hasResource)
+			emit sendMessage(cNode + "/" + cResource, ui.messageLine->text());
+		else
+			emit sendMessage(cNode, ui.messageLine->text());
 
-	ui.discutionText->insertHtml(QString("<font color='blue'>You said : </font><br>%1<br>").arg(ui.messageLine->text()));
-	ui.messageLine->clear();
-	ui.sendBtn->setEnabled(false);
+		ui.discutionText->insertHtml(QString("<font color='blue'>You said : </font><br>%1<br>").arg(ui.messageLine->text()));
+		ui.messageLine->clear();
+		ui.sendBtn->setEnabled(false);
+	}
 }
 
 void ChatWin::setContactNode(QString n)
