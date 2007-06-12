@@ -131,7 +131,7 @@ void XmppWin::newMessage()
 	if (!found)
 	{
 		ChatWin *cw = new ChatWin();
-		cw->setContactNode(mFrom);
+		cw->setContactNode(mFrom.split('/').at(0));
 		cw->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
 		connect(cw, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
 		cw->show();
