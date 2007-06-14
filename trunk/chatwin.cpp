@@ -24,6 +24,7 @@ void ChatWin::message()
 		else
 			emit sendMessage(cNode, ui.messageLine->text());
 
+		ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
 		ui.discutionText->insertHtml(QString("<font color='blue'>You said : </font><br>%1<br>").arg(ui.messageLine->text()));
 		ui.messageLine->clear();
 		ui.sendBtn->setEnabled(false);
@@ -36,7 +37,7 @@ void ChatWin::setContactNode(QString n)
 	setWindowTitle(cNode);
 }
 
-QString ChatWin::contactNode()
+QString ChatWin::contactNode() const
 {
 	return cNode;
 }
@@ -50,7 +51,7 @@ void ChatWin::setContactResource(QString r)
 	}
 }
 
-QString ChatWin::contactResource()
+QString ChatWin::contactResource() const
 {
 	return cResource;
 }

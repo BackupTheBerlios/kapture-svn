@@ -248,11 +248,11 @@ void KaptureWin::getDeviceCapabilities()
 			waitCamera.start(2000);
 			//TODO: This utility could use QDbus...
 		}
-		else
+		/*else
 		{
 			printf(".");
 			fflush(stdout);
-		}
+		}*/
 	}
 	fctExecuted++;
 }

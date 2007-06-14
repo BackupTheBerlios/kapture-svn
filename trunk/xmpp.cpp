@@ -36,6 +36,7 @@ Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
 	needBind = false;
 	needSession = false;
 	jidDone = false;
+	useTls = true;
 	connect(tcpSocket, SIGNAL(connected()), this, SLOT(start()));
 	stanza = new Stanza();
 }
@@ -207,7 +208,7 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 			if (elem.name == QString("stream:features"))
 			{
 				printf(" * Ok, received the features tag.\n");
-				if (!tlsDone)
+				if (!tlsDone && useTls)
 					state = waitStartTls;
 				else 
 					if (!saslDone)
@@ -216,6 +217,7 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 						state = waitNecessary;
 
 			}
+			break;
 		case waitStartTls:
 			if (elem.name == QString("starttls"))
 			{
@@ -234,9 +236,11 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 				 * Even if TLS isn't required, I use TLS.
 				 */
 			}
-			else
+			if (elem.name == QString("mechanisms"))
 			{
-				//printf(" ! No STARTTLS.\n");
+				useTls = false;
+				// Must directly switch to SASL authentication 
+				state = waitMechanism;
 			}
 			break;
 		case waitProceed:
@@ -500,14 +504,24 @@ void Xmpp::connexionError(QAbstractSocket::SocketError socketError)
 			break;
 		case QAbstractSocket::NetworkError:
 			printf(" ! Network error ! Will reconnect in 30 seconds.\n");
-			//emit error(NetworkIsDown);
+			emit error(NetworkIsDown);
 			/*must try to reconnect itself....*/
 			break;
 		default:
 			printf(" ! An Unknown error occured. Sorry.\n");
+			emit error(UnknownError);
 	}
 	printf("Error code : %d\n", (int)socketError);
 
 
 	/* must reinitialize data....*/
+}
+
+/*
+ * Calling this function before the client is connected has
+ * no sense.
+ */
+bool Xmpp::isSecured() const
+{
+	return useTls;
 }

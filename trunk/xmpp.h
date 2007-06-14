@@ -27,11 +27,13 @@ public:
 	void getRoster();
 	void sendMessage(QString to, QString message);
 	void setPresence(QString show = "", QString status = "");
+	bool isSecured() const;
 	//void logOut();
 	enum ErrorType
 	{
 		HostNotFound = 0,
-		NetworkIsDown
+		NetworkIsDown,
+		UnknownError
 	};
 
 
@@ -100,6 +102,7 @@ private:
 	void processEvent(XmlHandler::Event elem);
 	void processXml(QByteArray);
 	bool isTlsing;
+	bool useTls;
 	QString password;
 	QString resource;
 };

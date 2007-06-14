@@ -10,9 +10,9 @@ public:
 	~ChatWin();
 	Ui::chatWin ui;
 	void setContactNode(QString n);
-	QString contactNode();
+	QString contactNode() const;
 	void setContactResource(QString r);
-	QString contactResource();
+	QString contactResource() const;
 	bool hasResource;
 
 public slots:

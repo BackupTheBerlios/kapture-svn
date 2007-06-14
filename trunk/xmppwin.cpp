@@ -56,17 +56,26 @@ void XmppWin::jabberDisconnect()
 	ui.jabberConnect->setEnabled(true);
 	ui.jabberDisconnect->setEnabled(false);
 	delete client;
-	//ui.tableView->reset();
 	for (int i = 0; i < nodes.count(); i++)
 	{
-		m->setData(m->index(i, 1), "unavaible");
+		m->setData(m->index(i, 1), "Offline");
 	}
+	ui.tlsIconLabel->setEnabled(false);
 	
 }
 
 void XmppWin::clientConnected()
 {
-	ui.jabberConnect->setEnabled(false); // FIXME: could be a "Disconnect" button.
+	QPixmap *pixmap;
+	ui.jabberConnect->setEnabled(false); // FIXME: could become a "Disconnect" button.
+
+	if (client->isSecured())
+		pixmap = new QPixmap("encrypted.png");
+	else
+		pixmap = new QPixmap("decrypted.png");
+	ui.tlsIconLabel->setPixmap(*pixmap);
+	ui.tlsIconLabel->setEnabled(true);
+
 
 	connect(client->stanza, SIGNAL(presenceReady()), this, SLOT(newPresence()));
 	connect(client->stanza, SIGNAL(messageReady()), this, SLOT(newMessage()));
@@ -91,7 +100,7 @@ void XmppWin::newPresence()
 	if(pFrom.split('/').count() == 2)
 		fromNode = pFrom.split('/').at(0);
 
-	printf("Looking for %s\n", fromNode.toLatin1().constData());
+	// Looking for the contact in the contacts list.
 	for (i = 0; i < nodes.count(); i++)
 	{
 		if (nodes[i].node == fromNode)
@@ -102,6 +111,18 @@ void XmppWin::newPresence()
 				m->setData(m->index(i, 1), "Online");
 			ui.tableView->update(m->index(i, 1));
 			break;
+		}
+	}
+
+	// Looking for a ChatWin with the contact.
+	bool found = false;
+	for (int i = 0; i < chatWinList.count(); i++)
+	{
+		if (chatWinList.at(i)->contactNode() == pFrom.split('/').at(0) || /*see Jid Class*/ chatWinList.at(i)->contactNode() == pFrom)
+		{
+			found = true;
+			// Should show the status and not the type !
+			chatWinList.at(i)->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(pFrom).arg(pType == "avaible" ? "online" : "offline"));
 		}
 	}
 }
@@ -177,6 +198,7 @@ void XmppWin::startChat(QString to)
 	{
 		if (chatWinList.at(i)->contactNode() == to)
 		{
+			chatWinList.at(i)->show();
 			found = true;
 		}
 	}
