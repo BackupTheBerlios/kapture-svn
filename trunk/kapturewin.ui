@@ -2056,7 +2056,7 @@
      </rect>
     </property>
     <property name="text" >
-     <string>Show</string>
+     <string>Video</string>
     </property>
    </widget>
    <widget class="QPushButton" name="crButton" >

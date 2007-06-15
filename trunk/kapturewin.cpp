@@ -73,7 +73,9 @@ KaptureWin::KaptureWin()
 
 	mfw = new MainFrameWin();
 	mfw->resize(320, 240);
-	mfw->show();
+//	Not yet, user must ask to see that windows as he must ask to see jabber client.
+//	TODO:This interface will be improved one's the jabber client becomes stable.
+//	mfw->show();
 	connect(ui.showMfwBtn,	SIGNAL(clicked()), mfw, SLOT(show()));
 	
 	ui.comboBoxSize->clear();
@@ -429,7 +431,7 @@ void KaptureWin::getImage()
 		mfw->ui.mainFrameLabel->setPixmap(pixmap);
 		if(crIsActivated)
 		{
-			//Show the modified Picture.
+			//Show the modified Picture (Color Replaced).
 			showColorReplaced();
 		}
 		showZoom();

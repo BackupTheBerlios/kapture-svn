@@ -30,6 +30,8 @@ void XmppWin::jabberConnect()
 	c = fullJid.split('/').count();
 	if (c < 1 || c > 2)
 	{
+		QMessageBox::critical(this, tr("Jabber"), tr("This is an invalid Jid."), QMessageBox::Ok);
+		jabberDisconnect();
 		printf("Invalid jid !\n");
 		return;
 	}
@@ -47,7 +49,6 @@ void XmppWin::jabberConnect()
 	client = new Xmpp(jid, ui.serverEdit->text(), ui.portEdit->text());
 	connect(client, SIGNAL(connected()), this, SLOT(clientConnected()));
 	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
-	// Must also manage error signals....
 	client->auth(ui.password->text(), resource);
 }
 
@@ -70,9 +71,15 @@ void XmppWin::clientConnected()
 	ui.jabberConnect->setEnabled(false); // FIXME: could become a "Disconnect" button.
 
 	if (client->isSecured())
+	{
 		pixmap = new QPixmap("encrypted.png");
+		ui.tlsIconLabel->setToolTip(tr("The connection with the server is encrypted."));
+	}
 	else
+	{
 		pixmap = new QPixmap("decrypted.png");
+		ui.tlsIconLabel->setToolTip(tr("The connection with the server is *not* encrypted."));
+	}
 	ui.tlsIconLabel->setPixmap(*pixmap);
 	ui.tlsIconLabel->setEnabled(true);
 
@@ -167,9 +174,9 @@ void XmppWin::newIq()
 		m = new Model();
 		nodes.clear();
 		
-		Model::Nodes node;
+		Model::Nodes node; // TODO:Nodes should be replaced by a contact object...
 		QStringList l;
-		l = client->stanza->getContacts();
+		l = client->stanza->getContacts(); // TODO:Should return a QList<contact>...
 		for (int i = 0; i < l.count(); i++)
 		{
 			node.node = l.at(i);
@@ -217,15 +224,15 @@ void XmppWin::error(Xmpp::ErrorType e)
 {
 	// Still a lot of errors to manage...
 	// Errors from the authentification process.
-
-	QErrorMessage *dlg = new QErrorMessage();
 	switch (e)
 	{
 	case Xmpp::HostNotFound:
-		dlg->showMessage("An error occured while connecting : \nHost not found.");
+		QMessageBox::critical(this, tr("Jabber"), tr("An error occured while connecting : \nHost not found."), QMessageBox::Ok);
+		ui.jabberConnect->setEnabled(true);
+		ui.jabberDisconnect->setEnabled(false);
 		delete client;
 		break;
 	default :
-		dlg->showMessage("An unknown error occured while connecting.");
+		QMessageBox::critical(this, tr("Jabber"), tr("An unknown error occured while connecting."), QMessageBox::Ok);
 	}
 }
