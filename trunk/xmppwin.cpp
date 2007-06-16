@@ -11,6 +11,9 @@ XmppWin::XmppWin()
 	connect(ui.jabberDisconnect, SIGNAL(clicked()), this, SLOT(jabberDisconnect()));
 	ui.jid->setText("linux@localhost");
 	//connect(client, SIGNAL(messageReceived()), this, SLOT(messageReceived()));
+	emoticons.append(Emoticon::Emoticon(":)", "smile.png"));
+	emoticons.append(Emoticon::Emoticon(":-)", "smile.png"));
+	// TODO: add more emoticons
 }
 
 XmppWin::~XmppWin()
@@ -139,6 +142,7 @@ void XmppWin::newMessage()
 	QString mFrom = client->stanza->getFrom();
 	QString mTo = client->stanza->getTo();
 	QString mMessage = client->stanza->getMessage();
+	mMessage = changeEmoticons(mMessage);
 	
 	bool found = false;
 	for (int i = 0; i < chatWinList.count(); i++)
@@ -235,4 +239,18 @@ void XmppWin::error(Xmpp::ErrorType e)
 	default :
 		QMessageBox::critical(this, tr("Jabber"), tr("An unknown error occured while connecting."), QMessageBox::Ok);
 	}
+}
+
+/*This function should NOT be there*/
+/*This function changes all emoticons ( :-), ;-), :'(, ... )
+ * to a HTML tag for the corresponding image so it is shown.
+ */
+
+QString XmppWin::changeEmoticons(QString m)
+{
+	for (int i = 0; i < emoticons.count(); i++)
+	{
+		m.replace(emoticons[i].binette, "<img src=\"" + emoticons[i].link + "\">");
+	}
+	return m;
 }

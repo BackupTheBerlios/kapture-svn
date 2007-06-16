@@ -30,5 +30,18 @@ private:
 	QList<ChatWin*> chatWinList;
 	QList<Model::Nodes> nodes;
 	Model *m;
+	QString changeEmoticons(QString m); // should NOT be here
+	struct Emoticon
+	{
+		QString binette;
+		QString link;
+		public:
+		Emoticon(QString b, QString l)
+		{
+			binette = b;
+			link = l;
+		}
+	};
+	QList<Emoticon> emoticons;
 };
 #endif
