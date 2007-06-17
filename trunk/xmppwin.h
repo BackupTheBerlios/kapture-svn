@@ -35,7 +35,6 @@ private:
 	{
 		QString binette;
 		QString link;
-		public:
 		Emoticon(QString b, QString l)
 		{
 			binette = b;
