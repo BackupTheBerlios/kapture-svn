@@ -8,12 +8,9 @@ XmppWin::XmppWin()
 {
 	ui.setupUi(this);
 	connect(ui.jabberConnect, SIGNAL(clicked()), this, SLOT(jabberConnect()));
+	connect(ui.password, SIGNAL(returnPressed()), this, SLOT(jabberConnect()));
 	connect(ui.jabberDisconnect, SIGNAL(clicked()), this, SLOT(jabberDisconnect()));
 	ui.jid->setText("linux@localhost");
-	//connect(client, SIGNAL(messageReceived()), this, SLOT(messageReceived()));
-	emoticons.append(Emoticon::Emoticon(":)", "smile.png"));
-	emoticons.append(Emoticon::Emoticon(":-)", "smile.png"));
-	// TODO: add more emoticons
 }
 
 XmppWin::~XmppWin()
@@ -29,6 +26,7 @@ void XmppWin::jabberConnect()
 	QString fullJid = ui.jid->text();
 	QString jid;
 	QString resource;
+	// FIXME: Jid's stuff should be managed by a Jid class.
 	int c = 0;
 	c = fullJid.split('/').count();
 	if (c < 1 || c > 2)
@@ -100,6 +98,7 @@ void XmppWin::newPresence()
 	int i;
 	QString pFrom = client->stanza->getFrom();
 	QString pTo = client->stanza->getTo();
+	QString pStatus = client->stanza->getStatus();
 	QString pType = client->stanza->getType();
 
 	QString fromNode;
@@ -124,16 +123,23 @@ void XmppWin::newPresence()
 		}
 	}
 
-	// Looking for a ChatWin with the contact.
+	// Look in a ContactList for a Contact that has an open ChatWin open.
 	bool found = false;
-	for (int i = 0; i < chatWinList.count(); i++)
+	for (int i = 0; i < contactList.count(); i++)
 	{
-		if (chatWinList.at(i)->contactNode() == pFrom.split('/').at(0) || /*see Jid Class*/ chatWinList.at(i)->contactNode() == pFrom)
+		if (fromNode == contactList[i]->getJid())
 		{
 			found = true;
-			// Should show the status and not the type !
-			chatWinList.at(i)->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(pFrom).arg(pType == "avaible" ? "online" : "offline"));
+			contactList[i]->setPresence(/*status*/ pStatus,/*show*/ pType);
 		}
+	}
+	
+	if(!found)
+	{
+		Contact *contact = new Contact(fromNode);
+		contact->setPresence(/*status*/ pStatus,/*show*/ pType);
+		connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
+		contactList.append(contact);
 	}
 }
 
@@ -142,32 +148,23 @@ void XmppWin::newMessage()
 	QString mFrom = client->stanza->getFrom();
 	QString mTo = client->stanza->getTo();
 	QString mMessage = client->stanza->getMessage();
-	mMessage = changeEmoticons(mMessage);
 	
 	bool found = false;
-	for (int i = 0; i < chatWinList.count(); i++)
+	for (int i = 0; i < contactList.count(); i++)
 	{
-		if (chatWinList.at(i)->contactNode() == mFrom.split('/').at(0))
+		if (contactList[i]->getJid() == mFrom.split('/').at(0))
 		{
 			found = true;
-			chatWinList.at(i)->setContactResource(mFrom.split('/').at(1));
-			chatWinList.at(i)->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
-			if (!chatWinList.at(i)->isActiveWindow())
-			{
-				chatWinList.at(i)->activateWindow();
-			}
-			chatWinList.at(i)->show();
+			contactList[i]->setResource(mFrom.split('/').at(1));
+			contactList[i]->newMessage(mMessage);
 		}
 	}
-	
 	if (!found)
 	{
-		ChatWin *cw = new ChatWin();
-		cw->setContactNode(mFrom.split('/').at(0));
-		cw->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(mFrom).arg(mMessage));
-		connect(cw, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
-		cw->show();
-		chatWinList.append(cw);
+		Contact *contact = new Contact(mFrom.split('/').at(0));
+		contact->newMessage(mMessage);
+		connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
+		contactList.append(contact);
 	}
 }
 
@@ -192,6 +189,12 @@ void XmppWin::newIq()
 		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
 		client->setPresence();
 	}
+	/* Still a lot to implement.
+	 * Next one : File Transfert, See http://www.xmpp.org/extensions/xep-0096.html (XEP 0096 : File Transfert)
+	 * Wish : Jingle support : Video Over IP, See http://www.xmpp.org/extensions/xep-0166.html
+	 * 					  and http://www.xmpp.org/extensions/xep-0180.html
+	 * 					   or http://www.xmpp.org/extensions/xep-0181.html
+	 */
 }
 
 void XmppWin::sendMessage(QString to, QString message)
@@ -202,25 +205,23 @@ void XmppWin::sendMessage(QString to, QString message)
 void XmppWin::startChat(QString to)
 {
 	// Start Chat with "to" if it isn't done yet.
-	// printf("Start Chat with \"to\" if it isn't done yet.\n");
 	
 	bool found = false;
-	for (int i = 0; i < chatWinList.count(); i++)
+	for (int i = 0; i < contactList.count(); i++)
 	{
-		if (chatWinList.at(i)->contactNode() == to)
+		if (contactList[i]->getJid() == to)
 		{
-			chatWinList.at(i)->show();
+			contactList[i]->startChat();
 			found = true;
 		}
 	}
 	
 	if (!found)
 	{
-		ChatWin *cw = new ChatWin();
-		cw->setContactNode(to);
-		connect(cw, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
-		cw->show();
-		chatWinList.append(cw);
+		Contact *contact = new Contact(to);
+		connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
+		contact->startChat();
+		contactList.append(contact);
 	}
 }
 
@@ -241,16 +242,3 @@ void XmppWin::error(Xmpp::ErrorType e)
 	}
 }
 
-/*This function should NOT be there*/
-/*This function changes all emoticons ( :-), ;-), :'(, ... )
- * to a HTML tag for the corresponding image so it is shown.
- */
-
-QString XmppWin::changeEmoticons(QString m)
-{
-	for (int i = 0; i < emoticons.count(); i++)
-	{
-		m.replace(emoticons[i].binette, "<img src=\"" + emoticons[i].link + "\">");
-	}
-	return m;
-}

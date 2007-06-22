@@ -4,6 +4,7 @@
 #include "ui_xmppwin.h"
 #include "xmpp.h"
 #include "chatwin.h"
+#include "contact.h"
 #include "rosterModel.h"
 
 class XmppWin : public QMainWindow
@@ -27,20 +28,9 @@ public slots:
 private:
 	Ui::xmppWin ui;
 	Xmpp *client;
-	QList<ChatWin*> chatWinList;
+	QList<Contact*> contactList;
 	QList<Model::Nodes> nodes;
 	Model *m;
-	QString changeEmoticons(QString m); // should NOT be here
-	struct Emoticon
-	{
-		QString binette;
-		QString link;
-		Emoticon(QString b, QString l)
-		{
-			binette = b;
-			link = l;
-		}
-	};
-	QList<Emoticon> emoticons;
 };
 #endif
+

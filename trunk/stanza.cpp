@@ -283,6 +283,17 @@ QString Stanza::getType()
 	return type;
 }
 
+
+QString Stanza::getStatus()
+{
+	return status;
+}
+
+QString Stanza::getShow()
+{
+	return show;
+}
+
 void Stanza::setType(QString s)
 {
 	stan.setTagName(s);

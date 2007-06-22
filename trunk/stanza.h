@@ -22,6 +22,8 @@ public:
 	QStringList getContacts();
 	QString getId();
 	QString getType();
+	QString getStatus();
+	QString getShow();
 
 signals:
 	void presenceReady();
