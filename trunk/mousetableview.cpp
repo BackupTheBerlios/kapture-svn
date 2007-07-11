@@ -13,7 +13,7 @@ void MouseTableView::mouseDoubleClickEvent(QMouseEvent *e)
 	if (currentIndex().isValid())
 	{
 		//QString to = currentIndex().data().toString().toLatin1().constData();
-		QString to = this->model()->index(currentIndex().row(), 0).data().toString();
+		QString to = this->model()->index(currentIndex().row(), 1).data().toString();
 		printf("User : %s\n", currentIndex().data().toString().toLatin1().constData());
 		emit doubleClicked(to);
 	}

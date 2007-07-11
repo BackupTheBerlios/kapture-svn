@@ -5,7 +5,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>349</width>
+    <width>357</width>
     <height>290</height>
    </rect>
   </property>
@@ -50,12 +50,25 @@
       <widget class="QLineEdit" name="messageLine" />
      </item>
      <item>
+      <widget class="QPushButton" name="sendFileBtn" >
+       <property name="text" >
+        <string>Send file</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="sendBtn" >
        <property name="sizePolicy" >
-        <sizepolicy vsizetype="Fixed" hsizetype="Preferred" >
+        <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
+       </property>
+       <property name="minimumSize" >
+        <size>
+         <width>40</width>
+         <height>0</height>
+        </size>
        </property>
        <property name="focusPolicy" >
         <enum>Qt::NoFocus</enum>

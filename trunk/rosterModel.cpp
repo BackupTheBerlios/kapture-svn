@@ -20,33 +20,36 @@ void Model::setData(QModelIndex index, QString value)
 {
 	switch(index.column())
 	{
-		case 0:
-			nodes[index.row()].node = value;
-			break;
 		case 1:
-			nodes[index.row()].state = value;
+			nodes[index.row()].jid->setNode(value);
+			break;
+		case 2:
+			nodes[index.row()].presenceType = value;
 			break;
 	}
 }
 
 QVariant Model::data(const QModelIndex &index, int role) const
 {
-	if (role == Qt::DecorationRole && index.column() == 2)
+	if (role == Qt::DecorationRole && index.column() == 0)
 	{
-	/*	if (files[index.row()].split(' ').count() == 4)
-			return (QIcon("/home/detlev/src/extraits/yes.png"));
+		QImage *img;
+		//printf(" ***** %s : %s *****\n", nodes[index.row()].node.toLatin1().constData(), nodes[index.row()].presenceType.toLatin1().constData());
+		if (nodes[index.row()].presenceType == "unavailable")
+			img = new QImage("offline.png");
 		else
-			return (QIcon("/home/detlev/src/extraits/no.png"));
-	*/}
+			img = new QImage("online.png");
+			
+		return *img;
+	}
 	if (role == Qt::EditRole)
 		return false;
 	if (role == Qt::DisplayRole)
 	{
 		switch(index.column())
 		{
-			case 0: return nodes[index.row()].node;
-			case 1: return nodes[index.row()].state;
-			/*case 2: return QVariant();*/
+			case 1: return nodes[index.row()].jid->toQString();
+			case 2: return nodes[index.row()].presenceType;
 			default : return QVariant();
 		}
 	}
@@ -62,20 +65,19 @@ Qt::ItemFlags Model::flags(const QModelIndex &index) const
 
 QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
 {
-	if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
+	/*if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
 	{
 		switch(section)
 		{
-			case 0: return tr("Contacts");
-			case 1: return tr("State");
-			/*case 2: return tr("Printed");*/
+			case 1: return tr("Contacts");
+			case 2: return tr("State");
 			default: return QVariant();
 		}
 	}
 	if (orientation == Qt::Vertical && role == Qt::DisplayRole)
 	{
 		return section;
-	}
+	}*/
 	return QVariant();
 }
 
@@ -92,6 +94,6 @@ int Model::rowCount(const QModelIndex &parent) const
 int Model::columnCount(const QModelIndex &parent) const
 {
 	// There will be more than 1 column
-	return 2;
+	return 3;
 }
 

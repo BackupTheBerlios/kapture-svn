@@ -137,8 +137,10 @@ void Xmpp::dataReceived()
 	QByteArray data;
 	QString mess;
 	
-	printf("\n * Data avaible !\n");
 	data = tcpSocket->readAll();
+	if (data == "" || data.isNull())
+		return;
+	printf("\n * Data avaible !\n");
 
 	if (state == isHandShaking || tlsDone)
 	{
@@ -486,6 +488,46 @@ void Xmpp::sendMessage(QString to, QString message)
 	b.appendChild(t);
 	e.appendChild(b);
 	d.appendChild(e);
+
+	sendData(d.toString().toLatin1());
+}
+
+void Xmpp::sendFile(QString to, unsigned int size, QString name, QString description, QDateTime date, QString hash)
+{
+
+	/*
+	 * Stream Initiation
+	 *  - Discovers if Receiver implements the desired profile.
+	 *  - Offers a stream initiation.
+	 *  - Receiver accepts stream initiation.
+	 *  - Sender and receiver prepare for using negotiated profile and stream.
+	 *  See XEP 0095 : http://www.xmpp.org/extensions/xep-0095.html
+	 *
+	 *  Should have new states for the Xmpp::processEvent(...) function.
+	 */
+
+	QDomDocument d("");
+	QDomElement iq = d.createElement("iq");
+	iq.setAttribute("to", to);
+	iq.setAttribute("type", "set");
+	iq.setAttribute("id", "transfer1");
+
+	QDomElement file = d.createElement("file");
+	file.setAttribute("size", QString("%1").arg(size));
+	file.setAttribute("name", name);
+	
+	if(description != "")
+	{
+		QDomElement desc = d.createElement("desc");
+		QDomText text = d.createTextNode(description);
+		desc.appendChild(text);
+		file.appendChild(desc);
+	}
+	/*
+	 * Ranged transfers are not supported (yet)
+	 */
+	iq.appendChild(file);
+	d.appendChild(iq);
 
 	sendData(d.toString().toLatin1());
 }

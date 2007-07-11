@@ -79,7 +79,7 @@ void Stanza::setupPresence(QDomElement s)
 	ns = s.attribute("xmlns");
 	to = s.attribute("to");
 	from = s.attribute("from");
-	type = s.attribute("type", "avaible");
+	type = s.attribute("type", "available");
 	printf("ns = %s\nto = %s\nfrom = %s\ntype = %s\n", ns.toLatin1().constData(), to.toLatin1().constData(), from.toLatin1().constData(), type.toLatin1().constData());
 
 	printf("Changing the presence of %s\n", from.toLatin1().constData());

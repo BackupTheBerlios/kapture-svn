@@ -5,6 +5,7 @@ ChatWin::ChatWin()
 {
 	ui.setupUi(this);
 	connect(ui.sendBtn, SIGNAL(clicked()), this, SLOT(message()));
+	connect(ui.sendFileBtn, SIGNAL(clicked()), this, SLOT(file()));
 	ui.sendBtn->setEnabled(false);
 	connect(ui.messageLine, SIGNAL(textChanged(QString)), this, SLOT(composing(QString)));
 	connect(ui.messageLine, SIGNAL(returnPressed()), this, SLOT(message()));
@@ -26,6 +27,11 @@ void ChatWin::message()
 		ui.messageLine->clear();
 		ui.sendBtn->setEnabled(false);
 	}
+}
+
+void ChatWin::file()
+{
+
 }
 
 void ChatWin::composing(QString text)

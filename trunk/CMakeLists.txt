@@ -9,7 +9,7 @@ else (UVCVIDEO)
 	MESSAGE(" * If you want to, re-run cmake -D UVCVIDEO=/path/to/uvcvideo /path/to/Kapture/source")
 ENDIF(UVCVIDEO)
 
-FIND_PACKAGE(Qt4 REQUIRED)
+FIND_PACKAGE(Qt4 4.3 REQUIRED)
 
 INCLUDE(${QT_USE_FILE})
 
@@ -29,7 +29,7 @@ LINK_LIBRARIES(${SSL_LIBRARY} ${QT_LIBRARIES} ${QT_QTNETWORK_LIBRARIES}
 SET(Kapture_SRCS main.cpp imageConvert.cpp kapturewin.cpp
 mainframewin.cpp merror.cpp mouselabel.cpp webcam.cpp xmppwin.cpp xmpp.cpp
 tlsHandler.cpp xmlHandler.cpp event.cpp stanza.cpp rosterModel.cpp
-chatwin.cpp mousetableview.cpp contact.cpp utils.cpp)
+chatwin.cpp mousetableview.cpp contact.cpp utils.cpp jid.cpp)
 
 ADD_EXECUTABLE(Kapture ${Kapture_SRCS} ${Kapture_UIS_H} ${MOC_FILES})
 target_link_libraries(Kapture ${QT_LIBRARIES})

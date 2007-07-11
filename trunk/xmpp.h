@@ -26,6 +26,7 @@ public:
 	Stanza *stanza;
 	void getRoster();
 	void sendMessage(QString to, QString message);
+	void sendFile(QString to, unsigned int size, QString name, QString description = "", QDateTime date = QDateTime(), QString hash = "");
 	void setPresence(QString show = "", QString status = "");
 	bool isSecured() const;
 	//void logOut();

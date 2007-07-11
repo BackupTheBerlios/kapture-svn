@@ -6,6 +6,7 @@
 #include "chatwin.h"
 #include "contact.h"
 #include "rosterModel.h"
+#include "jid.h"
 
 class XmppWin : public QMainWindow
 {
@@ -13,6 +14,7 @@ class XmppWin : public QMainWindow
 public:
 	XmppWin();
 	~XmppWin();
+	Jid *jid;
 
 public slots:
 	void jabberConnect();

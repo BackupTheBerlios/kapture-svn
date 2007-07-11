@@ -1,7 +1,10 @@
 #ifndef CONTACT_H
 #define CONTACT_H
+
 #include <QObject>
+
 #include "chatwin.h"
+#include "jid.h"
 
 class Contact : public QObject
 {
@@ -10,18 +13,13 @@ public:
 	Contact(QString j);
 	~Contact();
 	void newMessage(QString m /*Message*/);
-	void setResource(QString r);
-	void setJid(QString j);
-	QString getJid();
+	Jid *jid;
 	void setPresence(QString status, QString show);
 	void startChat();
-	QString getResource();
 
 private:
 	ChatWin *chatWin; 
 	bool isChatting;
-	QString jid; //should be Jid jid;
-	QString resource;
 	struct Presence
 	{
 		QString status; // Emergency away,...

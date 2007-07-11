@@ -4,6 +4,8 @@
 #include <QtGui>
 #include <QAbstractItemModel>
 
+#include "jid.h"
+
 class Model : public QAbstractTableModel
 {
 	Q_OBJECT
@@ -12,8 +14,8 @@ public:
 	~Model();
 	struct Nodes
 	{
-		QString node;
-		QString state;
+		Jid *jid;
+		QString presenceType;
 	};
 	void setData(QList<Nodes> n);
 	void setData(QModelIndex index, QString value);
