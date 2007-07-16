@@ -567,3 +567,33 @@ bool Xmpp::isSecured() const
 {
 	return useTls;
 }
+
+void Xmpp::sendDiscoInfo(QString to, QString id)
+{
+/*
+ * <feature var='http://jabber.org/protocol/si'/>
+ * <feature var='http://jabber.org/protocol/si/profile/file-transfer'/>
+ */
+	QDomDocument d("");
+	QDomElement iq = d.createElement("iq");
+	iq.setAttribute("type", "result");
+	iq.setAttribute("from", username + '@' + server + '\\' + resource);
+	iq.setAttribute("to", to);
+	iq.setAttribute("id", id);
+	QDomElement query = d.createElement("query");
+	query.setAttribute("xmlns", XMLNS_DISCO);
+
+	QDomElement feature = d.createElement("feature");
+	feature.setAttribute("var", "http://jabber.org/protocol/si");
+	query.appendChild(feature);
+
+	QDomElement feature2 = d.createElement("feature");
+	feature2.setAttribute("var", "http://jabber.org/protocol/si/profile/file-transfer");
+	query.appendChild(feature2);
+	
+	iq.appendChild(query);
+	d.appendChild(iq);
+
+	sendData(d.toString().toLatin1());
+}
+

@@ -29,6 +29,7 @@ public:
 	void sendFile(QString to, unsigned int size, QString name, QString description = "", QDateTime date = QDateTime(), QString hash = "");
 	void setPresence(QString show = "", QString status = "");
 	bool isSecured() const;
+	void sendDiscoInfo(QString to, QString id);
 	//void logOut();
 	enum ErrorType
 	{

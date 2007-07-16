@@ -73,7 +73,7 @@ void XmppWin::clientConnected()
 	ui.tlsIconLabel->setPixmap(*pixmap);
 	ui.tlsIconLabel->setEnabled(true);
 
-
+#warning : Those signals should be connected with Xmpp.
 	connect(client->stanza, SIGNAL(presenceReady()), this, SLOT(newPresence()));
 	connect(client->stanza, SIGNAL(messageReady()), this, SLOT(newMessage()));
 	connect(client->stanza, SIGNAL(iqReady()), this, SLOT(newIq()));
@@ -182,6 +182,12 @@ void XmppWin::newIq()
 		ui.tableView->setModel(m);
 		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
 		client->setPresence();
+	}
+	
+	if(client->stanza->getAction() == 0) // Prefer a switch/case.
+	{
+		printf("XmppWin::newIq()\n");
+		client->sendDiscoInfo(client->stanza->getFrom(), client->stanza->getId());
 	}
 	/* Still a lot to implement.
 	 * Next one : File Transfert, See http://www.xmpp.org/extensions/xep-0096.html (XEP 0096 : File Transfert)

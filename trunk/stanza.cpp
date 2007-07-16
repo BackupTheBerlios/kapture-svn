@@ -1,5 +1,6 @@
 #include "stanza.h"
 
+
 Stanza::Stanza()
 {
 	to = "";
@@ -133,7 +134,7 @@ void Stanza::setupPresence(QDomElement s)
 		}
 		
 		// This won't happend, I don't care now.
-		if (tag == "x" && s.attribute("xmlns") == "vcard-temp:x:update") 
+		if (tag == "x" && s.namespaceURI() == "vcard-temp:x:update") 
 		{
 			printf("vcard update !\n");
 		}
@@ -237,6 +238,14 @@ void Stanza::setupIq(QDomElement s)
 					printf("New Roster contact : %s (subscription : %s)\n", contacts[i].toLatin1().constData(), items.at(i).toElement().attribute("subscription").toLatin1().constData());
 				}
 			}
+			
+			if (s.namespaceURI() == XMLNS_DISCO)
+			{
+				if (type == "get")
+					action = SendDiscoInfo;
+				if (type == "result")
+					action = ReceivedDiscoInfo;
+			}
 		}
 		
 		if (tag == "body")
@@ -247,6 +256,11 @@ void Stanza::setupIq(QDomElement s)
 	}
 //	printf("New message recieved from %s. (type = %s) :\n %s\n", from.toLatin1().constData(), type.toLatin1().constData(), message.toLatin1().constData());
 	
+}
+
+int Stanza::getAction()
+{
+	return action;
 }
 
 QString Stanza::getFrom()

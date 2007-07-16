@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QtXml>
+#define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
 
 class Stanza : public QObject
 {
@@ -24,6 +25,12 @@ public:
 	QString getType();
 	QString getStatus();
 	QString getShow();
+	enum Action
+	{
+		SendDiscoInfo = 0,
+		ReceivedDiscoInfo
+	} action;
+	int getAction();
 
 signals:
 	void presenceReady();
