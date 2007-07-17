@@ -1,4 +1,7 @@
 #include <QMessageBox>
+#include <QDir>
+#include <QFile>
+//#include <QXml>
 
 #include "xmppwin.h"
 #include "rosterModel.h"
@@ -6,6 +9,8 @@
 
 XmppWin::XmppWin()
 {
+	int i = 0;
+	bool found = false;
 	ui.setupUi(this);
 	connect(ui.jabberConnect, SIGNAL(clicked()), this, SLOT(jabberConnect()));
 	connect(ui.password, SIGNAL(returnPressed()), this, SLOT(jabberConnect()));
@@ -13,6 +18,65 @@ XmppWin::XmppWin()
 	ui.jid->setText("linux@localhost");
 	ui.tableView->verticalHeader()->hide();
 	ui.tableView->horizontalHeader()->hide();
+
+	//Loads last configuration from ~/.Kapture/conf.xml
+	QDir *confDir = new QDir(QDir::homePath() + "/.Kapture/");
+	if (!confDir->exists())
+	{
+		QDir::home().mkdir(".Kapture");
+	}
+	confDir->setPath(QDir::homePath() + "/.Kapture/");
+	
+	if (!confDir->exists())
+	{
+	//	noConfig = true;
+		return;
+	}
+	
+	QFile *conf = new QFile(QDir::homePath() + "/.Kapture/conf.xml");
+	conf->open(QIODevice::ReadOnly);
+	config = conf->readAll();
+	printf("Config = %s\n", config.constData());
+	QDomDocument d;
+	d.setContent(config);
+
+	QString cJid, cPassword, cPersonnalServer, cPort;
+	
+	if (d.documentElement().tagName() == "Kapture")
+	{
+		QDomNodeList classes = d.documentElement().childNodes();
+		for(i = 0; i < classes.count() ;i++)
+		{
+			if (classes.at(i).toElement().tagName() == "xmppwin")
+			{
+				found = true;
+				break;
+			}
+		}
+		if (found)
+		{
+			QDomNodeList infos = classes.at(i).childNodes();
+			printf("classe : %s", classes.at(i).toElement().tagName().toLatin1().constData());
+			for (i = 0; i < infos.count(); i++)
+			{
+				if (infos.at(i).toElement().tagName() == "jid" && infos.at(i).hasChildNodes())
+					cJid = infos.at(i).firstChild().toText().data();
+				
+				if (infos.at(i).toElement().tagName() == "password" && infos.at(i).hasChildNodes())
+					cPassword = infos.at(i).firstChild().toText().data();
+				
+				if (infos.at(i).toElement().tagName() == "server" && infos.at(i).hasChildNodes())
+					cPersonnalServer = infos.at(i).firstChild().toText().data();
+				
+				if (infos.at(i).toElement().tagName() == "port" && infos.at(i).hasChildNodes())
+					cPort = infos.at(i).firstChild().toText().data();
+			}
+		}
+	}
+	ui.jid->setText(cJid);
+	ui.password->setText(cPassword);
+	ui.serverEdit->setText(cPersonnalServer);
+	ui.portEdit->setText(cPort);
 }
 
 XmppWin::~XmppWin()
@@ -73,38 +137,25 @@ void XmppWin::clientConnected()
 	ui.tlsIconLabel->setPixmap(*pixmap);
 	ui.tlsIconLabel->setEnabled(true);
 
-#warning : Those signals should be connected with Xmpp.
-	connect(client->stanza, SIGNAL(presenceReady()), this, SLOT(newPresence()));
-	connect(client->stanza, SIGNAL(messageReady()), this, SLOT(newMessage()));
-	connect(client->stanza, SIGNAL(iqReady()), this, SLOT(newIq()));
+	connect(client, SIGNAL(presence(QString, QString, QString, QString)), this, SLOT(processPresence(QString, QString, QString, QString)));
+	connect(client, SIGNAL(message(QString, QString, QString)), this, SLOT(processMessage(QString, QString, QString)));
+	connect(client, SIGNAL(iq(QString, QString, QString, QStringList)), this, SLOT(processIq(QString, QString, QString, QStringList)));
 	
 	QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
 	client->getRoster();
 }
 
-void XmppWin::newPresence()
+void XmppWin::processPresence(QString pFrom, QString pTo, QString pStatus, QString pType)
 {
 	int i;
-	//QString pFrom = client->stanza->getFrom();
-	//QString pTo = client->stanza->getTo();
-	QString pStatus = client->stanza->getStatus();
-	QString pType = client->stanza->getType();
 
-	Jid *from = new Jid(client->stanza->getFrom());
-	Jid *to = new Jid(client->stanza->getTo());
+	Jid *from = new Jid(pFrom);
+	Jid *to = new Jid(pTo);
 
-/*	QString fromNode;
-	if(pFrom.split('/').count() == 0)
-		return;
-	if(pFrom.split('/').count() == 1)
-		fromNode = pFrom;
-	if(pFrom.split('/').count() == 2)
-		fromNode = pFrom.split('/').at(0);
-*/
 	// Looking for the contact in the contacts list.
 	for (i = 0; i < nodes.count(); i++)
 	{
-		//printf("Lookingk for node %s (does it equals %s ?)\n", fromNode.toLatin1().constData(), nodes[i].node.toLatin1().constData());
+		//printf("Looking for node %s (does it equals %s ?)\n", fromNode.toLatin1().constData(), nodes[i].node.toLatin1().constData());
 		if (nodes[i].jid->equals(from))
 		{
 			nodes[i].presenceType = pType;
@@ -135,13 +186,10 @@ void XmppWin::newPresence()
 	}
 }
 
-void XmppWin::newMessage()
+void XmppWin::processMessage(QString mFrom, QString mTo, QString mMessage)
 {
-	//QString mFrom = client->stanza->getFrom();
-	//QString mTo = client->stanza->getTo();
-	Jid *from = new Jid(client->stanza->getFrom());
-	Jid *to = new Jid(client->stanza->getTo());
-	QString mMessage = client->stanza->getMessage();
+	Jid *from = new Jid(mFrom);
+	Jid *to = new Jid(mTo);
 	
 	bool found = false;
 	for (int i = 0; i < contactList.count(); i++)
@@ -155,26 +203,25 @@ void XmppWin::newMessage()
 	}
 	if (!found)
 	{
-		Contact *contact = new Contact(jid->toQString());
+		Contact *contact = new Contact(from->toQString());
 		contact->newMessage(mMessage);
 		connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
 		contactList.append(contact);
 	}
 }
 
-void XmppWin::newIq()
+void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList contacts)
 {
-	if (client->stanza->getId() == "roster_1")
+	if (iId == "roster_1")
 	{
 		m = new Model();
 		nodes.clear();
 		
 		Model::Nodes node; // TODO:Nodes should be replaced by a contact object...
 		QStringList l;
-		l = client->stanza->getContacts(); // TODO:Should return a QList<contact>...
-		for (int i = 0; i < l.count(); i++)
+		for (int i = 0; i < contacts.count(); i++)
 		{
-			node.jid = new Jid(l.at(i));
+			node.jid = new Jid(contacts.at(i));
 			node.presenceType = "unavailable";
 			nodes << node;
 		}
@@ -183,12 +230,7 @@ void XmppWin::newIq()
 		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
 		client->setPresence();
 	}
-	
-	if(client->stanza->getAction() == 0) // Prefer a switch/case.
-	{
-		printf("XmppWin::newIq()\n");
-		client->sendDiscoInfo(client->stanza->getFrom(), client->stanza->getId());
-	}
+
 	/* Still a lot to implement.
 	 * Next one : File Transfert, See http://www.xmpp.org/extensions/xep-0096.html (XEP 0096 : File Transfert)
 	 * Wish : Jingle support : Video Over IP, See http://www.xmpp.org/extensions/xep-0166.html

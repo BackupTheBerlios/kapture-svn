@@ -20,9 +20,9 @@ public slots:
 	void jabberConnect();
 	void jabberDisconnect();
 	void clientConnected();
-	void newPresence();
-	void newMessage();
-	void newIq();
+	void processPresence(QString pFrom, QString pTo, QString pStatus, QString pType);
+	void processMessage(QString pFrom, QString pTo, QString mMessage);
+	void processIq(QString iFrom, QString iTo, QString iId, QStringList contacts);
 	void sendMessage(QString to, QString message);
 	void startChat(QString to);
 	void error(Xmpp::ErrorType);
@@ -33,6 +33,7 @@ private:
 	QList<Contact*> contactList;
 	QList<Model::Nodes> nodes;
 	Model *m;
+	QByteArray config;
 };
 #endif
 

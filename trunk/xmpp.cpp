@@ -9,10 +9,11 @@
  */
 Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
 {
-	//printf("New client created : %s, %s, %s.\n", jid.toLatin1().constData(), pServer.toLatin1().constData(), pPort.toLatin1().constData());
 	timeOut = 5000; // Default timeout set to 5 seconds
 	tcpSocket = new QTcpSocket();
+	sslSocket = new QSslSocket();
 	connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connexionError(QAbstractSocket::SocketError)));
+	connect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connexionError(QAbstractSocket::SocketError)));
 	username = jid.split('@').at(0);
 	server = jid.split('@').at(1);
 
@@ -38,6 +39,7 @@ Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
 	jidDone = false;
 	useTls = true;
 	connect(tcpSocket, SIGNAL(connected()), this, SLOT(start()));
+	connect(sslSocket, SIGNAL(connected()), this, SLOT(start()));
 	stanza = new Stanza();
 }
 
@@ -69,11 +71,11 @@ Xmpp::~Xmpp()
  */
 void Xmpp::auth(QString pass, QString res)
 {
-	if (!usePersonnalServer)
-		tcpSocket->connectToHost(server, port);
+	if (port != 5223)
+		tcpSocket->connectToHost(usePersonnalServer ? personnalServer : server, port);
 	else
-		tcpSocket->connectToHost(personnalServer, port);
-		
+		sslSocket->connectToHostEncrypted(usePersonnalServer ? personnalServer : server, port);
+
 	password = pass;
 	resource = res;
 }
@@ -81,8 +83,9 @@ void Xmpp::auth(QString pass, QString res)
 void Xmpp::start()
 {
 	QString firstXml = QString("<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version=\"1.0\">").arg(server);
-	//printf(" * toSend = %s\n", firstXml.toLatin1().constData()); 
-	connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	//printf(" * toSend = %s\n", firstXml.toLatin1().constData());
+	
+	connect(port != 5223 ? tcpSocket : sslSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	state = waitStream;
 	sendData(QByteArray(firstXml.toLatin1()));
 }
@@ -101,7 +104,7 @@ int Xmpp::sendData(QByteArray mess)
 	else
 	{
 		//printf(" * Sending : %s\n", mess.constData());
-		tcpSocket->write(mess);
+		port != 5223 ? tcpSocket->write(mess) : sslSocket->write(mess);
 	}
 	return 0;
 }
@@ -121,10 +124,21 @@ QByteArray Xmpp::readData()
 	 *  read, the readData function becomes obsolete.
 	 *
 	 */
-	if (tcpSocket->waitForReadyRead(timeOut))
-		return tcpSocket->readAll();
+	if (port != 5223)
+	{
+		if (tcpSocket->waitForReadyRead(timeOut))
+			return tcpSocket->readAll();
+		else
+			return QByteArray();
+	}
 	else
-		return QByteArray();
+	{
+		if (sslSocket->waitForReadyRead(timeOut))
+			return sslSocket->readAll();
+		else
+			return QByteArray();
+		
+	}
 }
 
 bool Xmpp::connectedToServer()
@@ -137,7 +151,7 @@ void Xmpp::dataReceived()
 	QByteArray data;
 	QString mess;
 	
-	data = tcpSocket->readAll();
+	data = port != 5223 ? tcpSocket->readAll() : sslSocket->readAll();
 	if (data == "" || data.isNull())
 		return;
 	printf("\n * Data avaible !\n");
@@ -357,6 +371,11 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 					 * when receiving presence stanza's wich come after
 					 * setting the first presence.
 					 */
+
+					connect(stanza, SIGNAL(presenceReady()), this, SLOT(newPresence()));
+					connect(stanza, SIGNAL(messageReady()), this, SLOT(newMessage()));
+					connect(stanza, SIGNAL(iqReady()), this, SLOT(newIq()));
+					
 					state = active;
 					emit connected(); 
 
@@ -384,9 +403,10 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 					printf("'%s'@'%s'/'%s'\n", u.toLatin1().constData(), s.toLatin1().constData(), r.toLatin1().constData());
 				}
 				
-				if (u == username && s == server && r == resource)
+				if (u == username && s == server)
 				{
 					printf("Jid OK !\n");
+					resource = r;
 					jidDone = true;
 				}
 			}
@@ -424,7 +444,10 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 
 void Xmpp::sendDataFromTls(/*QByteArray data*/)
 {
-	tcpSocket->write(tls->readOutgoing());
+	if (port != 5223)
+		tcpSocket->write(tls->readOutgoing());
+	else
+		sslSocket->write(tls->readOutgoing());
 }
 
 void Xmpp::clearDataReceived()
@@ -595,5 +618,70 @@ void Xmpp::sendDiscoInfo(QString to, QString id)
 	d.appendChild(iq);
 
 	sendData(d.toString().toLatin1());
+}
+
+void Xmpp::newPresence()
+{
+	QString pFrom = stanza->getFrom();
+	QString pTo = stanza->getTo();
+	QString pStatus = stanza->getStatus();
+	QString pType = stanza->getType();
+
+	emit presence(pFrom, pTo, pStatus, pType);
+}
+
+void Xmpp::newMessage()
+{
+	QString mFrom = stanza->getFrom();
+	QString mTo = stanza->getTo();
+	QString mMessage = stanza->getMessage();
+	
+	emit message(mFrom, mTo, mMessage);
+}
+
+void Xmpp::newIq()
+{
+	QString iFrom = stanza->getFrom();
+	QString iTo = stanza->getTo();
+	QString iId = stanza->getId();
+
+	int action = stanza->getAction();
+	QStringList contacts = stanza->getContacts();
+	Jid *from = new Jid(iFrom);
+	
+	int i = 0;
+	bool exists = false;
+
+	switch (action) {
+		case 0 :
+			printf("Send disco Info\n");
+			sendDiscoInfo(iFrom, iId);
+			break;
+		case 1 :
+			for ( ; i < cFeatures.count(); i++)
+			{
+				if (cFeatures[i].jid->equals(from))
+				{
+					exists = true;
+					break;
+				}
+			}
+
+			if (!exists)
+			{
+				ContactFeatures tmp;
+				tmp.jid = new Jid(iFrom);
+				tmp.features = stanza->getFeatures(); //Should go in processEvent function or in another state machine.
+				cFeatures << tmp;
+			}
+			else
+			{
+				cFeatures[i].features.clear();
+				cFeatures[i].features = stanza->getFeatures();
+			}
+			break;
+		default :
+			emit iq(iFrom, iTo, iId, contacts);
+	}
 }
 

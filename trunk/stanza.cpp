@@ -203,20 +203,9 @@ void Stanza::setupMessage(QDomElement s)
 
 void Stanza::setupIq(QDomElement s)
 {
-/*
-<iq xmlns='jabber:client' id='roster_1' type='result' from='linux@localhost/Kapture'>
- <query xmlns='jabber:iq:roster'>
-  <item subscription='both' jid='linux3@localhost'/>
-  <item subscription='both' jid='linux2@localhost'/>
- </query>
-</iq>
- */
-	
 	id = s.attribute("id");
 	from = s.attribute("from");
 	type = s.attribute("type");
-
-	//if (type != "")
 
 	if (s.hasChildNodes())
 		s = s.firstChildElement();
@@ -238,13 +227,36 @@ void Stanza::setupIq(QDomElement s)
 					printf("New Roster contact : %s (subscription : %s)\n", contacts[i].toLatin1().constData(), items.at(i).toElement().attribute("subscription").toLatin1().constData());
 				}
 			}
-			
+/*
+ <iq type='result' to='sender@jabber.org/resource' from='receiver@jabber.org/resource' id='info1'>
+  <query xmlns='http://jabber.org/protocol/disco#info'>
+    ...
+    <feature var='http://jabber.org/protocol/si'/>
+    <feature var='http://jabber.org/protocol/si/profile/file-transfer'/>
+    ...
+  </query>
+</iq>
+*/
 			if (s.namespaceURI() == XMLNS_DISCO)
 			{
 				if (type == "get")
 					action = SendDiscoInfo;
 				if (type == "result")
+				{
+					QDomNodeList p = s.childNodes();
+					
+					for (int i = 0; i < p.count(); i++)
+					{
+						features << p.at(i).toElement().attribute("var");
+					}
+
 					action = ReceivedDiscoInfo;
+				}
+			}
+			else
+			{
+				printf("Action : None\n");
+				action = None;
 			}
 		}
 		
@@ -254,13 +266,20 @@ void Stanza::setupIq(QDomElement s)
 		
 		s = s.nextSibling().toElement();
 	}
-//	printf("New message recieved from %s. (type = %s) :\n %s\n", from.toLatin1().constData(), type.toLatin1().constData(), message.toLatin1().constData());
-	
+}
+
+QStringList Stanza::getFeatures()
+{
+	QStringList f = features;
+	features.clear();
+	return f;
 }
 
 int Stanza::getAction()
 {
-	return action;
+	int a = action;
+	action = None;
+	return a;
 }
 
 QString Stanza::getFrom()

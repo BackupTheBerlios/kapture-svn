@@ -28,9 +28,11 @@ public:
 	enum Action
 	{
 		SendDiscoInfo = 0,
-		ReceivedDiscoInfo
+		ReceivedDiscoInfo,
+		None
 	} action;
 	int getAction();
+	QStringList getFeatures();
 
 signals:
 	void presenceReady();
@@ -59,6 +61,7 @@ private:
 	QString show;
 	QString status;
 	QStringList contacts;
+	QStringList features;
 
 };
 

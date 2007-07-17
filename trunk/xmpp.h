@@ -7,6 +7,7 @@
 #include "xmlHandler.h"
 #include "tlsHandler.h"
 #include "stanza.h"
+#include "jid.h"
 
 /*
  * This class manage xmpp stuff.
@@ -23,7 +24,6 @@ public:
 	void auth(QString password, QString resource);
 	bool connectedToServer();
 	QList<QDomElement> elems;
-	Stanza *stanza;
 	void getRoster();
 	void sendMessage(QString to, QString message);
 	void sendFile(QString to, unsigned int size, QString name, QString description = "", QDateTime date = QDateTime(), QString hash = "");
@@ -46,17 +46,25 @@ public slots:
 	void tlsIsConnected();
 	void start();
 	void connexionError(QAbstractSocket::SocketError socketError);
+	void newPresence();
+	void newMessage();
+	void newIq();
 
 signals:
 	void messageReceived();
 	void presenceChanged();
 	void connected();
 	void error(Xmpp::ErrorType);
+	void presence(QString, QString, QString, QString);
+	void message(QString, QString, QString);
+	void iq(QString, QString, QString, QStringList);
 
-private:	
+private:
+	Stanza *stanza;
 	int sendData(QByteArray mess);
 	QByteArray readData();
 	QTcpSocket *tcpSocket;
+	QSslSocket *sslSocket;
 	QString server;
 	QString username;
 	int timeOut;
@@ -69,6 +77,13 @@ private:
 	bool usePersonnalServer;
 	QString personnalServer;
 	int port;
+	struct ContactFeatures
+	{
+		Jid *jid;
+		QStringList features;
+	};
+
+	QList<ContactFeatures> cFeatures;
 
 	XmlHandler *handler;
 	struct rooster
