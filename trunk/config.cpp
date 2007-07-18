@@ -24,13 +24,11 @@ Config::Config()
 	QFile *conf = new QFile(QDir::homePath() + "/.Kapture/conf.xml");
 	conf->open(QIODevice::ReadOnly);
 	config = conf->readAll();
-	printf("Config = %s\n", config.constData());
 	d.setContent(config);
 
 	if (d.documentElement().tagName() != "Kapture")
 	{
 		noConfig = true;
-		printf("ERROR1!!!\n");
 		return;
 	}
 
@@ -39,7 +37,6 @@ Config::Config()
 	{
 		if (classes.at(i).toElement().tagName() == "xmppwin")
 		{
-			printf("INFO1!!!\n");
 			found = true;
 			n = i;
 			break;
@@ -48,14 +45,12 @@ Config::Config()
 	if (!found)
 	{
 		noConfig = true;
-		printf("ERROR2!!!\n");
 		return;
 	}
 	
 	QDomNodeList profilesNodeList = classes.at(i).childNodes();
 	for (int j = 0; j < profilesNodeList.count(); j++)
 	{
-		printf("INFO2!!!\n");
 		cJid = "";
 		cPassword = "";
 		cPersonnalServer = "";
@@ -64,7 +59,6 @@ Config::Config()
 		QDomNodeList infos = profilesNodeList.at(j).childNodes();
 		for (i = 0; i < infos.count(); i++)
 		{
-			printf("INFO3!!!\n");
 			if (infos.at(i).toElement().tagName() == "jid" && infos.at(i).hasChildNodes())
 				cJid = infos.at(i).firstChild().toText().data();
 
@@ -81,9 +75,7 @@ Config::Config()
 		profile->setData(cJid, cPassword, cPersonnalServer, cPort);
 		profiles << *profile;
 		profiles2 << *profile;
-		printf("Count1 = %d\n", profiles.count());
 	}
-	//delete conf;
 }
 
 Config::~Config()
@@ -103,8 +95,6 @@ QStringList Config::getProfileNames()
 
 QList<Profile> Config::getProfileList()
 {
-	printf("Count2 = %d\n", profiles2.count());
-	
 	return profiles2;
 }
 

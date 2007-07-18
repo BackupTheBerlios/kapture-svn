@@ -50,7 +50,6 @@ void XmppConfigDialog::add()
 	conf = new Config();
 
 	profiles = conf->getProfileList();
-	printf("Count = %d\n", profiles.count());
 	model->setProfileList(profiles);
 	model->insertRow(profiles.count(), QModelIndex());
 }
