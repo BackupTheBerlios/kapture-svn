@@ -19,7 +19,7 @@ XmppWin::XmppWin()
 	connect(ui.password, SIGNAL(returnPressed()), this, SLOT(jabberConnect()));
 	connect(ui.jabberDisconnect, SIGNAL(clicked()), this, SLOT(jabberDisconnect()));
 	connect(ui.configBtn, SIGNAL(clicked()), this, SLOT(showConfigDial()));
-	ui.jid->setText("linux@localhost");
+	ui.jid->setText("Jid");
 	ui.tableView->verticalHeader()->hide();
 	ui.tableView->horizontalHeader()->hide();
 	ui.tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -28,6 +28,8 @@ XmppWin::XmppWin()
 
 	// Loads predifined Profiles.
 	Config *conf = new Config();
+	if (conf->noConfig)
+		return;
 	profilesa = conf->getProfileList();
 	for (i = 0; i < profilesa.count(); i++)
 	{

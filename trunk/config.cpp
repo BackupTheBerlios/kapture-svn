@@ -1,6 +1,7 @@
 #include <QFile>
 #include <QDir>
 #include <QDomDocument>
+#include <QMessageBox>
 
 #include "config.h"
 
@@ -8,6 +9,7 @@ Config::Config()
 {
 	int i = 0;
 	bool found = false;
+	noConfig = false;
 	QByteArray config;
 	//Loads last configuration from ~/.Kapture/conf.xml
 	QDir *confDir = new QDir(QDir::homePath() + "/.Kapture/");
@@ -19,7 +21,8 @@ Config::Config()
 	
 	if (!confDir->exists())
 	{
-	//	noConfig = true;
+		noConfig = true;
+		QMessageBox::critical(0, QString("Jabber"), QString("Unable to create config file. Check permissions for\n \"$HOME/.Kapture/conf.xml\""), QMessageBox::Ok);
 		return;
 	}
 	
@@ -32,7 +35,10 @@ Config::Config()
 
 	
 	if (d.documentElement().tagName() != "Kapture")
-		return; // TODO:Should say it !
+	{
+		noConfig = true;
+		return;
+	}
 
 	QDomNodeList classes = d.documentElement().childNodes();
 	for(i = 0; i < classes.count() ;i++)
@@ -44,7 +50,10 @@ Config::Config()
 		}
 	}
 	if (!found)
+	{
+		noConfig = true;
 		return;
+	}
 	
 	QDomNodeList profilesNodeList = classes.at(i).childNodes();
 	for (int j = 0; j < profilesNodeList.count(); j++)

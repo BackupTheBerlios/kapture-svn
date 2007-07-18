@@ -14,6 +14,7 @@ public:
 	QString getPassword(QString profile);
 	QString getPersonnalServer(QString profile);
 	QString getPort(QString profile);
+	bool noConfig;
 
 private:
 	QString cJid, cPassword, cPersonnalServer, cPort, cProfile;
