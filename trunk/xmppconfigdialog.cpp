@@ -4,14 +4,17 @@
 XmppConfigDialog::XmppConfigDialog()
 {
 	ui.setupUi(this);
-	Config *conf = new Config();
+	conf = new Config();
 	profiles = conf->getProfileList();
 	model = new ProfileModel();
 	model->setProfileList(profiles);
 	ui.profilesTable->setModel(model);
 	ui.profilesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.profilesTable->setSelectionMode(QAbstractItemView::SingleSelection);
+	
 	connect(ui.profilesTable, SIGNAL(Clicked(QString)), this, SLOT(selectChange(QString)));
+	connect(ui.addBtn, SIGNAL(clicked()), this, SLOT(add()));
+	//connect(ui.deleteBtn, SIGNAL(clicked()), this, SLOT(del()));
 }
 
 XmppConfigDialog::~XmppConfigDialog()
@@ -32,4 +35,27 @@ void XmppConfigDialog::selectChange(QString profileName)
 	ui.personnalServerEdit->setText(profiles[i].getPersonnalServer());
 	ui.portEdit->setText(profiles[i].getPort());
 	ui.profileNameEdit->setText(profiles[i].getName());
+}
+
+void XmppConfigDialog::add()
+{
+	Profile p(ui.profileNameEdit->text());
+	p.setData(ui.jidEdit->text(),
+		  ui.passwordEdit->text(),
+		  ui.personnalServerEdit->text(),
+		  ui.portEdit->text());
+
+	conf->addProfile(p);
+	delete conf;
+	conf = new Config();
+
+	profiles = conf->getProfileList();
+	printf("Count = %d\n", profiles.count());
+	model->setProfileList(profiles);
+	model->insertRow(profiles.count(), QModelIndex());
+}
+
+void XmppConfigDialog::del()
+{
+
 }

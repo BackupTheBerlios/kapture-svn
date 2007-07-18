@@ -114,3 +114,14 @@ int ProfileModel::columnCount(const QModelIndex &parent) const
 {
 	return 4;
 }
+
+bool ProfileModel::insertRow(int position, const QModelIndex &parent)
+{
+	beginInsertRows(QModelIndex(), position, position);
+	
+	Profile p("");
+	profiles.insert(position, p);
+
+	endInsertRows();
+	return true;
+}

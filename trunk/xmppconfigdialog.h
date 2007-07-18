@@ -13,12 +13,15 @@ class XmppConfigDialog : public QDialog
 public:
 	XmppConfigDialog();
 	~XmppConfigDialog();
-	ProfileModel *model;
 public slots:
 	void selectChange(QString);
+	void add();
+	void del();
 private:
 	Ui::xmppConfigDialog ui;
 	QList<Profile> profiles;
+	Config *conf;
+	ProfileModel *model;
 };
 
 #endif

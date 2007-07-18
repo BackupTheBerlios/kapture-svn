@@ -20,6 +20,7 @@ public:
 	QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
 	int rowCount(const QModelIndex &parent = QModelIndex()) const;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
+	bool insertRow(int position, const QModelIndex &parent);
 private:
 	QList<Profile> profiles;
 };
