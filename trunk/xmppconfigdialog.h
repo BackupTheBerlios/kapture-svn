@@ -2,16 +2,23 @@
 #define XMPPCONFIGDIALOG_H
 
 #include "ui_xmppconfigdialog.h"
-//#include <QDialog>
+#include "profile.h"
+#include "config.h"
+#include "profilemodel.h"
+#include "mouseprofilestableview.h"
 
 class XmppConfigDialog : public QDialog
 {
 	Q_OBJECT
 public:
-	XmppConfigDialog::XmppConfigDialog();
-	XmppConfigDialog::~XmppConfigDialog();
+	XmppConfigDialog();
+	~XmppConfigDialog();
+	ProfileModel *model;
+public slots:
+	void selectChange(QString);
 private:
 	Ui::xmppConfigDialog ui;
+	QList<Profile> profiles;
 };
 
 #endif

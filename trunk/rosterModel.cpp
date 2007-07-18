@@ -34,7 +34,6 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	if (role == Qt::DecorationRole && index.column() == 0)
 	{
 		QImage *img;
-		//printf(" ***** %s : %s *****\n", nodes[index.row()].node.toLatin1().constData(), nodes[index.row()].presenceType.toLatin1().constData());
 		if (nodes[index.row()].presenceType == "unavailable")
 			img = new QImage("offline.png");
 		else

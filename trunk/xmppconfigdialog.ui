@@ -90,7 +90,11 @@
           </widget>
          </item>
          <item>
-          <widget class="QLineEdit" name="passwordEdit" />
+          <widget class="QLineEdit" name="passwordEdit" >
+           <property name="echoMode" >
+            <enum>QLineEdit::Password</enum>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -228,7 +232,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QListView" name="listView" />
+      <widget class="MouseProfilesTableView" native="1" name="profilesTable" >
+       <property name="showGrid" stdset="0" >
+        <bool>false</bool>
+       </property>
+       <property name="cornerButtonEnabled" stdset="0" >
+        <bool>false</bool>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -261,6 +272,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MouseProfilesTableView</class>
+   <extends>QWidget</extends>
+   <header>mouseprofilestableview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

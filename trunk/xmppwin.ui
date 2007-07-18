@@ -31,7 +31,7 @@
    <string>Kapture : xmpp window - alpha</string>
   </property>
   <widget class="QWidget" name="centralwidget" >
-   <widget class="MouseTableView" native="1" name="tableView" >
+   <widget class="MouseRosterTableView" native="1" name="tableView" >
     <property name="geometry" >
      <rect>
       <x>0</x>
@@ -49,7 +49,7 @@
      <rect>
       <x>0</x>
       <y>10</y>
-      <width>113</width>
+      <width>41</width>
       <height>22</height>
      </rect>
     </property>
@@ -60,9 +60,9 @@
    <widget class="QLineEdit" name="password" >
     <property name="geometry" >
      <rect>
-      <x>110</x>
+      <x>40</x>
       <y>10</y>
-      <width>113</width>
+      <width>51</width>
       <height>22</height>
      </rect>
     </property>
@@ -107,7 +107,7 @@
      <rect>
       <x>0</x>
       <y>40</y>
-      <width>113</width>
+      <width>41</width>
       <height>20</height>
      </rect>
     </property>
@@ -115,9 +115,9 @@
    <widget class="QLineEdit" name="portEdit" >
     <property name="geometry" >
      <rect>
-      <x>110</x>
+      <x>40</x>
       <y>40</y>
-      <width>113</width>
+      <width>51</width>
       <height>20</height>
      </rect>
     </property>
@@ -150,13 +150,36 @@
      <string/>
     </property>
    </widget>
+   <widget class="QComboBox" name="profilesComboBox" >
+    <property name="geometry" >
+     <rect>
+      <x>100</x>
+      <y>10</y>
+      <width>131</width>
+      <height>22</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="configBtn" >
+    <property name="geometry" >
+     <rect>
+      <x>120</x>
+      <y>40</y>
+      <width>81</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="text" >
+     <string>Configuration</string>
+    </property>
+   </widget>
   </widget>
  </widget>
  <customwidgets>
   <customwidget>
-   <class>MouseTableView</class>
+   <class>MouseRosterTableView</class>
    <extends>QWidget</extends>
-   <header>mousetableview.h</header>
+   <header>mouserostertableview.h</header>
   </customwidget>
  </customwidgets>
  <tabstops>

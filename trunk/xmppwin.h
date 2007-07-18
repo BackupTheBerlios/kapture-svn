@@ -7,6 +7,7 @@
 #include "contact.h"
 #include "rosterModel.h"
 #include "jid.h"
+#include "profile.h"
 
 class XmppWin : public QMainWindow
 {
@@ -26,6 +27,8 @@ public slots:
 	void sendMessage(QString to, QString message);
 	void startChat(QString to);
 	void error(Xmpp::ErrorType);
+	void showConfigDial();
+	void changeProfile(int p);
 
 private:
 	Ui::xmppWin ui;
@@ -34,6 +37,7 @@ private:
 	QList<Model::Nodes> nodes;
 	Model *m;
 	QByteArray config;
+	QList<Profile> profilesa;
 };
 #endif
 

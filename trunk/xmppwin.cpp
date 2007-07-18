@@ -6,6 +6,9 @@
 #include "xmppwin.h"
 #include "rosterModel.h"
 #include "chatwin.h"
+#include "xmppconfigdialog.h"
+#include "config.h"
+#include "profile.h"
 
 XmppWin::XmppWin()
 {
@@ -15,68 +18,33 @@ XmppWin::XmppWin()
 	connect(ui.jabberConnect, SIGNAL(clicked()), this, SLOT(jabberConnect()));
 	connect(ui.password, SIGNAL(returnPressed()), this, SLOT(jabberConnect()));
 	connect(ui.jabberDisconnect, SIGNAL(clicked()), this, SLOT(jabberDisconnect()));
+	connect(ui.configBtn, SIGNAL(clicked()), this, SLOT(showConfigDial()));
 	ui.jid->setText("linux@localhost");
 	ui.tableView->verticalHeader()->hide();
 	ui.tableView->horizontalHeader()->hide();
+	ui.tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+	ui.tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+	
 
-	//Loads last configuration from ~/.Kapture/conf.xml
-	QDir *confDir = new QDir(QDir::homePath() + "/.Kapture/");
-	if (!confDir->exists())
+	// Loads predifined Profiles.
+	Config *conf = new Config();
+	profilesa = conf->getProfileList();
+	for (i = 0; i < profilesa.count(); i++)
 	{
-		QDir::home().mkdir(".Kapture");
+		/*printf("Profile : %s (%s, %s, %s, %s)\n", profilesa[i].getName().toLatin1().constData(),
+							  profilesa[i].getJid().toLatin1().constData(),
+							  profilesa[i].getPassword().toLatin1().constData(),
+							  profilesa[i].getPersonnalServer().toLatin1().constData(),
+							  profilesa[i].getPort().toLatin1().constData());
+		*/
+		ui.profilesComboBox->addItem(profilesa[i].getName());
 	}
-	confDir->setPath(QDir::homePath() + "/.Kapture/");
+	ui.jid->setText(profilesa[0].getJid());
+	ui.password->setText(profilesa[0].getPassword());
+	ui.serverEdit->setText(profilesa[0].getPersonnalServer());
+	ui.portEdit->setText(profilesa[0].getPort());
 	
-	if (!confDir->exists())
-	{
-	//	noConfig = true;
-		return;
-	}
-	
-	QFile *conf = new QFile(QDir::homePath() + "/.Kapture/conf.xml");
-	conf->open(QIODevice::ReadOnly);
-	config = conf->readAll();
-	printf("Config = %s\n", config.constData());
-	QDomDocument d;
-	d.setContent(config);
-
-	QString cJid, cPassword, cPersonnalServer, cPort;
-	
-	if (d.documentElement().tagName() == "Kapture")
-	{
-		QDomNodeList classes = d.documentElement().childNodes();
-		for(i = 0; i < classes.count() ;i++)
-		{
-			if (classes.at(i).toElement().tagName() == "xmppwin")
-			{
-				found = true;
-				break;
-			}
-		}
-		if (found)
-		{
-			QDomNodeList infos = classes.at(i).childNodes();
-			printf("classe : %s", classes.at(i).toElement().tagName().toLatin1().constData());
-			for (i = 0; i < infos.count(); i++)
-			{
-				if (infos.at(i).toElement().tagName() == "jid" && infos.at(i).hasChildNodes())
-					cJid = infos.at(i).firstChild().toText().data();
-				
-				if (infos.at(i).toElement().tagName() == "password" && infos.at(i).hasChildNodes())
-					cPassword = infos.at(i).firstChild().toText().data();
-				
-				if (infos.at(i).toElement().tagName() == "server" && infos.at(i).hasChildNodes())
-					cPersonnalServer = infos.at(i).firstChild().toText().data();
-				
-				if (infos.at(i).toElement().tagName() == "port" && infos.at(i).hasChildNodes())
-					cPort = infos.at(i).firstChild().toText().data();
-			}
-		}
-	}
-	ui.jid->setText(cJid);
-	ui.password->setText(cPassword);
-	ui.serverEdit->setText(cPersonnalServer);
-	ui.portEdit->setText(cPort);
+	connect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeProfile(int)));
 }
 
 XmppWin::~XmppWin()
@@ -100,6 +68,9 @@ void XmppWin::jabberConnect()
 	}
 	
 	client = new Xmpp(jid->getNode(), ui.serverEdit->text(), ui.portEdit->text());
+	/*
+	 * FIXME:Maybe Client should receive a Profile instead of all data separately.
+	 */
 	connect(client, SIGNAL(connected()), this, SLOT(clientConnected()));
 	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	client->auth(ui.password->text(), jid->getResource() == "" ? "Kapture" : jid->getResource());
@@ -229,6 +200,7 @@ void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList con
 		ui.tableView->setModel(m);
 		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
 		client->setPresence();
+		ui.tableView->setColumnWidth(0, 22);
 	}
 
 	/* Still a lot to implement.
@@ -287,3 +259,19 @@ void XmppWin::error(Xmpp::ErrorType e)
 	}
 }
 
+void XmppWin::showConfigDial()
+{
+	XmppConfigDialog *dial = new XmppConfigDialog();
+	dial->show();
+}
+
+void XmppWin::changeProfile(int p)
+{
+	/*
+	 * FIXME:Maybe should disconnect first...
+	 */
+	ui.jid->setText(profilesa[p].getJid());
+	ui.password->setText(profilesa[p].getPassword());
+	ui.serverEdit->setText(profilesa[p].getPersonnalServer());
+	ui.portEdit->setText(profilesa[p].getPort());
+}
