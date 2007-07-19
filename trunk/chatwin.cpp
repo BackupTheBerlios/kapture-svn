@@ -31,7 +31,7 @@ void ChatWin::message()
 
 void ChatWin::file()
 {
-
+	emit sendFile();
 }
 
 void ChatWin::composing(QString text)

@@ -219,3 +219,27 @@ void Config::addProfile(Profile p)
 	}
 
 }
+	
+void Config::delProfile(QString profileName)
+{
+	// If user deletes a profile, it means that the configuration is valid.
+	QDomNodeList p = classes.at(n).childNodes();
+	for (int i = 0; i < p.count(); i++)
+	{
+		if (p.at(i).toElement().attribute("name") == profileName)
+		{
+			classes.at(n).removeChild(p.at(i));
+			break;
+		}
+	}
+	
+	QFile *file = new QFile(QDir::homePath() + "/.Kapture/conf.xml");
+	file->open(QIODevice::WriteOnly);
+	if (!file->exists())
+	{
+		printf("An error occured while writing the file.\n");
+		return; // An error occured (QMessageBox)
+	}
+	file->write(d.toByteArray(1));
+	delete file;
+}

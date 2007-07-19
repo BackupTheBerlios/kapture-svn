@@ -17,11 +17,14 @@ public slots:
 	void selectChange(QString);
 	void add();
 	void del();
+signals:
+	void accepted();
 private:
 	Ui::xmppConfigDialog ui;
 	QList<Profile> profiles;
 	Config *conf;
 	ProfileModel *model;
+	QString selectedProfile;
 };
 
 #endif

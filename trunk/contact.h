@@ -16,6 +16,7 @@ public:
 	Jid *jid;
 	void setPresence(QString status, QString show);
 	void startChat();
+	void setResource(QString);
 
 private:
 	ChatWin *chatWin; 
@@ -29,8 +30,10 @@ private:
 	} presence;
 public slots:
 	void messageToSend(QString message);
+	void sendFile();
 signals:
 	void sendMessage(QString to, QString message);
+	void sendFileSignal(QString);
 };
 
 #endif //CONTACT_H

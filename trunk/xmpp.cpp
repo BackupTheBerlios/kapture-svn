@@ -600,7 +600,7 @@ void Xmpp::sendDiscoInfo(QString to, QString id)
 	QDomDocument d("");
 	QDomElement iq = d.createElement("iq");
 	iq.setAttribute("type", "result");
-	iq.setAttribute("from", username + '@' + server + '\\' + resource);
+	iq.setAttribute("from", username + '@' + server + '/' + resource);
 	iq.setAttribute("to", to);
 	iq.setAttribute("id", id);
 	QDomElement query = d.createElement("query");
@@ -614,6 +614,23 @@ void Xmpp::sendDiscoInfo(QString to, QString id)
 	feature2.setAttribute("var", "http://jabber.org/protocol/si/profile/file-transfer");
 	query.appendChild(feature2);
 	
+	iq.appendChild(query);
+	d.appendChild(iq);
+
+	sendData(d.toString().toLatin1());
+}
+
+void Xmpp::askDiscoInfo(QString to, QString id)
+{
+	QDomDocument d("");
+	QDomElement iq = d.createElement("iq");
+	iq.setAttribute("type", "get");
+	iq.setAttribute("from", username + '@' + server + '/' + resource);
+	iq.setAttribute("to", to);
+	iq.setAttribute("id", id);
+	QDomElement query = d.createElement("query");
+	query.setAttribute("xmlns", XMLNS_DISCO);
+
 	iq.appendChild(query);
 	d.appendChild(iq);
 
@@ -641,6 +658,8 @@ void Xmpp::newMessage()
 
 void Xmpp::newIq()
 {
+	ContactFeatures tmp;
+	
 	QString iFrom = stanza->getFrom();
 	QString iTo = stanza->getTo();
 	QString iId = stanza->getId();
@@ -658,27 +677,11 @@ void Xmpp::newIq()
 			sendDiscoInfo(iFrom, iId);
 			break;
 		case 1 :
-			for ( ; i < cFeatures.count(); i++)
-			{
-				if (cFeatures[i].jid->equals(from))
-				{
-					exists = true;
-					break;
-				}
-			}
-
-			if (!exists)
-			{
-				ContactFeatures tmp;
-				tmp.jid = new Jid(iFrom);
-				tmp.features = stanza->getFeatures(); //Should go in processEvent function or in another state machine.
-				cFeatures << tmp;
-			}
-			else
-			{
-				cFeatures[i].features.clear();
-				cFeatures[i].features = stanza->getFeatures();
-			}
+			printf("deja bien \n");
+			tmp.jid = new Jid(iFrom);
+			tmp.features = stanza->getFeatures(); //Should go in processEvent function or in another state machine.
+			printf("count = %d\n", tmp.features.count());
+			emit contactFeaturesReady(tmp);
 			break;
 		default :
 			emit iq(iFrom, iTo, iId, contacts);

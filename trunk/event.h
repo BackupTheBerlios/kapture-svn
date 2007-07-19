@@ -6,8 +6,8 @@
 class Event
 {
 public:
-	Event::Event();
-	Event::~Event();
+	Event();
+	~Event();
 	QString localName;
 	enum Type {Stream, Stanza, EndOfStream} type;
 };

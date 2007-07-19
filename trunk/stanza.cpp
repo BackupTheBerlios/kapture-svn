@@ -247,7 +247,8 @@ void Stanza::setupIq(QDomElement s)
 					
 					for (int i = 0; i < p.count(); i++)
 					{
-						features << p.at(i).toElement().attribute("var");
+						if (p.at(i).localName() == "feature")
+							features << p.at(i).toElement().attribute("var");
 					}
 
 					action = ReceivedDiscoInfo;

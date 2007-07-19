@@ -11,10 +11,12 @@ XmppConfigDialog::XmppConfigDialog()
 	ui.profilesTable->setModel(model);
 	ui.profilesTable->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.profilesTable->setSelectionMode(QAbstractItemView::SingleSelection);
-	
+	ui.profilesTable->resizeColumnsToContents();
+	//ui.profilesTable->setColumnWidth(0, ui.profilesTable->width() - ui.profilesTable->columnWidth(1) - ui.profilesTable->columnWidth(2) - ui.profilesTable->columnWidth(3));
 	connect(ui.profilesTable, SIGNAL(Clicked(QString)), this, SLOT(selectChange(QString)));
 	connect(ui.addBtn, SIGNAL(clicked()), this, SLOT(add()));
-	//connect(ui.deleteBtn, SIGNAL(clicked()), this, SLOT(del()));
+	connect(ui.delBtn, SIGNAL(clicked()), this, SLOT(del()));
+	connect(ui.buttonBox, SIGNAL(accepted()), this, SIGNAL(accepted()));
 }
 
 XmppConfigDialog::~XmppConfigDialog()
@@ -25,6 +27,7 @@ XmppConfigDialog::~XmppConfigDialog()
 void XmppConfigDialog::selectChange(QString profileName)
 {
 	int i = 0;
+	selectedProfile = profileName;
 	for (i = 0; i < profiles.count(); i++)
 	{
 		if (profiles[i].getName() == profileName)
@@ -44,6 +47,20 @@ void XmppConfigDialog::add()
 		  ui.passwordEdit->text(),
 		  ui.personnalServerEdit->text(),
 		  ui.portEdit->text());
+	if (ui.profileNameEdit->text() == "" || ui.jidEdit->text() == "" || ui.passwordEdit->text() == "")
+	{
+		QMessageBox::critical(this, tr("Profiles"), QString("You *must* supply a profile name, a JID and a password."), QMessageBox::Ok);
+		return;
+	}
+	
+	for (int i = 0; i < profiles.count(); i++)
+	{
+		if (profiles[i].getName() == ui.profileNameEdit->text())
+		{
+			QMessageBox::critical(this, tr("Profiles"), QString("A profile with the name \"%1\" already exists.").arg(ui.profileNameEdit->text()), QMessageBox::Ok);
+			return;
+		}
+	}
 
 	conf->addProfile(p);
 	delete conf;
@@ -56,5 +73,17 @@ void XmppConfigDialog::add()
 
 void XmppConfigDialog::del()
 {
+	int pos = ui.profilesTable->currentIndex().row();
 
+	model->removeRow(pos, QModelIndex());
+	conf->delProfile(selectedProfile);
+	delete conf;
+	conf = new Config();
+	profiles = conf->getProfileList();
+	model->setProfileList(profiles);
+	
+	// Selection has changed, swithing to the new selected profile
+	pos = ui.profilesTable->currentIndex().row();
+	QString profileName = model->index(pos, 0).data().toString();
+	selectChange(profileName);
 }

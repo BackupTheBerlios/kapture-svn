@@ -21,6 +21,7 @@ public:
 	int rowCount(const QModelIndex &parent = QModelIndex()) const;
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
 	bool insertRow(int position, const QModelIndex &parent);
+	bool removeRow(int position, const QModelIndex &parent);
 private:
 	QList<Profile> profiles;
 };

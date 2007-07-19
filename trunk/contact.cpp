@@ -12,6 +12,11 @@ Contact::~Contact()
 
 }
 
+void Contact::sendFile()
+{
+	emit sendFileSignal(jid->toQString());
+}
+
 void Contact::newMessage(QString m /*Message*/)
 {
 	if (!isChatting)
@@ -19,6 +24,7 @@ void Contact::newMessage(QString m /*Message*/)
 		chatWin = new ChatWin();
 		chatWin->setWindowTitle(jid->toQString());
 		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
+		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
 	}
 
 	chatWin->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(jid->toQString()).arg(changeEmoticons(m)));
@@ -39,6 +45,7 @@ void Contact::startChat()
 		chatWin = new ChatWin();
 		chatWin->setWindowTitle(jid->toQString());
 		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
+		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
 		isChatting = true;
 	}
 	chatWin->show();
@@ -69,3 +76,7 @@ void Contact::setPresence(QString status, QString type)
 	presence.type = type;
 }
 
+void Contact::setResource(QString r)
+{
+	jid->setResource(r);
+}

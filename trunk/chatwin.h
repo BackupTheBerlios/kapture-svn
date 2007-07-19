@@ -17,7 +17,7 @@ public slots:
 
 signals:
 	void sendMessage(QString message);
-	void sendFile(QString fileName);
+	void sendFile();
 
 
 };

@@ -8,6 +8,9 @@
 #include "rosterModel.h"
 #include "jid.h"
 #include "profile.h"
+#include "config.h"
+#include "xmppconfigdialog.h"
+
 
 class XmppWin : public QMainWindow
 {
@@ -29,6 +32,9 @@ public slots:
 	void error(Xmpp::ErrorType);
 	void showConfigDial();
 	void changeProfile(int p);
+	void updateProfileList();
+	void sendFile(QString);
+	void contactFeaturesSave(Xmpp::ContactFeatures);
 
 private:
 	Ui::xmppWin ui;
@@ -38,6 +44,8 @@ private:
 	Model *m;
 	QByteArray config;
 	QList<Profile> profilesa;
+	Config *conf;
+	bool connected;
 };
 #endif
 

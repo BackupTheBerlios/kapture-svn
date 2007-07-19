@@ -20,6 +20,7 @@ public:
 	QString getPort(QString profile);
 	bool noConfig;
 	void addProfile(Profile);
+	void delProfile(QString profileName);
 
 private:
 	QString cJid, cPassword, cPersonnalServer, cPort, cProfile;

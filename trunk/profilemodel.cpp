@@ -95,7 +95,7 @@ QVariant ProfileModel::headerData(int section, Qt::Orientation orientation, int 
 	}
 	if (orientation == Qt::Vertical && role == Qt::DisplayRole)
 	{
-		return section;
+		return section + 1;
 	}
 	return QVariant();
 }
@@ -123,5 +123,15 @@ bool ProfileModel::insertRow(int position, const QModelIndex &parent)
 	profiles.insert(position, p);
 
 	endInsertRows();
+	return true;
+}
+
+bool ProfileModel::removeRow(int position, const QModelIndex &parent)
+{
+	beginRemoveRows(QModelIndex(), position, position);
+
+	profiles.removeAt(position);
+
+	endRemoveRows();
 	return true;
 }

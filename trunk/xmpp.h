@@ -30,12 +30,19 @@ public:
 	void setPresence(QString show = "", QString status = "");
 	bool isSecured() const;
 	void sendDiscoInfo(QString to, QString id);
+	void askDiscoInfo(QString to, QString id);
 	//void logOut();
 	enum ErrorType
 	{
 		HostNotFound = 0,
 		NetworkIsDown,
 		UnknownError
+	};
+	
+	struct ContactFeatures
+	{
+		Jid *jid;
+		QStringList features;
 	};
 
 
@@ -58,6 +65,7 @@ signals:
 	void presence(QString, QString, QString, QString);
 	void message(QString, QString, QString);
 	void iq(QString, QString, QString, QStringList);
+	void contactFeaturesReady(Xmpp::ContactFeatures);
 
 private:
 	Stanza *stanza;
@@ -77,13 +85,6 @@ private:
 	bool usePersonnalServer;
 	QString personnalServer;
 	int port;
-	struct ContactFeatures
-	{
-		Jid *jid;
-		QStringList features;
-	};
-
-	QList<ContactFeatures> cFeatures;
 
 	XmlHandler *handler;
 	struct rooster
