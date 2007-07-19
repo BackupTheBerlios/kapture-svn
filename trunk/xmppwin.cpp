@@ -79,11 +79,11 @@ void XmppWin::jabberDisconnect()
 	ui.jabberConnect->setEnabled(true);
 	ui.jabberDisconnect->setEnabled(false);
 	delete client;
-	for (int i = 0; i < nodes.count(); i++)
+	for (int i = 0; i < contactList.count(); i++)
 	{
-		nodes[i].presenceType = "unavailable";
+		contactList[i]->setPresence("", "offline");
 	}
-	m->setData(nodes);
+	m->setData(contactList);
 	ui.tlsIconLabel->setEnabled(false);
 	connected = false;
 }
@@ -122,16 +122,16 @@ void XmppWin::processPresence(QString pFrom, QString pTo, QString pStatus, QStri
 	Jid *from = new Jid(pFrom);
 	Jid *to = new Jid(pTo);
 
-	// Looking for the contact in the contacts list.
-	for (i = 0; i < nodes.count(); i++)
+	// Looking for the contact in the contactList.
+	for (i = 0; i < contactList.count(); i++)
 	{
-		if (nodes[i].jid->equals(from))
+		if (contactList[i]->jid->equals(from))
 		{
-			nodes[i].presenceType = pType;
-			m->setData(nodes);
+			contactList[i]->setPresence(pStatus, pType);
+			m->setData(contactList);
 			ui.tableView->update(m->index(i, 0));
 			printf("Found node ! --> setting type : %s\n", pType.toLatin1().constData());
-			nodes[i].jid->setResource(from->getResource());
+			contactList[i]->jid->setResource(from->getResource());
 			/* 
 			 * FIXME:This could cause a lot of problems regarding multiple resources connected.
 			 * The whole resource's system will be reviewd later.
@@ -139,31 +139,6 @@ void XmppWin::processPresence(QString pFrom, QString pTo, QString pStatus, QStri
 			break;
 		}
 	}
-
-	// Look in a ContactList for a Contact that has an open ChatWin open.
-	bool found = false;
-	for (int i = 0; i < contactList.count(); i++)
-	{
-		if (contactList[i]->jid->equals(from))
-		{
-			found = true;
-			contactList[i]->setPresence(/*status*/ pStatus,/*show*/ pType);
-			contactList[i]->setResource(from->getResource());
-			/* 
-			 * FIXME:This could cause a lot of problems regarding multiple resources connected.
-			 * The whole resource's system will be reviewd later.
-			 */
-		}
-	}
-	
-	/*if(!found)
-	{
-		Contact *contact = new Contact(from->toQString());
-		contact->setPresence(pStatus, pType);
-		connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
-		connect(contact, SIGNAL(sendFile()), this, SLOT(sendFile()));
-		contactList.append(contact);
-	}*/
 }
 
 void XmppWin::processMessage(QString mFrom, QString mTo, QString mMessage)
@@ -171,23 +146,12 @@ void XmppWin::processMessage(QString mFrom, QString mTo, QString mMessage)
 	Jid *from = new Jid(mFrom);
 	Jid *to = new Jid(mTo);
 	
-	bool found = false;
 	for (int i = 0; i < contactList.count(); i++)
 	{
 		if (contactList[i]->jid->equals(from))
 		{
-			found = true;
-			contactList[i]->jid->setResource(jid->getResource());
 			contactList[i]->newMessage(mMessage);
 		}
-	}
-	if (!found)
-	{
-		Contact *contact = new Contact(from->toQString());
-		contact->newMessage(mMessage);
-		connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
-		connect(contact, SIGNAL(sendFileSignal(QString)), this, SLOT(sendFile(QString)));
-		contactList.append(contact);
 	}
 }
 
@@ -196,17 +160,18 @@ void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList con
 	if (iId == "roster_1")
 	{
 		m = new Model();
-		nodes.clear();
+		contactList.clear();
 		
-		Model::Nodes node; // TODO:Nodes should be replaced by a contact object...
-		QStringList l;
+		Contact *contact;
 		for (int i = 0; i < contacts.count(); i++)
 		{
-			node.jid = new Jid(contacts.at(i));
-			node.presenceType = "unavailable";
-			nodes << node;
+			contact = new Contact(contacts.at(i));
+			contact->setPresence("", "offline");
+			contactList << contact;
+			connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
+			connect(contact, SIGNAL(sendFileSignal(QString)), this, SLOT(sendFile(QString)));
 		}
-		m->setData(nodes);
+		m->setData(contactList);
 		ui.tableView->setModel(m);
 		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
 		client->setPresence();
@@ -223,6 +188,7 @@ void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList con
 
 void XmppWin::sendMessage(QString to, QString message)
 {
+	printf("Send message from XmppWin\n");
 	if (connected)
 		client->sendMessage(to, message);
 	else
@@ -231,29 +197,16 @@ void XmppWin::sendMessage(QString to, QString message)
 
 void XmppWin::startChat(QString sTo)
 {
-	
 	// Start Chat with "to" if it isn't done yet.
 	Jid *to = new Jid(sTo);
 	
-	bool found = false;
 	for (int i = 0; i < contactList.count(); i++)
 	{
 		if (contactList[i]->jid->equals(to))
 		{
 			contactList[i]->startChat();
-			found = true;
 		}
 	}
-	
-	if (!found)
-	{
-		Contact *contact = new Contact(to->toQString());
-		connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
-		connect(contact, SIGNAL(sendFileSignal(QString)), this, SLOT(sendFile(QString)));
-		contact->startChat();
-		contactList.append(contact);
-	}
-	//client->sendFile("linux2@localhost/Psi", 256, "test.txt", "Testing file transfer...");
 }
 
 void XmppWin::error(Xmpp::ErrorType e)
@@ -301,15 +254,9 @@ void XmppWin::updateProfileList()
 	conf = new Config();
 	if (conf->noConfig)
 		return;
-	profilesa = conf->getProfileList();
+	profilesa = conf->getProfileList(); //FIXME: find another name fore profilesa
 	for (int i = 0; i < profilesa.count(); i++)
 	{
-		/*printf("Profile : %s (%s, %s, %s, %s)\n", profilesa[i].getName().toLatin1().constData(),
-							  profilesa[i].getJid().toLatin1().constData(),
-							  profilesa[i].getPassword().toLatin1().constData(),
-							  profilesa[i].getPersonnalServer().toLatin1().constData(),
-							  profilesa[i].getPort().toLatin1().constData());
-		*/
 		ui.profilesComboBox->addItem(profilesa[i].getName());
 	}
 	ui.jid->setText(profilesa[0].getJid());
@@ -325,10 +272,8 @@ void XmppWin::sendFile(QString to)
 
 void XmppWin::contactFeaturesSave(Xmpp::ContactFeatures c)
 {
-	printf("Received features for contact %s :\n", c.jid->toQString().toLatin1().constData());
-	for (int i = 0; i < c.features.count(); i++)
-	{
-		printf(" * %s\n", c.features[i].toLatin1().constData());
-		//contactList[i].setFeatures(c);
-	}
+	int i = 0;
+	while (c.jid->toQString() != contactList[i]->jid->toQString())
+		i++;
+	contactList[i]->setFeatures(c.features);
 }

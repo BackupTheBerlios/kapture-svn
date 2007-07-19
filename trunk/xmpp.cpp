@@ -500,6 +500,7 @@ void Xmpp::setPresence(QString show, QString status)
 
 void Xmpp::sendMessage(QString to, QString message)
 {
+	printf("Send message from Xmpp\n");
 	QDomDocument d("");
 	QDomElement e = d.createElement("message");
 	e.setAttribute("from", username + "@" + server + "/" + resource);
@@ -606,13 +607,13 @@ void Xmpp::sendDiscoInfo(QString to, QString id)
 	QDomElement query = d.createElement("query");
 	query.setAttribute("xmlns", XMLNS_DISCO);
 
-	QDomElement feature = d.createElement("feature");
+	/*QDomElement feature = d.createElement("feature");
 	feature.setAttribute("var", "http://jabber.org/protocol/si");
 	query.appendChild(feature);
 
 	QDomElement feature2 = d.createElement("feature");
 	feature2.setAttribute("var", "http://jabber.org/protocol/si/profile/file-transfer");
-	query.appendChild(feature2);
+	query.appendChild(feature2);*/
 	
 	iq.appendChild(query);
 	d.appendChild(iq);
@@ -677,10 +678,8 @@ void Xmpp::newIq()
 			sendDiscoInfo(iFrom, iId);
 			break;
 		case 1 :
-			printf("deja bien \n");
 			tmp.jid = new Jid(iFrom);
-			tmp.features = stanza->getFeatures(); //Should go in processEvent function or in another state machine.
-			printf("count = %d\n", tmp.features.count());
+			tmp.features = stanza->getFeatures();
 			emit contactFeaturesReady(tmp);
 			break;
 		default :

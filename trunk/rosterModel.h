@@ -5,6 +5,7 @@
 #include <QAbstractItemModel>
 
 #include "jid.h"
+#include "contact.h"
 
 class Model : public QAbstractTableModel
 {
@@ -17,7 +18,7 @@ public:
 		Jid *jid;
 		QString presenceType;
 	};
-	void setData(QList<Nodes> n);
+	void setData(QList<Contact*>);
 	void setData(QModelIndex index, QString value);
 	QVariant data(const QModelIndex &index, int role) const;
 	Qt::ItemFlags flags(const QModelIndex &index) const;
@@ -27,6 +28,6 @@ public:
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
 private:
-	QList<Nodes> nodes;
+	QList<Contact*> contacts;
 };
 #endif

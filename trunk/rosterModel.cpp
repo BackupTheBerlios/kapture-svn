@@ -11,9 +11,9 @@ Model::~Model()
 	
 }
 
-void Model::setData(QList<Nodes> n)
+void Model::setData(QList<Contact*> c)
 {
-	nodes = n;
+	contacts = c;
 }
 
 void Model::setData(QModelIndex index, QString value)
@@ -21,11 +21,13 @@ void Model::setData(QModelIndex index, QString value)
 	switch(index.column())
 	{
 		case 1:
-			nodes[index.row()].jid->setNode(value);
+			delete contacts[index.row()]->jid;
+			contacts[index.row()]->jid = new Jid(value);
 			break;
-		case 2:
-			nodes[index.row()].presenceType = value;
+		/*case 2:
+			contacts[index.row()].setPresence("", value);
 			break;
+		*/
 	}
 }
 
@@ -34,10 +36,10 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	if (role == Qt::DecorationRole && index.column() == 0)
 	{
 		QImage *img;
-		if (nodes[index.row()].presenceType == "unavailable")
-			img = new QImage("offline.png");
-		else
+		if (contacts[index.row()]->isAvailable())
 			img = new QImage("online.png");
+		else
+			img = new QImage("offline.png");
 			
 		return *img;
 	}
@@ -47,8 +49,8 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	{
 		switch(index.column())
 		{
-			case 1: return nodes[index.row()].jid->toQString();
-			case 2: return nodes[index.row()].presenceType;
+			case 1: return contacts[index.row()]->jid->toQString();
+			//case 2: return contacts[index.row()].getPresenceType();
 			default : return QVariant();
 		}
 	}
@@ -64,19 +66,6 @@ Qt::ItemFlags Model::flags(const QModelIndex &index) const
 
 QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
 {
-	/*if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-	{
-		switch(section)
-		{
-			case 1: return tr("Contacts");
-			case 2: return tr("State");
-			default: return QVariant();
-		}
-	}
-	if (orientation == Qt::Vertical && role == Qt::DisplayRole)
-	{
-		return section;
-	}*/
 	return QVariant();
 }
 
@@ -87,12 +76,11 @@ QModelIndex Model::index(int row, int column, const QModelIndex &parent) const
 
 int Model::rowCount(const QModelIndex &parent) const
 {
-	return nodes.count();
+	return contacts.count();
 }
 
 int Model::columnCount(const QModelIndex &parent) const
 {
-	// There will be more than 1 column
-	return 3;
+	return 2;
 }
 

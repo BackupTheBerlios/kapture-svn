@@ -14,9 +14,12 @@ public:
 	~Contact();
 	void newMessage(QString m /*Message*/);
 	Jid *jid;
-	void setPresence(QString status, QString show);
+	void setPresence(QString status, QString type);
+	//TODO : fix the mistakes in the names (Presence type is available or unavailable)
 	void startChat();
 	void setResource(QString);
+	bool isAvailable(); // available or unavailable.
+	void setFeatures(QStringList);
 
 private:
 	ChatWin *chatWin; 
@@ -28,6 +31,7 @@ private:
 		QString type; //Offline or online
 
 	} presence;
+	QStringList features;
 public slots:
 	void messageToSend(QString message);
 	void sendFile();

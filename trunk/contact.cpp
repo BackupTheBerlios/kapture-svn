@@ -53,7 +53,7 @@ void Contact::startChat()
 
 void Contact::messageToSend(QString message)
 {
-	printf("Emit sendMessage from Contact class.\n");
+	printf("Emit sendMessage from Contact class. to = %s\n", jid->toQString().toLatin1().constData());
 	emit sendMessage(jid->toQString(), message);
 }
 
@@ -79,4 +79,17 @@ void Contact::setPresence(QString status, QString type)
 void Contact::setResource(QString r)
 {
 	jid->setResource(r);
+}
+
+bool Contact::isAvailable()
+{
+	if (presence.type == "available")
+		return true;
+	else
+		return false;
+}
+
+void Contact::setFeatures(QStringList c)
+{
+	features = c;
 }
