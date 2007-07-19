@@ -40,7 +40,6 @@ void ProfileModel::setData(QModelIndex index, QString value)
 QVariant ProfileModel::data(const QModelIndex &index, int role) const
 {
 	QString a;
-	int b = index.row();
 	/*if (role == Qt::DecorationRole && index.column() == 0)
 	{
 		QImage *img;

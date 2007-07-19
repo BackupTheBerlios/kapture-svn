@@ -105,6 +105,7 @@ QString Config::getJid(QString profile)
 		if (profiles[i].getName() == profile)
 			return profiles[i].getJid();
 	}
+	return "";
 }
 
 QString Config::getPassword(QString profile)
@@ -114,6 +115,7 @@ QString Config::getPassword(QString profile)
 		if (profiles[i].getName() == profile)
 			return profiles[i].getPassword();
 	}
+	return "";
 }
 
 QString Config::getPersonnalServer(QString profile)
@@ -123,6 +125,7 @@ QString Config::getPersonnalServer(QString profile)
 		if (profiles[i].getName() == profile)
 			return profiles[i].getPersonnalServer();
 	}
+	return "";
 }
 
 QString Config::getPort(QString profile)
@@ -132,6 +135,7 @@ QString Config::getPort(QString profile)
 		if (profiles[i].getName() == profile)
 			return profiles[i].getPort();
 	}
+	return "";
 }
 
 void Config::addProfile(Profile p)

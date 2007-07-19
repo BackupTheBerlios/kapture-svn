@@ -7,7 +7,6 @@
 XmppWin::XmppWin()
 {
 	int i = 0;
-	bool found = false;
 	ui.setupUi(this);
 	connect(ui.jabberConnect, SIGNAL(clicked()), this, SLOT(jabberConnect()));
 	connect(ui.password, SIGNAL(returnPressed()), this, SLOT(jabberConnect()));

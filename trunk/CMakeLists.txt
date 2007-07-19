@@ -9,6 +9,8 @@ else (UVCVIDEO)
 	MESSAGE(" * If you want to, re-run cmake -D UVCVIDEO=/path/to/uvcvideo /path/to/Kapture/source")
 ENDIF(UVCVIDEO)
 
+ADD_DEFINITIONS("-W -Wall -Wextra")
+
 FIND_PACKAGE(Qt4 4.3 REQUIRED)
 
 INCLUDE(${QT_USE_FILE})
