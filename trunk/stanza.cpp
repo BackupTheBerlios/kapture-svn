@@ -95,19 +95,11 @@ void Stanza::setupPresence(QDomElement s)
 	while (!s.isNull())
 	{
 		QString tag = s.localName();
-	//	printf("tag = %s, XMLNS = '%s'\n", tag.toLatin1().constData(), s.attribute("xmlns", "NOXMLNS").toLatin1().constData());
-		//if (s.hasAttribute("xmlns"))
-			//printf("Has attributes\n");
-
-
 		/* !!! DO NOT MODIFY s BEFORE ""s = s.nextSibling().toElement(); !!!*/
-		
-		
 		if (tag == "priority")
 		{
 			if (s.firstChild().isText())
 			{
-				//printf("OK, it is text !\n");
 				priority = s.firstChild().toText().data();
 				printf("Priority =  %s\n", priority.toLatin1().constData());
 			}
@@ -133,13 +125,19 @@ void Stanza::setupPresence(QDomElement s)
 			
 		}
 		
-		// This won't happend, I don't care now.
 		if (tag == "x" && s.namespaceURI() == "vcard-temp:x:update") 
 		{
 			printf("vcard update !\n");
+			QDomNodeList vcardData = s.childNodes();
+			for (int i = 0; i < vcardData.count(); i++)
+			{
+				if (vcardData.at(i).localName() == "nickname")
+				{
+					nickname = vcardData.at(i).firstChild().toText().data();
+				}
+			}
 		}
 
-		//printf("Next element ! \n");
 		s = s.nextSibling().toElement();
 	}
 
@@ -224,19 +222,11 @@ void Stanza::setupIq(QDomElement s)
 				for (int i = 0; i < items.count(); i++)
 				{
 					contacts << items.at(i).toElement().attribute("jid");
+					nicknames << items.at(i).toElement().attribute("name");
 					printf("New Roster contact : %s (subscription : %s)\n", contacts[i].toLatin1().constData(), items.at(i).toElement().attribute("subscription").toLatin1().constData());
 				}
 			}
-/*
- <iq type='result' to='sender@jabber.org/resource' from='receiver@jabber.org/resource' id='info1'>
-  <query xmlns='http://jabber.org/protocol/disco#info'>
-    ...
-    <feature var='http://jabber.org/protocol/si'/>
-    <feature var='http://jabber.org/protocol/si/profile/file-transfer'/>
-    ...
-  </query>
-</iq>
-*/
+
 			if (s.namespaceURI() == XMLNS_DISCO)
 			{
 				if (type == "get")
@@ -300,6 +290,13 @@ QString Stanza::getMessage()
 	return ret;
 }
 
+QString Stanza::getNickname()
+{
+	QString n = nickname;
+	nickname = "";
+	return n;
+}
+
 QStringList Stanza::getContacts()
 {
 	QStringList ret = contacts;
@@ -326,6 +323,11 @@ QString Stanza::getStatus()
 QString Stanza::getShow()
 {
 	return show;
+}
+
+QStringList Stanza::getNicknameList()
+{
+	return nicknames;
 }
 
 void Stanza::setType(QString s)

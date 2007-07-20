@@ -62,9 +62,9 @@ signals:
 	void presenceChanged();
 	void connected();
 	void error(Xmpp::ErrorType);
-	void presence(QString, QString, QString, QString);
+	void presence(QString, QString, QString, QString, QString);
 	void message(QString, QString, QString);
-	void iq(QString, QString, QString, QStringList);
+	void iq(QString, QString, QString, QStringList, QStringList);
 	void contactFeaturesReady(Xmpp::ContactFeatures);
 
 private:

@@ -25,6 +25,8 @@ public:
 	QString getType();
 	QString getStatus();
 	QString getShow();
+	QString getNickname();
+	QStringList getNicknameList();
 	enum Action
 	{
 		SendDiscoInfo = 0,
@@ -61,7 +63,9 @@ private:
 	QString show;
 	QString status;
 	QStringList contacts;
+	QStringList nicknames;
 	QStringList features;
+	QString nickname;
 
 };
 

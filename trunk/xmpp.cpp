@@ -644,8 +644,9 @@ void Xmpp::newPresence()
 	QString pTo = stanza->getTo();
 	QString pStatus = stanza->getStatus();
 	QString pType = stanza->getType();
+	QString pNickname = stanza->getNickname();
 
-	emit presence(pFrom, pTo, pStatus, pType);
+	emit presence(pFrom, pTo, pStatus, pType, pNickname);
 }
 
 void Xmpp::newMessage()
@@ -664,9 +665,9 @@ void Xmpp::newIq()
 	QString iFrom = stanza->getFrom();
 	QString iTo = stanza->getTo();
 	QString iId = stanza->getId();
-
 	int action = stanza->getAction();
 	QStringList contacts = stanza->getContacts();
+	QStringList nicknames = stanza->getNicknameList();
 	Jid *from = new Jid(iFrom);
 	
 	int i = 0;
@@ -683,7 +684,7 @@ void Xmpp::newIq()
 			emit contactFeaturesReady(tmp);
 			break;
 		default :
-			emit iq(iFrom, iTo, iId, contacts);
+			emit iq(iFrom, iTo, iId, contacts, nicknames);
 	}
 }
 

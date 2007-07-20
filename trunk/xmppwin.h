@@ -24,9 +24,9 @@ public slots:
 	void jabberConnect();
 	void jabberDisconnect();
 	void clientConnected();
-	void processPresence(QString pFrom, QString pTo, QString pStatus, QString pType);
+	void processPresence(QString pFrom, QString pTo, QString pStatus, QString pType, QString pNickname);
 	void processMessage(QString pFrom, QString pTo, QString mMessage);
-	void processIq(QString iFrom, QString iTo, QString iId, QStringList contacts);
+	void processIq(QString iFrom, QString iTo, QString iId, QStringList contacts, QStringList nicknames);
 	void sendMessage(QString to, QString message);
 	void startChat(QString to);
 	void error(Xmpp::ErrorType);

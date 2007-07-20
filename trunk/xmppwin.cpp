@@ -105,16 +105,16 @@ void XmppWin::clientConnected()
 	ui.tlsIconLabel->setPixmap(*pixmap);
 	ui.tlsIconLabel->setEnabled(true);
 
-	connect(client, SIGNAL(presence(QString, QString, QString, QString)), this, SLOT(processPresence(QString, QString, QString, QString)));
+	connect(client, SIGNAL(presence(QString, QString, QString, QString, QString)), this, SLOT(processPresence(QString, QString, QString, QString, QString)));
 	connect(client, SIGNAL(message(QString, QString, QString)), this, SLOT(processMessage(QString, QString, QString)));
-	connect(client, SIGNAL(iq(QString, QString, QString, QStringList)), this, SLOT(processIq(QString, QString, QString, QStringList)));
+	connect(client, SIGNAL(iq(QString, QString, QString, QStringList, QStringList)), this, SLOT(processIq(QString, QString, QString, QStringList, QStringList)));
 	
 	QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
 	client->getRoster();
 	connected = true;
 }
 
-void XmppWin::processPresence(QString pFrom, QString pTo, QString pStatus, QString pType)
+void XmppWin::processPresence(QString pFrom, QString pTo, QString pStatus, QString pType, QString pNickname)
 {
 	int i;
 
@@ -126,13 +126,14 @@ void XmppWin::processPresence(QString pFrom, QString pTo, QString pStatus, QStri
 	{
 		if (contactList[i]->jid->equals(from))
 		{
+			contactList[i]->jid->setResource(from->getResource());
+			contactList[i]->getVCard()->setNickname(pNickname);
 			contactList[i]->setPresence(pStatus, pType);
 			m->setData(contactList);
 			ui.tableView->update(m->index(i, 0));
 			printf("Found node ! --> setting type : %s\n", pType.toLatin1().constData());
-			contactList[i]->jid->setResource(from->getResource());
+			ui.tableView->resizeColumnsToContents();
 			/* 
-			 * FIXME:This could cause a lot of problems regarding multiple resources connected.
 			 * The whole resource's system will be reviewd later.
 			 */
 			break;
@@ -154,7 +155,7 @@ void XmppWin::processMessage(QString mFrom, QString mTo, QString mMessage)
 	}
 }
 
-void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList contacts)
+void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList contacts, QStringList nicknames)
 {
 	if (iId == "roster_1")
 	{
@@ -166,6 +167,8 @@ void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList con
 		{
 			contact = new Contact(contacts.at(i));
 			contact->setPresence("", "offline");
+			printf("XmppWin::Nickname = %s\n", nicknames.at(i).toLatin1().constData());
+			contact->getVCard()->setNickname(nicknames.at(i));
 			contactList << contact;
 			connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
 			connect(contact, SIGNAL(sendFileSignal(QString)), this, SLOT(sendFile(QString)));
@@ -175,6 +178,7 @@ void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList con
 		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
 		client->setPresence();
 		ui.tableView->setColumnWidth(0, 22);
+		ui.tableView->resizeColumnsToContents();
 	}
 
 	/* Still a lot to implement.
@@ -222,6 +226,9 @@ void XmppWin::error(Xmpp::ErrorType e)
 		break;
 	default :
 		QMessageBox::critical(this, tr("Jabber"), tr("An unknown error occured while connecting."), QMessageBox::Ok);
+		ui.jabberConnect->setEnabled(true);
+		ui.jabberDisconnect->setEnabled(false);
+		delete client;
 	}
 }
 

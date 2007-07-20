@@ -49,10 +49,14 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	{
 		switch(index.column())
 		{
-			case 1: return contacts[index.row()]->jid->toQString();
+			case 1: return contacts[index.row()]->getVCard()->getNickname() == "" ? contacts[index.row()]->jid->toQString() : contacts[index.row()]->getVCard()->getNickname();
 			//case 2: return contacts[index.row()].getPresenceType();
 			default : return QVariant();
 		}
+	}
+	if (role == Qt::WhatsThisRole)
+	{
+		return contacts[index.row()]->jid->toQString();
 	}
 	return QVariant();
 }
@@ -84,3 +88,7 @@ int Model::columnCount(const QModelIndex &parent) const
 	return 2;
 }
 
+QList<Contact*> Model::getContactList()
+{
+	return contacts;
+}

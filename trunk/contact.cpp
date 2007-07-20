@@ -5,6 +5,7 @@ Contact::Contact(QString j)
 {
 	jid = new Jid(j);
 	isChatting = false;
+	vcard = new VCard();
 }
 
 Contact::~Contact()
@@ -27,7 +28,7 @@ void Contact::newMessage(QString m /*Message*/)
 		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
 	}
 
-	chatWin->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(jid->toQString()).arg(changeEmoticons(m)));
+	chatWin->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(vcard->getNickname() == "" ? jid->toQString() : vcard->getNickname()).arg(changeEmoticons(m)));
 	
 	if (!chatWin->isActiveWindow())
 	{
@@ -74,6 +75,7 @@ void Contact::setPresence(QString status, QString type)
 	
 	presence.status = status;
 	presence.type = type;
+	printf("Contact has a new nickname : %s\n", vcard->getNickname().toLatin1().constData());
 }
 
 void Contact::setResource(QString r)
@@ -92,4 +94,9 @@ bool Contact::isAvailable()
 void Contact::setFeatures(QStringList c)
 {
 	features = c;
+}
+
+VCard *Contact::getVCard() const
+{
+	return vcard;
 }

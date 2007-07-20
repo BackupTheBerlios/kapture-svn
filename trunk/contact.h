@@ -5,6 +5,7 @@
 
 #include "chatwin.h"
 #include "jid.h"
+#include "vcard.h"
 
 class Contact : public QObject
 {
@@ -20,6 +21,7 @@ public:
 	void setResource(QString);
 	bool isAvailable(); // available or unavailable.
 	void setFeatures(QStringList);
+	VCard *getVCard() const;
 
 private:
 	ChatWin *chatWin; 
@@ -32,6 +34,8 @@ private:
 
 	} presence;
 	QStringList features;
+	VCard *vcard;
+
 public slots:
 	void messageToSend(QString message);
 	void sendFile();

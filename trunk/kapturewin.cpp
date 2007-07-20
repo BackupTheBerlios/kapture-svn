@@ -53,13 +53,6 @@ KaptureWin::KaptureWin()
 			otherVideoDevice = true;
 			videoDevice = qApp->arguments().at(i + 1);
 		}
-		if (qApp->arguments().at(i) == QString("-jonly"))
-		{
-			Xmpp *jabberAccount = new Xmpp("linux@localhost");
-			if (jabberAccount->connectedToServer())
-				jabberAccount->auth("CD4DDE","Kapture");
-			return;
-		}
 	}
 	if (!otherVideoDevice)
 		videoDevice = QString("/dev/video0");
