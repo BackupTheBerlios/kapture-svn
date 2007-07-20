@@ -7,12 +7,20 @@ Config::Config()
 	noConfig = false;
 	QByteArray config;
 	//Loads last configuration from ~/.Kapture/conf.xml
-	QDir *confDir = new QDir(QDir::homePath() + "/.Kapture/");
+#ifdef linux
+	QString confDirString = QDir::homePath() + "/.Kapture/";
+	QString confFileString = QDir::homePath() + "/.Kapture/conf.xml";
+#else
+	QString confDirString = QDir::homePath() + "\\.Kapture\\";
+        QString confFileString = QDir::homePath() + "\\.Kapture\\conf.xml";
+#endif
+	QDir *confDir = new QDir(confDirString);
+
 	if (!confDir->exists())
 	{
 		QDir::home().mkdir(".Kapture");
 	}
-	confDir->setPath(QDir::homePath() + "/.Kapture/");
+	confDir->setPath(confDirString);
 	
 	if (!confDir->exists())
 	{
@@ -21,7 +29,7 @@ Config::Config()
 		return;
 	}
 	
-	QFile *conf = new QFile(QDir::homePath() + "/.Kapture/conf.xml");
+	QFile *conf = new QFile(confFileString);
 	conf->open(QIODevice::ReadOnly);
 	config = conf->readAll();
 	d.setContent(config);

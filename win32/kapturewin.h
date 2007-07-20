@@ -29,50 +29,15 @@ class KaptureWin : public QMainWindow
 public:
 	KaptureWin();
 	~KaptureWin();
-	QPixmap zoomAtCursor(int xCurPos, int yCurPos, QImage imageToZoomIn);
 	void mError(int ret);
-	int posCurX;
-	int posCurY;
-	QList<int> formatList;
-	QList<QString> formatName;
-	bool panSupported;
 
 public slots:
-	void getImage();
-	void changeSize(const QString & itemSelected);
-	void changeFormat(const QString & itemSelected);
-	void getDeviceCapabilities();
-	void startStopVideo();
-	void savePhoto();
-	void crStartStop();
-	void colorChanged();
-	void showColorReplaced();
-	void satChanged();
-	void brightChanged();
-	void contChanged();
-	void freqChanged();
-	void sharpChanged();
-	int showZoom();
-	void keepZoomerTimeOut();
 	void showJabberWin();
 private:
 	Ui::kaptureWin ui;
-	Webcam *camera;
-	MainFrameWin *mfw;
 	XmppWin *xw;
 
-	QTimer waitCamera;
-	QTimer keepZoomer;
-	bool isCapturing;
-	bool crIsActivated;
-	QImage mainImageSav;
-	QImage crImage;
-	bool imageSaved;
-	QImage imageFromCamera;
-	int fctExecuted;
 	void closeEvent(QCloseEvent *event);
-	QString videoDevice;
-	bool otherVideoDevice;
 	bool xmppWinCreated;
 };
 
