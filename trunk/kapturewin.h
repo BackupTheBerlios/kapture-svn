@@ -35,7 +35,6 @@ public:
 	int posCurY;
 	QList<int> formatList;
 	QList<QString> formatName;
-	bool panSupported;
 
 public slots:
 	void getImage();
@@ -52,9 +51,9 @@ public slots:
 	void contChanged();
 	void freqChanged();
 	void sharpChanged();
-	int showZoom();
 	void keepZoomerTimeOut();
 	void showJabberWin();
+	int showZoom();
 private:
 	Ui::kaptureWin ui;
 	Webcam *camera;
@@ -63,17 +62,18 @@ private:
 
 	QTimer waitCamera;
 	QTimer keepZoomer;
-	bool isCapturing;
-	bool crIsActivated;
 	QImage mainImageSav;
 	QImage crImage;
-	bool imageSaved;
 	QImage imageFromCamera;
-	int fctExecuted;
-	void closeEvent(QCloseEvent *event);
 	QString videoDevice;
 	bool otherVideoDevice;
+	bool imageSaved;
 	bool xmppWinCreated;
+	bool isCapturing;
+	bool crIsActivated;
+	void closeEvent(QCloseEvent*);
+	int fctExecuted;
+	bool panTiltSupported;
 };
 
 #endif // KAPTUREWIN_H

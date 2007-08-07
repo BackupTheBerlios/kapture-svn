@@ -1,8 +1,13 @@
 #include "profile.h"
 
-Profile::Profile(QString n)
+Profile::Profile(QString& name)
 {
-	profileName = n;
+	n = name;
+}
+
+Profile::Profile()
+{
+
 }
 
 Profile::~Profile()
@@ -10,61 +15,61 @@ Profile::~Profile()
 
 }
 
-void Profile::setData(QString j, QString pw, QString s, QString p)
+void Profile::setData(QString& jid, QString& pass, QString& server, QString& port)
 {
-	jid = j;
-	password = pw;
-	server = s;
-	port = p;
+	j = jid;
+	p = pass;
+	s = server;
+	po = port;
 }
 	
-QString Profile::getJid()
+QString Profile::jid() const
 {
-	return jid;
+	return j;
 }
 
-QString Profile::getPassword()
+QString Profile::password() const
 {
-	return password;
+	return p;
 }
 
-QString Profile::getPersonnalServer()
+QString Profile::personnalServer() const
 {
-	return server;
+	return s;
 }
 
-QString Profile::getPort()
+QString Profile::port() const
 {
-	return port;
+	return po;
 }
 
-QString Profile::getName()
+QString Profile::name() const
 {
-	return profileName;
+	return n;
 }
 
-void Profile::setName(QString n)
+void Profile::setName(QString& name)
 {
-	profileName = n;
+	n = name;
 }
 
-void Profile::setJid(QString j)
+void Profile::setJid(QString& jid)
 {
-	jid = j;
+	j = jid;
 }
 
-void Profile::setPassword(QString p)
+void Profile::setPassword(QString& pass)
 {
-	password = p;
+	p = pass;
 }
 
-void Profile::setPersonnalServer(QString p)
+void Profile::setPersonnalServer(QString& server)
 {
-	server = p;
+	s = server;
 }
 
-void Profile::setPort(QString p)
+void Profile::setPort(QString& port)
 {
-	port = p;
+	po = port;
 }
 

@@ -74,7 +74,6 @@ Config::Config()
 		Profile *profile = new Profile(cProfile);
 		profile->setData(cJid, cPassword, cPersonnalServer, cPort);
 		profiles << *profile;
-		profiles2 << *profile;
 	}
 }
 
@@ -83,62 +82,62 @@ Config::~Config()
 
 }
 
-QStringList Config::getProfileNames()
+QStringList Config::profileNames() const
 {
 	QStringList p;
 	for (int i = 0; i < profiles.count(); i++)
 	{
-		p << profiles[i].getName();
+		p << profiles[i].name();
 	}
 	return p;
 }
 
-QList<Profile> Config::getProfileList()
+QList<Profile> Config::profileList() const
 {
-	return profiles2;
+	return profiles;
 }
 
-QString Config::getJid(QString profile)
+QString Config::jid(QString& profile) const
 {
 	for (int i = 0; i < profiles.count(); i++)
 	{
-		if (profiles[i].getName() == profile)
-			return profiles[i].getJid();
+		if (profiles[i].name() == profile)
+			return profiles[i].jid();
 	}
 	return "";
 }
 
-QString Config::getPassword(QString profile)
+QString Config::password(QString& profile) const
 {
 	for (int i = 0; i < profiles.count(); i++)
 	{
-		if (profiles[i].getName() == profile)
-			return profiles[i].getPassword();
+		if (profiles[i].name() == profile)
+			return profiles[i].password();
 	}
 	return "";
 }
 
-QString Config::getPersonnalServer(QString profile)
+QString Config::personnalServer(QString& profile) const
 {
 	for (int i = 0; i < profiles.count(); i++)
 	{
-		if (profiles[i].getName() == profile)
-			return profiles[i].getPersonnalServer();
+		if (profiles[i].name() == profile)
+			return profiles[i].personnalServer();
 	}
 	return "";
 }
 
-QString Config::getPort(QString profile)
+QString Config::port(QString& profile) const
 {
 	for (int i = 0; i < profiles.count(); i++)
 	{
-		if (profiles[i].getName() == profile)
-			return profiles[i].getPort();
+		if (profiles[i].name() == profile)
+			return profiles[i].port();
 	}
 	return "";
 }
 
-void Config::addProfile(Profile p)
+void Config::addProfile(const Profile& p)
 {
 	if (noConfig)
 	{
@@ -148,22 +147,22 @@ void Config::addProfile(Profile p)
 		kap.setAttribute("xmlns", "http://kapture.berlios.de/config");
 		QDomElement classe = doc->createElement("xmppwin");
 		QDomElement prof = doc->createElement("profile");
-		prof.setAttribute("name", p.getName());
+		prof.setAttribute("name", p.name());
 		
 		QDomElement eJid = doc->createElement("jid");
-		QDomText vJid = doc->createTextNode(p.getJid());
+		QDomText vJid = doc->createTextNode(p.jid());
 		eJid.appendChild(vJid);
 		
 		QDomElement ePassword = doc->createElement("password");
-		QDomText vPassword = doc->createTextNode(p.getPassword());
+		QDomText vPassword = doc->createTextNode(p.password());
 		ePassword.appendChild(vPassword);
 		
 		QDomElement eServer = doc->createElement("server");
-		QDomText vServer = doc->createTextNode(p.getPersonnalServer());
+		QDomText vServer = doc->createTextNode(p.personnalServer());
 		eServer.appendChild(vServer);
 		
 		QDomElement ePort = doc->createElement("port");
-		QDomText vPort = doc->createTextNode(p.getPort());
+		QDomText vPort = doc->createTextNode(p.port());
 		ePort.appendChild(vPort);
 
 		prof.appendChild(eJid);
@@ -187,22 +186,22 @@ void Config::addProfile(Profile p)
 	else
 	{
 		QDomElement prof = d.createElement("profile");
-		prof.setAttribute("name", p.getName());
+		prof.setAttribute("name", p.name());
 		
 		QDomElement eJid = d.createElement("jid");
-		QDomText vJid = d.createTextNode(p.getJid());
+		QDomText vJid = d.createTextNode(p.jid());
 		eJid.appendChild(vJid);
 		
 		QDomElement ePassword = d.createElement("password");
-		QDomText vPassword = d.createTextNode(p.getPassword());
+		QDomText vPassword = d.createTextNode(p.password());
 		ePassword.appendChild(vPassword);
 		
 		QDomElement eServer = d.createElement("server");
-		QDomText vServer = d.createTextNode(p.getPersonnalServer());
+		QDomText vServer = d.createTextNode(p.personnalServer());
 		eServer.appendChild(vServer);
 		
 		QDomElement ePort = d.createElement("port");
-		QDomText vPort = d.createTextNode(p.getPort());
+		QDomText vPort = d.createTextNode(p.port());
 		ePort.appendChild(vPort);
 
 		prof.appendChild(eJid);
@@ -224,7 +223,7 @@ void Config::addProfile(Profile p)
 
 }
 	
-void Config::delProfile(QString profileName)
+void Config::delProfile(const QString &profileName)
 {
 	// If user deletes a profile, it means that the configuration is valid.
 	QDomNodeList p = classes.at(n).childNodes();

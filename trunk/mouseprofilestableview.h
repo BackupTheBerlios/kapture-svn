@@ -9,7 +9,7 @@ class MouseProfilesTableView : public QTableView
 public:
 	MouseProfilesTableView(QWidget *parent = 0);
 signals:
-	void Clicked(QString to);
+	void Clicked(QString& to);
 
 protected:
 	void mouseReleaseEvent(QMouseEvent *e);

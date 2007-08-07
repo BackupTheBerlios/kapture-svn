@@ -8,10 +8,10 @@ class VCard
 public:
 	VCard();
 	~VCard();
-	void setNickname(QString n);
-	QString getNickname();
+	void setNickname(const QString &n);
+	QString nickname() const;
 private:
-	QString nickname;
+	QString n; // Nickname
 };
 
 #endif

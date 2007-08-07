@@ -3,69 +3,61 @@
 
 #include <QString>
 #include <QtXml>
-#define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
+//#define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
+#include "jid.h"
 
 class Stanza : public QObject
 {
 	Q_OBJECT
 public:
-	enum Kind {IQ, Message, Presence, BadStanza};
+	enum Kind {IQ = 0, Message, Presence, BadStanza};
+	/*!
+	 * Create a new invalid Stanza.
+	 */
 	Stanza();
-	Stanza(QString kind, QString type, QString id);
+	/*!
+	 * Create a new Stanza with kind Kind, type Type, id Id and to To.
+	 */
+	Stanza(Kind kind, const QString& type, const QString& id, const QString& to);
+	/*!
+	 * Create a new Stanza from an xml tree.
+	 */
+	Stanza(QByteArray &node);
+	/*!
+	 * Destructor.
+	 */
 	~Stanza();
-	void setData(QByteArray node);
-	void setType(QString s);
-	//QString getQStringType(Kind kind);
-	QByteArray getData();
-	QString getFrom();
-	QString getTo();
-	QString getMessage();
-	QStringList getContacts();
-	QString getId();
-	QString getType();
-	QString getStatus();
-	QString getShow();
-	QString getNickname();
-	QStringList getNicknameList();
-	enum Action
-	{
-		SendDiscoInfo = 0,
-		ReceivedDiscoInfo,
-		None
-	} action;
-	int getAction();
-	QStringList getFeatures();
+	
+	Kind tagNameToKind(QString tagName) const;
+	QString kindToTagName(Kind kind) const;
+	
+	void setType(QString &s);
+	void setFrom(const Jid&);
+	void setTo(const Jid&);
+	void setId(const QString&);
+	void setType(const QString&);
+	void setKind(Kind);
+	void appendChild(const QDomNode&);
 
-signals:
-	void presenceReady();
-	void messageReady();
-	void iqReady();
+	Jid from() const;
+	Jid to() const;
+	QString id() const;
+	QString type() const;
+	Kind kind() const;
+	QByteArray data() const;
+	QDomDocument document() const;
 
 private:
-	QString badStanzaStr;
-	QString kind;
-	QDomDocument d;
-	QDomElement stan;
-	void setupPresence(QDomElement s);
-	void setupMessage(QDomElement s);
-	void setupIq(QDomElement s);
-	bool isComposing;
-
-	QString to;
-	QString id;
-	QString from;
-	QString ns;
-	QString type;
-	QString message;
-	QString subject;
-	QString thread;
-	QString priority;
-	QString show;
-	QString status;
-	QStringList contacts;
-	QStringList nicknames;
-	QStringList features;
-	QString nickname;
+	/*!
+	 * Stanza's xml tree.
+	 */
+	QByteArray n; // node
+	Kind k; // kind
+	Jid t; // to
+	QString i; // id
+	Jid f; // from
+	QString ty; // type
+	QDomDocument doc; // Xml Tree.
 
 };
 

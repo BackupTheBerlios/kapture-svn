@@ -30,25 +30,27 @@ public:
 	
 	void close();
 	int  open(const char *devFile);
-	QList<int>   getFormatList(QList<QString> *description);
-	QList<QSize> getSizesList();
+	QList<int>   getFormatList(QList<QString> &description) const;
+	QList<QSize> getSizesList() const;
 	int setFormat(unsigned int width, unsigned int height, int pixelformat=V4L2_PIX_FMT_MJPEG);
 	int streamOff();
 	int stopStreaming();
-	int getFrame(QImage *image);
-	int currentWidth();
-	int currentHeight();
-	int currentPixelFormat();
-	int changeCtrl(int ctrl, int value);
+	int getFrame(QImage &image);
+	int currentWidth() const;
+	int currentHeight() const;
+	int currentPixelFormat() const;
+	int changeCtrl(int ctrl, int value = 0);
 	int defaultCtrlVal(unsigned int control, int &defaultValue);
+	bool isStreaming() const {return streaming;};
+	bool isOpened() const {return opened;}; // Should not be used, Webcam should managed it itself.
+	bool panTiltSupported();
+	enum Control {Saturation = 0,
+		      PowerLineFreq,
+		      Brightness,
+		      Contrast,
+		      Sharpness,
+		      PanTiltReset};
 	
-	uchar *mem[2];
-	size_t bufLength;
-	QSocketNotifier *imageNotifier;
-	QImage *image;
-	bool isStreaming;
-	bool isOpened;
-	bool mmaped;
 
 signals:
 	void imageReady();
@@ -66,6 +68,14 @@ private:
 	struct v4l2_buffer buf;
 	struct v4l2_requestbuffers rb;
 	bool allocated;
+	
+	uchar *mem[2];
+	size_t bufLength;
+	QSocketNotifier *imageNotifier;
+	QImage *image;
+	bool streaming;
+	bool opened;
+	bool mmaped;
 };
 #endif
 

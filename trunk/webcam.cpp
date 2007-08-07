@@ -41,9 +41,9 @@
 
 Webcam::Webcam()
 {
-	isStreaming = false;
+	streaming = false;
 	dev = 0;
-	isOpened = false;
+	opened = false;
 	imageNotifier = 0;
 	allocated = false;
 }
@@ -60,7 +60,7 @@ void Webcam::close()
 
 	delete imageNotifier;
 	imageNotifier = 0;
-	isOpened = false;
+	opened = false;
 	allocated = false;
 }
 
@@ -70,7 +70,7 @@ int Webcam::open(const char *devFile)
 	int ret;
 	char str[256];
 
-	if (isOpened)
+	if (opened)
 		close();
 
 	dev = ::open(devFile, O_RDWR);
@@ -96,7 +96,7 @@ int Webcam::open(const char *devFile)
 		KError(strcat(str, devFile), errno);
                 return -EINVAL;
 	}
-	isOpened = true;
+	opened = true;
 
 	imageNotifier = new QSocketNotifier(dev, QSocketNotifier::Read);
 	imageNotifier->setEnabled(false);
@@ -104,7 +104,7 @@ int Webcam::open(const char *devFile)
 	return EXIT_SUCCESS;
 }
 
-QList<int> Webcam::getFormatList(QList<QString> *description)
+QList<int> Webcam::getFormatList(QList<QString> &description) const
 {
 	QList<int> formatList;
 	int ret;
@@ -121,7 +121,7 @@ QList<int> Webcam::getFormatList(QList<QString> *description)
 		else
 		{
 			formatList.append((int)fmtList.pixelformat);
-			description->append((char*)fmtList.description);
+			description.append((char*)fmtList.description);
 		}
 		i++;
 	}
@@ -129,7 +129,7 @@ QList<int> Webcam::getFormatList(QList<QString> *description)
 	return formatList;
 }
 
-QList<QSize> Webcam::getSizesList()
+QList<QSize> Webcam::getSizesList() const
 {
 #ifdef USE_UVCVIDEO
 	int i = 0;
@@ -166,7 +166,7 @@ int Webcam::setFormat(unsigned int width, unsigned int height, int pixelformat)
 {
 	int i = 0;
 
-	if(isStreaming)
+	if(streaming)
 		return -1;
 
 	memset(&fmt, 0, sizeof fmt);
@@ -189,7 +189,7 @@ int Webcam::streamOff()
 	int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 	int ret;
 	
-	if(!isStreaming)
+	if(!streaming)
 		return -1;
 	
 	ret = ioctl(dev, VIDIOC_STREAMOFF, &type);
@@ -198,7 +198,7 @@ int Webcam::streamOff()
 		KError("Unable to stop capture", errno);
 		return EXIT_FAILURE;
 	}
-	isStreaming = false;
+	streaming = false;
 	return EXIT_SUCCESS;
 }
 
@@ -206,7 +206,7 @@ int Webcam::startStreaming()
 {
 	int i, ret;
 
-	if (!isOpened)
+	if (!opened)
 		return -1;
 
 	if ((ret = setFormat(currentWidth(), currentHeight(), currentPixelFormat())) != 0)
@@ -276,13 +276,13 @@ int Webcam::startStreaming()
 	}
 	
 	imageNotifier->setEnabled(true);
-	isStreaming = true;
+	streaming = true;
 	return EXIT_SUCCESS;
 }
 
 int Webcam::stopStreaming()
 {
-	if(!isStreaming)
+	if(!streaming)
 		return -1;
 	
 	imageNotifier->setEnabled(false);
@@ -301,7 +301,7 @@ int Webcam::stopStreaming()
 
 	if(streamOff() == 0)
 	{
-		isStreaming = false;
+		streaming = false;
 		printf(" * Succesful Stopped\n");
 	}
 	else
@@ -309,7 +309,7 @@ int Webcam::stopStreaming()
 	return EXIT_SUCCESS;
 }
 
-int Webcam::getFrame(QImage *image)
+int Webcam::getFrame(QImage &image)
 {
 	int ret = 0;
 
@@ -326,12 +326,12 @@ int Webcam::getFrame(QImage *image)
 	if (fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_MJPEG)
 	{
 		if (mjpegToJpeg(mem[buf.index], jpegBuf1, (int) buf.bytesused) == EXIT_SUCCESS)
-			image->loadFromData(jpegBuf1, buf.bytesused+420);
+			image.loadFromData(jpegBuf1, buf.bytesused+420);
 	}
 
 	if (fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_YUYV)
 	{
-		yuvToJpeg(mem[buf.index], image, currentWidth(), currentHeight());
+		yuvToJpeg(mem[buf.index], &image, currentWidth(), currentHeight());
 	}
 	
 	// Requeue the buffer.
@@ -352,7 +352,7 @@ int Webcam::changeCtrl(int ctrl, int value) // an enum for formats and reorganis
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 	
-	if(!isOpened) // At the begining of the function.
+	if(!opened) // At the begining of the function.
 	{
 		return -1;
 	}
@@ -368,44 +368,39 @@ int Webcam::changeCtrl(int ctrl, int value) // an enum for formats and reorganis
 	__u32 CTRL;
 	switch(ctrl)
 	{
-		case 0: 
+		case Saturation: 
 		{
 			CTRL = V4L2_CID_SATURATION;
 			break;
 		}
-#ifdef USE_UVCVIDEO
-		case 1: 
-		{
-			CTRL = V4L2_CID_POWER_LINE_FREQUENCY;
-			break;
-		}
-#endif
-		case 2: 
+		case Brightness: 
 		{
 			CTRL = V4L2_CID_BRIGHTNESS;
 			break;
 		}
-		case 3: 
+		case Contrast: 
 		{
 			CTRL = V4L2_CID_CONTRAST;
 			break;
 		}
 #ifdef USE_UVCVIDEO
-		case 4: 
+		case PowerLineFreq: 
+		{
+			CTRL = V4L2_CID_POWER_LINE_FREQUENCY;
+			break;
+		}
+		case Sharpness:
 		{
 			CTRL = V4L2_CID_SHARPNESS;
 			break;
 		}
-		case 5:
+		case PanTiltReset:
 		{
 			CTRL = V4L2_CID_PANTILT_RESET;
+			value = 3;
 			break;
 		}
 #endif
-		default:
-		{
-			break;
-		}
 	}
 
 	memset (&queryctrl, 0, sizeof queryctrl);
@@ -435,86 +430,63 @@ int Webcam::changeCtrl(int ctrl, int value) // an enum for formats and reorganis
 	return EXIT_SUCCESS;
 }
 
-int Webcam::currentWidth()
+int Webcam::currentWidth() const
 {
 	return (int) fmt.fmt.pix.width;
 }
 
-int Webcam::currentHeight()
+int Webcam::currentHeight() const
 {
 	return (int) fmt.fmt.pix.height;
 }
 
-int Webcam::currentPixelFormat()
+int Webcam::currentPixelFormat() const
 {
 	return (int) fmt.fmt.pix.pixelformat;
 }
+
 
 int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 {
 	struct v4l2_queryctrl queryctrl;
 	char *ctrl;
 	
-	if(!isOpened)
+	if(!opened)
 	{
 		return false;
 	}
-/*
- * ctrl values :
- * 	0 : Saturation
- * 	1 : Power line Frequency (néons)
- * 	2 : Brightness
- * 	3 : Contrast
- * 	4 : Sharpness
- * 	6 : Pan <->
- * 	7 : Tilt |
- */
 	
 	memset(&queryctrl, 0, sizeof queryctrl);
 	switch(control){
-		case 0 : 
+		case Saturation : 
 		{
 			ctrl = "Saturation";
 			queryctrl.id = V4L2_CID_SATURATION;
 			break;
 		}
-#ifdef USE_UVCVIDEO
-		case 1 : 
-		{
-			ctrl = "Powerline Frequecy";
-			queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
-			break;
-		}
-#endif
-		case 2 : 
+		case Brightness : 
 		{
 			ctrl = "Brightness";
 			queryctrl.id = V4L2_CID_BRIGHTNESS;
 			break;
 		}
-		case 3 : 
+		case Contrast : 
 		{
 			ctrl = "Contrast";
 			queryctrl.id = V4L2_CID_CONTRAST;
 			break;
 		}
 #ifdef USE_UVCVIDEO
-		case 4 : 
+		case PowerLineFreq : 
+		{
+			ctrl = "Powerline Frequecy";
+			queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
+			break;
+		}
+		case Sharpness : 
 		{
 			ctrl = "Sharpness";
 			queryctrl.id = V4L2_CID_SHARPNESS;
-			break;
-		}
-		case 6:
-		{
-			ctrl = "Pan";
-			queryctrl.id = V4L2_CID_PAN_RELATIVE;
-			break;
-		}
-		case 7:
-		{
-			ctrl = "Tilt";
-			queryctrl.id = V4L2_CID_TILT_RELATIVE;
 			break;
 		}
 #endif
@@ -529,14 +501,37 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 		return false;
 	}
 
+	defaultValue = (int)queryctrl.default_value;
+
+	return true;
+}
+
+bool Webcam::panTiltSupported()
+{
+	struct v4l2_queryctrl queryctrl;
+
+	if(!opened)
+	{
+		return false;
+	}
+
+	memset(&queryctrl, 0, sizeof queryctrl);
+	queryctrl.id = V4L2_CID_TILT_RELATIVE; // Could be V4L2_CID_PAN_RELATIVE.
+
+	if (-1 == ioctl(dev, VIDIOC_QUERYCTRL, &queryctrl))
+	{
+		KError("Unable to check wether Pan Tilt is supported.", errno);
+		return false;
+	}
+
 	if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
 	{
 		printf ("Pan & Tilt not supported.\n");
 		return false; //FLAG_NOT_SUPPORTED;
 	}
-	defaultValue = (int)queryctrl.default_value;
 
 	return true;
+
 }
 
 void Webcam::turnRight()

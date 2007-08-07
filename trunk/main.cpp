@@ -18,16 +18,9 @@
 
 int main(int argc, char **argv)
 {
-	bool show = true;
 	QApplication app(argc, argv);
-	KaptureWin *kw = new KaptureWin;
-	for(int i = 0; i < argc; i++)
-	{
-		if (strcmp(argv[i], "-jonly") == 0)
-			show = false;
-	}
-	if (show)
-		kw->show();
-	app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()) );
+	KaptureWin *kw = new KaptureWin();
+	kw->show();
+	app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
 	return app.exec();
 }

@@ -7,15 +7,16 @@
 /*
  * Establish connection to the server.
  */
-Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
+Xmpp::Xmpp(const Jid &jid, const QString &pServer, const int pPort)
 {
 	timeOut = 5000; // Default timeout set to 5 seconds
 	tcpSocket = new QTcpSocket();
 	sslSocket = new QSslSocket();
 	connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connexionError(QAbstractSocket::SocketError)));
 	connect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connexionError(QAbstractSocket::SocketError)));
-	username = jid.split('@').at(0);
-	server = jid.split('@').at(1);
+
+	username = jid.node();
+	server = jid.domain();
 
 	if (pServer == "")
 	{
@@ -27,7 +28,7 @@ Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
 		personnalServer = pServer;
 	}
 
-	port = pPort.toInt();
+	port = pPort;
 
 	handler = new XmlHandler();
 	authenticated = false;
@@ -40,7 +41,8 @@ Xmpp::Xmpp(QString jid, QString pServer, QString pPort)
 	useTls = true;
 	connect(tcpSocket, SIGNAL(connected()), this, SLOT(start()));
 	connect(sslSocket, SIGNAL(connected()), this, SLOT(start()));
-	stanza = new Stanza();
+	j = jid;
+	printf("JID = %s\n", jid.full().toLatin1().constData());
 }
 
 /*
@@ -60,8 +62,10 @@ Xmpp::~Xmpp()
 		s.appendChild(t);
 		e.appendChild(s);
 		d.appendChild(e);
+		
+		QByteArray data = d.toString().toLatin1();
 
-		sendData(d.toString().toLatin1());
+		sendData(data);
 	}
 	tcpSocket->close();
 }
@@ -69,31 +73,32 @@ Xmpp::~Xmpp()
 /*
  * Start the authentication process to the server.
  */
-void Xmpp::auth(QString pass, QString res)
+void Xmpp::auth(const QString &pass, const QString &res)
 {
+	printf("Port = %d, Server = %s, Personnal Server = %s\n", port, server.toLatin1().constData(), personnalServer.toLatin1().constData());
 	if (port != 5223)
 		tcpSocket->connectToHost(usePersonnalServer ? personnalServer : server, port);
 	else
 		sslSocket->connectToHostEncrypted(usePersonnalServer ? personnalServer : server, port);
 
 	password = pass;
-	resource = res;
+	resource = res; //TODO:Should be removed.
+	j.setResource(res);
 }
 
 void Xmpp::start()
 {
 	QString firstXml = QString("<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version=\"1.0\">").arg(server);
-	//printf(" * toSend = %s\n", firstXml.toLatin1().constData());
-	
 	connect(port != 5223 ? tcpSocket : sslSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	state = waitStream;
-	sendData(QByteArray(firstXml.toLatin1()));
+	QByteArray data = firstXml.toLatin1();
+	sendData(data);
 }
 
 /*
  * Send QString to the server.
  */
-int Xmpp::sendData(QByteArray mess)
+int Xmpp::sendData(QByteArray &mess)
 {
 	printf("SENT : %s\n", mess.constData());
 	if (tlsDone)
@@ -168,7 +173,7 @@ void Xmpp::dataReceived()
 		processXml(data);
 }
 
-void Xmpp::processXml(QByteArray data)
+void Xmpp::processXml(QByteArray &data)
 {
 	QXmlInputSource xmlSource;
 	QXmlSimpleReader xml;
@@ -185,7 +190,7 @@ void Xmpp::processXml(QByteArray data)
 		xml.parse(xmlSource);
 		//	printf(" * Parsing OK (SAX).\n");
 		
-		events += handler->getEvents();
+		events += handler->events();
 	
 		while (!events.isEmpty())
 		{
@@ -194,14 +199,28 @@ void Xmpp::processXml(QByteArray data)
 	}
 	else
 	{
-		printf("Create Stanza\n");
-		/*
-		 * Maybe stanza should be public. So XmppWin could directly connect to Stanza.
-		 * It wil avoid having a lot of signals trough Xmpp 
-		 * (Xmpp -> Stanza -> Xmpp -> XmppWin -> [chatWindow]) should become
-		 * (Xmpp -> Stanza -> XmppWin)
-		 */
-		stanza->setData(data);
+/*
+ * FIXME : That can happen :
+<presence xmlns='jabber:client' to='linux@localhost/Kapture' from='linux2@localhost/Psi'>
+ <x xmlns='jabber:x:delay' from='linux2@localhost/Psi' stamp='20070807T09:22:29'/>
+ <priority>5</priority>
+ <x xmlns='vcard-temp:x:update'>
+  <nickname>Gnu/Linux2</nickname>
+ </x>
+</presence>
+<presence xmlns='jabber:client' to='linux@localhost/Kapture' from='linux3@localhost/Psi'>
+ <x xmlns='jabber:x:delay' from='linux3@localhost/Psi' stamp='20070807T09:22:29'/>
+ <priority>5</priority>
+ <x xmlns='vcard-temp:x:update'>
+  <nickname>linux3</nickname>
+ </x>
+</presence>
+*
+* There are 2 presences in a row !
+*/
+		Stanza *s = new Stanza(data);
+		stanzaList << s;
+		emit readyRead();
 	}
 	data.clear();
 }
@@ -243,7 +262,8 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 				QDomElement e = doc.createElement("starttls");
 				doc.appendChild(e);
 				e.setAttribute(QString("xmlns"), QString("urn:ietf:params:xml:ns:xmpp-tls"));
-				sendData(QByteArray(doc.toString().toLatin1()));
+				QByteArray sData = doc.toString().toLatin1();
+				sendData(sData);
 				
 				// Next state
 				state = waitProceed;
@@ -300,7 +320,8 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 					QString text = QString("%1%2%3%4").arg('\0').arg(username).arg('\0').arg(password);
 					QDomText t = doc.createTextNode(text.toLatin1().toBase64());
 					e.appendChild(t);
-					sendData(doc.toString().toLatin1());
+					QByteArray sData = doc.toString().toLatin1();
+					sendData(sData);
 					state = waitSuccess;
 				}
 			}
@@ -315,7 +336,8 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 			if (elem.name == QString("failure"))
 			{
 				printf(" ! Check Username and password.\n");
-				sendData(QString("</stream:stream>").toLatin1());
+				QByteArray sData = "</stream:stream>";
+				sendData(sData);
 			}
 			break;
 		case waitNecessary:
@@ -345,8 +367,8 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 				e2.appendChild(e3);
 				e.appendChild(e2);
 				doc.appendChild(e);
-				
-				sendData(doc.toString().toLatin1());
+				QByteArray sData = doc.toString().toLatin1();
+				sendData(sData);
 				
 				state = waitBind;
 			}
@@ -363,7 +385,6 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 				if (elem.attributes.value("type") == "result")
 				{
 					printf(" * Connection is now active !\n");
-					//emit connected;
 					
 					/*
 					 * Presence must be sent after getting the roster
@@ -372,10 +393,6 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 					 * setting the first presence.
 					 */
 
-					connect(stanza, SIGNAL(presenceReady()), this, SLOT(newPresence()));
-					connect(stanza, SIGNAL(messageReady()), this, SLOT(newMessage()));
-					connect(stanza, SIGNAL(iqReady()), this, SLOT(newIq()));
-					
 					state = active;
 					emit connected(); 
 
@@ -426,7 +443,8 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 				e.appendChild(e2);
 				doc.appendChild(e);
 
-				sendData(doc.toString().toLatin1());
+				QByteArray sData = doc.toString().toLatin1();
+				sendData(sData);
 
 				state = waitSession;
 			}
@@ -452,8 +470,8 @@ void Xmpp::sendDataFromTls(/*QByteArray data*/)
 
 void Xmpp::clearDataReceived()
 {
-	//printf("Xmpp : Clear data received\n");
-	processXml(tls->read());
+	QByteArray toSend = tls->read();
+	processXml(toSend);
 }
 
 void Xmpp::tlsIsConnected()
@@ -464,47 +482,21 @@ void Xmpp::tlsIsConnected()
 	// now that TLS is done, I relaunch the auth process.
 	QString firstXml = QString("<?xml version='1.0'?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version='1.0'>").arg(server);
 	//printf(" * toSend = %s\n", firstXml.toLatin1().constData()); 
-	sendData(QByteArray(firstXml.toLatin1()));
-}
-
-void Xmpp::getRoster()
-{
-	QDomDocument d("");
-	QDomElement e = d.createElement("iq");
-	e.setAttribute("from", username + "@" + server + "/" + resource);
-	e.setAttribute("type", "get");
-	e.setAttribute("id", "roster_1");
-	QDomElement q = d.createElement("query");
-	q.setAttribute("xmlns", "jabber:iq:roster");
-	e.appendChild(q);
-	d.appendChild(e);
-
-	sendData(d.toString().toLatin1());
+	QByteArray sData = firstXml.toLatin1();
+	sendData(sData);
 }
 
 void Xmpp::setPresence(QString show, QString status)
 {
-	if (show == "" && status == "")
-	{
-		// Send initial presence.
-		QDomDocument doc("");
-		QDomElement e = doc.createElement("presence");
-
-		doc.appendChild(e);
-
-		sendData(doc.toString().toLatin1());
-
-	}
-
 }
 
-void Xmpp::sendMessage(QString to, QString message)
+void Xmpp::sendMessage(const Jid &to, const QString &message)
 {
 	printf("Send message from Xmpp\n");
 	QDomDocument d("");
 	QDomElement e = d.createElement("message");
 	e.setAttribute("from", username + "@" + server + "/" + resource);
-	e.setAttribute("to", to);
+	e.setAttribute("to", to.full());
 	e.setAttribute("type", "chat"); // The only one supported for now.
 	QDomElement b = d.createElement("body");
 	QDomText t = d.createTextNode(message);
@@ -513,10 +505,10 @@ void Xmpp::sendMessage(QString to, QString message)
 	e.appendChild(b);
 	d.appendChild(e);
 
-	sendData(d.toString().toLatin1());
+	QByteArray sData = d.toString().toLatin1();
 }
 
-void Xmpp::sendFile(QString to, unsigned int size, QString name, QString description, QDateTime date, QString hash)
+void Xmpp::sendFile(QString &to, unsigned int size, QString &name, QString description, QDateTime date, QString hash)
 {
 
 	/*
@@ -553,7 +545,8 @@ void Xmpp::sendFile(QString to, unsigned int size, QString name, QString descrip
 	iq.appendChild(file);
 	d.appendChild(iq);
 
-	sendData(d.toString().toLatin1());
+	QByteArray sData = d.toString().toLatin1();
+	sendData(sData);
 }
 
 void Xmpp::connexionError(QAbstractSocket::SocketError socketError)
@@ -592,12 +585,29 @@ bool Xmpp::isSecured() const
 	return useTls;
 }
 
-void Xmpp::sendDiscoInfo(QString to, QString id)
+Stanza *Xmpp::getFirstStanza()
 {
-/*
+	return stanzaList.takeFirst();
+}
+
+void Xmpp::write(Stanza& s)
+{
+	s.setFrom(j);
+	QByteArray sData = s.data();
+	sendData(sData);
+}
+
+bool Xmpp::stanzaAvailable() const
+{
+	return !stanzaList.isEmpty();
+}
+
+/*void Xmpp::sendDiscoInfo(QString &to, QString &id)
+{
+ *
  * <feature var='http://jabber.org/protocol/si'/>
  * <feature var='http://jabber.org/protocol/si/profile/file-transfer'/>
- */
+ *
 	QDomDocument d("");
 	QDomElement iq = d.createElement("iq");
 	iq.setAttribute("type", "result");
@@ -607,21 +617,22 @@ void Xmpp::sendDiscoInfo(QString to, QString id)
 	QDomElement query = d.createElement("query");
 	query.setAttribute("xmlns", XMLNS_DISCO);
 
-	/*QDomElement feature = d.createElement("feature");
+	*QDomElement feature = d.createElement("feature");
 	feature.setAttribute("var", "http://jabber.org/protocol/si");
 	query.appendChild(feature);
 
 	QDomElement feature2 = d.createElement("feature");
 	feature2.setAttribute("var", "http://jabber.org/protocol/si/profile/file-transfer");
-	query.appendChild(feature2);*/
+	query.appendChild(feature2);*
 	
 	iq.appendChild(query);
 	d.appendChild(iq);
 
-	sendData(d.toString().toLatin1());
+	QByteArray sData = d.toString().toLatin1();
+	sendData(sData);
 }
 
-void Xmpp::askDiscoInfo(QString to, QString id)
+void Xmpp::askDiscoInfo(QString &to, QString &id)
 {
 	QDomDocument d("");
 	QDomElement iq = d.createElement("iq");
@@ -635,7 +646,8 @@ void Xmpp::askDiscoInfo(QString to, QString id)
 	iq.appendChild(query);
 	d.appendChild(iq);
 
-	sendData(d.toString().toLatin1());
+	QByteArray sData = d.toString().toLatin1();
+	sendData(sData);
 }
 
 void Xmpp::newPresence()
@@ -687,4 +699,4 @@ void Xmpp::newIq()
 			emit iq(iFrom, iTo, iId, contacts, nicknames);
 	}
 }
-
+*/

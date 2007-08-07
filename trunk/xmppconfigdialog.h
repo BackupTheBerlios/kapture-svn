@@ -14,7 +14,7 @@ public:
 	XmppConfigDialog();
 	~XmppConfigDialog();
 public slots:
-	void selectChange(QString);
+	void selectChange(QString&);
 	void add();
 	void del();
 signals:

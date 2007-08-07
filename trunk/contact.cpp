@@ -1,11 +1,31 @@
 #include "contact.h"
 #include "utils.h"
 
-Contact::Contact(QString j)
+Contact::Contact(const QString& j)
 {
 	jid = new Jid(j);
 	isChatting = false;
 	vcard = new VCard();
+}
+
+Contact::Contact(const QString &j, const QString &n)
+{
+	jid = new Jid(j);
+	isChatting = false;
+	vcard = new VCard();
+	vcard->setNickname(n);
+}
+
+Contact::Contact(const char *j)
+{
+	jid = new Jid(j);
+	isChatting = false;
+	vcard = new VCard();
+}
+
+Contact::Contact()
+{
+
 }
 
 Contact::~Contact()
@@ -15,20 +35,20 @@ Contact::~Contact()
 
 void Contact::sendFile()
 {
-	emit sendFileSignal(jid->toQString());
+	emit sendFileSignal(jid->full());
 }
 
-void Contact::newMessage(QString m /*Message*/)
+void Contact::newMessage(const QString &m /*Message*/)
 {
 	if (!isChatting)
 	{
 		chatWin = new ChatWin();
-		chatWin->setWindowTitle(jid->toQString());
+		chatWin->setWindowTitle(jid->full());
 		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
 		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
 	}
 
-	chatWin->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(vcard->getNickname() == "" ? jid->toQString() : vcard->getNickname()).arg(changeEmoticons(m)));
+	chatWin->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(vcard->nickname() == "" ? jid->full() : vcard->nickname()).arg(changeEmoticons(m)));
 	
 	if (!chatWin->isActiveWindow())
 	{
@@ -44,7 +64,7 @@ void Contact::startChat()
 	if (!isChatting)
 	{
 		chatWin = new ChatWin();
-		chatWin->setWindowTitle(jid->toQString());
+		chatWin->setWindowTitle(jid->full());
 		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
 		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
 		isChatting = true;
@@ -54,31 +74,32 @@ void Contact::startChat()
 
 void Contact::messageToSend(QString message)
 {
-	printf("Emit sendMessage from Contact class. to = %s\n", jid->toQString().toLatin1().constData());
-	emit sendMessage(jid->toQString(), message);
+	printf("Emit sendMessage from Contact class. to = %s\n", jid->full().toLatin1().constData());
+	QString to = jid->full();
+	emit sendMessage(to, message);
 }
 
-void Contact::setPresence(QString status, QString type)
+void Contact::setPresence(QString& status, QString& type)
 {
 	if (isChatting)
 	{
 		if (presence.type != type)
-			chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->toQString()).arg(type == "available" ? "online" : "offline"));
+			chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->full()).arg(type == "available" ? "online" : "offline"));
 		else
 		{
 			if (presence.status != status)
 			{
-				chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->toQString()).arg(status));
+				chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->full()).arg(status));
 			}
 		}
 	}
 	
 	presence.status = status;
 	presence.type = type;
-	printf("Contact has a new nickname : %s\n", vcard->getNickname().toLatin1().constData());
+	printf("Contact has a new nickname : %s\n", vcard->nickname().toLatin1().constData());
 }
 
-void Contact::setResource(QString r)
+void Contact::setResource(QString& r)
 {
 	jid->setResource(r);
 }
@@ -91,12 +112,12 @@ bool Contact::isAvailable()
 		return false;
 }
 
-void Contact::setFeatures(QStringList c)
+void Contact::setFeatures(QStringList &c)
 {
 	features = c;
 }
 
-VCard *Contact::getVCard() const
+VCard *Contact::vCard() const
 {
 	return vcard;
 }

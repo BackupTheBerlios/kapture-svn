@@ -1,22 +1,45 @@
 #include "jid.h"
 
-Jid::Jid(QString j)
+
+Jid::Jid()
 {
+
+}
+
+Jid::Jid(const char *j)
+{
+
+}
+
+Jid::Jid(const QString& j)
+{
+	if (j.isEmpty())
+	{
+		valid = false;
+		return;
+	}
+
 	valid = true;
-        //QString fromNode;
-        if(j.split('/').count() == 0)
+        
+	if(j.split('/').count() == 0)
 	{
 		valid = false;
         }
-        if(j.split('/').count() == 1)
+        
+	if(j.split('/').count() == 1)
 	{
-		node = j;
-		resource = "";
+		n = j.split('@').at(0);
+		d = j.split('@').at(1);
+		// FIXME:Must manage errors
+		r = "";
+		printf("n = %s, d = %s, r = %s\n", n.toLatin1().constData(), d.toLatin1().constData(), r.toLatin1().constData());
 	}
+	
 	if(j.split('/').count() == 2)
 	{
-		node = j.split('/').at(0);
-		resource = j.split('/').at(1);
+		n = j.split('@').at(0);
+		d = j.split('@').at(1).split('/').at(0);
+		r = j.split('/').at(1);
 	}
 }
 
@@ -25,78 +48,81 @@ Jid::~Jid()
 
 }
 
-QString Jid::toQString()
+QString Jid::full() const
 {
-	if (resource != "")
+	if (!valid)
+		return QString();
+
+	if (r != "")
 	{
-		return QString("%1/%2").arg(node, resource);
+		return QString("%1@%2/%3").arg(n, d, r);
 	}
 	else
 	{
-		return node;
+		return QString("%1@%2").arg(n, d);
 	}
 }
 
-bool Jid::isValid()
+bool Jid::isValid() const
 {
 	return valid;
 }
 
-QString Jid::getNode()
+QString Jid::node() const
 {
-	return node;
+	return n;
 }
 
-void Jid::setNode(QString n)
+void Jid::setNode(const QString &node)
 {
-	node = n;
+	n = node;
 }
 
-QString Jid::getResource()
+QString Jid::resource() const
 {
-	return resource;
+	return r;
 }
 
-void Jid::setResource(QString r)
+void Jid::setResource(const QString &resource)
 {
-	resource = r;
+	r = resource;
 }
 
-bool Jid::equals(Jid *other, bool withResource)
+bool Jid::equals(const Jid& other, bool withResource)
 {
-	if (!valid || !other->isValid())
+	if (!valid || !other.isValid())
 		return false;
 	if (withResource)
 	{
-		if (node == other->getNode() && resource == other->getResource())
+		if (n == other.node() && r == other.resource())
 			return true;
 		else
 			return false;
 	}
 	else
 	{
-		if (node == other->getNode())
+		if (n == other.node())
 			return true;
 		else
 			return false;
 	}
 }
 
-bool Jid::operator==(Jid *other)
+bool Jid::operator==(Jid &other) const
 {
-	if (!valid || !other->isValid())
+	if (!valid || !other.isValid())
 		return false;
 	
-	if (resource == "" || other->getResource() == "")
+	if (r == "" || other.resource() == "")
 	{
-		if (node == other->getNode())
+		if (n == other.node())
 			return true;
 		else
 			return false;
 	}
 	else
 	{
-		if (node == other->getNode() && resource == other->getResource())
+		if (n == other.node() && r == other.resource())
 			return true;
 		else
 			return false;
@@ -104,3 +130,18 @@ bool Jid::operator==(Jid *other)
 	}
 	return false;
 }
+
+QString Jid::domain() const
+{
+	return d;
+}
+
+QString Jid::bare() const // node@domain/resource --> bare = node@domain. Replace node !!!
+{
+	return n + '@' + d;
+}
+
+/*Jid & Jid::operator=(QString& jid)
+{
+	return Jid(jid);
+}*/

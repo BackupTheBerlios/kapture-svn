@@ -3,6 +3,8 @@
 #include <QFile>
 
 #include "xmppwin.h"
+#include "message.h"
+#include "presence.h"
 
 XmppWin::XmppWin()
 {
@@ -17,27 +19,26 @@ XmppWin::XmppWin()
 	ui.tableView->horizontalHeader()->hide();
 	ui.tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.tableView->setSelectionMode(QAbstractItemView::SingleSelection);
-	
 
 	// Loads predifined Profiles.
 	conf = new Config();
 	if (conf->noConfig)
 		return;
-	profilesa = conf->getProfileList();
+	profilesa = conf->profileList();
 	for (i = 0; i < profilesa.count(); i++)
 	{
-		/*printf("Profile : %s (%s, %s, %s, %s)\n", profilesa[i].getName().toLatin1().constData(),
-							  profilesa[i].getJid().toLatin1().constData(),
-							  profilesa[i].getPassword().toLatin1().constData(),
-							  profilesa[i].getPersonnalServer().toLatin1().constData(),
-							  profilesa[i].getPort().toLatin1().constData());
+		/*printf("Profile : %s (%s, %s, %s, %s)\n", profilesa[i].name().toLatin1().constData(),
+							  profilesa[i].jid().toLatin1().constData(),
+							  profilesa[i].password().toLatin1().constData(),
+							  profilesa[i].personnalServer().toLatin1().constData(),
+							  profilesa[i].port().toLatin1().constData());
 		*/
-		ui.profilesComboBox->addItem(profilesa[i].getName());
+		ui.profilesComboBox->addItem(profilesa[i].name());
 	}
-	ui.jid->setText(profilesa[0].getJid());
-	ui.password->setText(profilesa[0].getPassword());
-	ui.serverEdit->setText(profilesa[0].getPersonnalServer());
-	ui.portEdit->setText(profilesa[0].getPort());
+	ui.jid->setText(profilesa[0].jid());
+	ui.password->setText(profilesa[0].password());
+	ui.serverEdit->setText(profilesa[0].personnalServer());
+	ui.portEdit->setText(profilesa[0].port());
 	
 	connect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeProfile(int)));
 	connected = false;
@@ -48,6 +49,10 @@ XmppWin::~XmppWin()
 
 }
 
+/*!
+ * Connects and authenticates the User to the server.
+ */
+
 void XmppWin::jabberConnect()
 {
 	ui.jabberConnect->setEnabled(false);
@@ -55,6 +60,7 @@ void XmppWin::jabberConnect()
 	
 	jid = new Jid(ui.jid->text());
 	
+	printf("Jid = %s\n", jid->full().toLatin1().constData());
 	if (!jid->isValid())
 	{
 		QMessageBox::critical(this, tr("Jabber"), tr("This is an invalid Jid."), QMessageBox::Ok);
@@ -63,14 +69,11 @@ void XmppWin::jabberConnect()
 		return;
 	}
 	
-	client = new Xmpp(jid->getNode(), ui.serverEdit->text(), ui.portEdit->text());
-	/*
-	 * FIXME:Maybe Client should receive a Profile instead of all data separately.
-	 */
-	connect(client, SIGNAL(connected()), this, SLOT(clientConnected()));
-	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
-	connect(client, SIGNAL(contactFeaturesReady(Xmpp::ContactFeatures)), this, SLOT(contactFeaturesSave(Xmpp::ContactFeatures)));
-	client->auth(ui.password->text(), jid->getResource() == "" ? "Kapture" : jid->getResource());
+	client = new Client(*jid, ui.serverEdit->text(), ui.portEdit->text());
+	connect(client, SIGNAL(connected()), this, SLOT(clientAuthenticated()));
+	client->setResource(jid->resource());
+	client->setPassword(ui.password->text());
+	client->authenticate();
 }
 
 void XmppWin::jabberDisconnect()
@@ -78,16 +81,18 @@ void XmppWin::jabberDisconnect()
 	ui.jabberConnect->setEnabled(true);
 	ui.jabberDisconnect->setEnabled(false);
 	delete client;
+	QString status = "";
+	QString type = "";
 	for (int i = 0; i < contactList.count(); i++)
 	{
-		contactList[i]->setPresence("", "offline");
+		contactList[i]->setPresence(status, type);
 	}
 	m->setData(contactList);
 	ui.tlsIconLabel->setEnabled(false);
 	connected = false;
 }
 
-void XmppWin::clientConnected()
+void XmppWin::clientAuthenticated()
 {
 	QPixmap *pixmap;
 	ui.jabberConnect->setEnabled(false); // FIXME: could become a "Disconnect" button.
@@ -105,35 +110,69 @@ void XmppWin::clientConnected()
 	ui.tlsIconLabel->setPixmap(*pixmap);
 	ui.tlsIconLabel->setEnabled(true);
 
-	connect(client, SIGNAL(presence(QString, QString, QString, QString, QString)), this, SLOT(processPresence(QString, QString, QString, QString, QString)));
-	connect(client, SIGNAL(message(QString, QString, QString)), this, SLOT(processMessage(QString, QString, QString)));
-	connect(client, SIGNAL(iq(QString, QString, QString, QStringList, QStringList)), this, SLOT(processIq(QString, QString, QString, QStringList, QStringList)));
+	connect(client, SIGNAL(readyRead()), this, SLOT(processStanza()));
 	
 	QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
 	client->getRoster();
+	connect(client, SIGNAL(rosterReady(Roster)), this, SLOT(setRoster(Roster)));
+	connect(client, SIGNAL(presenceReady(const Presence&)), this, SLOT(processPresence(const Presence&)));
+	connect(client, SIGNAL(messageReady(const Message&)), this, SLOT(processMessage(const Message&)));
 	connected = true;
 }
 
-void XmppWin::processPresence(QString pFrom, QString pTo, QString pStatus, QString pType, QString pNickname)
+void XmppWin::processStanza()
+{
+	printf("void XmppWin::processStanza()\n");
+	while (!client->noStanza())
+	{
+		Stanza *stanza = client->getFirstStanza();
+		const QByteArray data = stanza->data();
+		printf("Data = %s\n", data.constData());
+	}
+}
+
+void XmppWin::setRoster(Roster roster)
+{
+	r = roster;
+	m = new Model();
+	contactList.clear();
+	contactList = r.contactList();
+	// Connecting contacts.
+	for (int i = 0; i < contactList.count(); i++)
+	{
+		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
+	}
+	m->setData(contactList);
+	ui.tableView->setModel(m);
+	connect(ui.tableView, SIGNAL(doubleClicked(QString&)), this, SLOT(startChat(QString&)));
+	QString a = "";
+	QString b = "";
+	client->setInitialPresence(a, b); 
+	ui.tableView->setColumnWidth(0, 22);
+	ui.tableView->resizeColumnsToContents();
+}
+
+
+void XmppWin::processPresence(const Presence& presence)
 {
 	int i;
-
-	Jid *from = new Jid(pFrom);
-	Jid *to = new Jid(pTo);
+	//Jid *to = new Jid(pTo);
 
 	// Looking for the contact in the contactList.
 	for (i = 0; i < contactList.count(); i++)
 	{
-		if (contactList[i]->jid->equals(from))
+		if (contactList[i]->jid->equals(presence.from()))
 		{
-			contactList[i]->jid->setResource(from->getResource());
-			contactList[i]->getVCard()->setNickname(pNickname);
-			contactList[i]->setPresence(pStatus, pType);
+			contactList[i]->jid->setResource(presence.from().resource());
+			//contactList[i]->vCard()->setNickname(pNickname);
+			QString status = presence.status();
+			QString type = presence.type();
+			contactList[i]->setPresence(status, type);
 			m->setData(contactList);
 			ui.tableView->update(m->index(i, 0));
-			printf("Found node ! --> setting type : %s\n", pType.toLatin1().constData());
+			//printf("Found node ! --> setting type : %s\n", pType.toLatin1().constData());
 			ui.tableView->resizeColumnsToContents();
-			/* 
+			 /* 
 			 * The whole resource's system will be reviewd later.
 			 */
 			break;
@@ -141,55 +180,29 @@ void XmppWin::processPresence(QString pFrom, QString pTo, QString pStatus, QStri
 	}
 }
 
-void XmppWin::processMessage(QString mFrom, QString mTo, QString mMessage)
+void XmppWin::processMessage(const Message& m)
 {
-	Jid *from = new Jid(mFrom);
-	Jid *to = new Jid(mTo);
-	
 	for (int i = 0; i < contactList.count(); i++)
 	{
-		if (contactList[i]->jid->equals(from))
+		if (contactList[i]->jid->equals(m.from()))
 		{
-			contactList[i]->newMessage(mMessage);
+			contactList[i]->newMessage(m.message());
 		}
 	}
 }
-
+/*
 void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList contacts, QStringList nicknames)
 {
-	if (iId == "roster_1")
-	{
-		m = new Model();
-		contactList.clear();
-		
-		Contact *contact;
-		for (int i = 0; i < contacts.count(); i++)
-		{
-			contact = new Contact(contacts.at(i));
-			contact->setPresence("", "offline");
-			printf("XmppWin::Nickname = %s\n", nicknames.at(i).toLatin1().constData());
-			contact->getVCard()->setNickname(nicknames.at(i));
-			contactList << contact;
-			connect(contact, SIGNAL(sendMessage(QString, QString)), this, SLOT(sendMessage(QString, QString)));
-			connect(contact, SIGNAL(sendFileSignal(QString)), this, SLOT(sendFile(QString)));
-		}
-		m->setData(contactList);
-		ui.tableView->setModel(m);
-		connect(ui.tableView, SIGNAL(doubleClicked(QString)), this, SLOT(startChat(QString)));
-		client->setPresence();
-		ui.tableView->setColumnWidth(0, 22);
-		ui.tableView->resizeColumnsToContents();
-	}
-
-	/* Still a lot to implement.
+	 * Still a lot to implement.
 	 * Next one : File Transfert, See http://www.xmpp.org/extensions/xep-0096.html (XEP 0096 : File Transfert)
 	 * Wish : Jingle support : Video Over IP, See http://www.xmpp.org/extensions/xep-0166.html
 	 * 					  and http://www.xmpp.org/extensions/xep-0180.html
 	 * 					   or http://www.xmpp.org/extensions/xep-0181.html
-	 */
+	 *
 }
+*/
 
-void XmppWin::sendMessage(QString to, QString message)
+void XmppWin::sendMessage(QString &to, QString &message)
 {
 	printf("Send message from XmppWin\n");
 	if (connected)
@@ -198,14 +211,14 @@ void XmppWin::sendMessage(QString to, QString message)
 		QMessageBox::critical(this, tr("Jabber"), tr("You are not logged in right now !!!"), QMessageBox::Ok);
 }
 
-void XmppWin::startChat(QString sTo)
+void XmppWin::startChat(QString &sTo)
 {
 	// Start Chat with "to" if it isn't done yet.
 	Jid *to = new Jid(sTo);
 	
 	for (int i = 0; i < contactList.count(); i++)
 	{
-		if (contactList[i]->jid->equals(to))
+		if (contactList[i]->jid->equals(*to))
 		{
 			contactList[i]->startChat();
 		}
@@ -244,10 +257,10 @@ void XmppWin::changeProfile(int p)
 	/*
 	 * FIXME:Maybe should disconnect first...
 	 */
-	ui.jid->setText(profilesa[p].getJid());
-	ui.password->setText(profilesa[p].getPassword());
-	ui.serverEdit->setText(profilesa[p].getPersonnalServer());
-	ui.portEdit->setText(profilesa[p].getPort());
+	ui.jid->setText(profilesa[p].jid());
+	ui.password->setText(profilesa[p].password());
+	ui.serverEdit->setText(profilesa[p].personnalServer());
+	ui.portEdit->setText(profilesa[p].port());
 }
 
 void XmppWin::updateProfileList()
@@ -260,26 +273,27 @@ void XmppWin::updateProfileList()
 	conf = new Config();
 	if (conf->noConfig)
 		return;
-	profilesa = conf->getProfileList(); //FIXME: find another name fore profilesa
+	profilesa = conf->profileList(); //FIXME: find another name fore profilesa
 	for (int i = 0; i < profilesa.count(); i++)
 	{
-		ui.profilesComboBox->addItem(profilesa[i].getName());
+		ui.profilesComboBox->addItem(profilesa[i].name());
 	}
-	ui.jid->setText(profilesa[0].getJid());
-	ui.password->setText(profilesa[0].getPassword());
-	ui.serverEdit->setText(profilesa[0].getPersonnalServer());
-	ui.portEdit->setText(profilesa[0].getPort());
+	ui.jid->setText(profilesa[0].jid());
+	ui.password->setText(profilesa[0].password());
+	ui.serverEdit->setText(profilesa[0].personnalServer());
+	ui.portEdit->setText(profilesa[0].port());
 }
 
-void XmppWin::sendFile(QString to)
+void XmppWin::sendFile(QString &to)
 {
-	client->askDiscoInfo(to, "askinfo1");
+//	QString id = "askinfo1";
+//	client->askDiscoInfo(to, id);
 }
 
 void XmppWin::contactFeaturesSave(Xmpp::ContactFeatures c)
 {
 	int i = 0;
-	while (c.jid->toQString() != contactList[i]->jid->toQString())
+	while (!(c.jid == contactList[i]->jid))
 		i++;
 	contactList[i]->setFeatures(c.features);
 }

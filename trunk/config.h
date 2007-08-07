@@ -12,23 +12,22 @@ class Config
 public:
 	Config();
 	~Config();
-	QStringList getProfileNames();
-	QList<Profile> getProfileList();
-	QString getJid(QString profile);
-	QString getPassword(QString profile);
-	QString getPersonnalServer(QString profile);
-	QString getPort(QString profile);
+	QStringList profileNames() const;
+	QList<Profile> profileList() const;
+	QString jid(QString &profile) const;
+	QString password(QString &profile) const;
+	QString personnalServer(QString &profile) const;
+	QString port(QString &profile) const;
 	bool noConfig;
-	void addProfile(Profile);
-	void delProfile(QString profileName);
+	void addProfile(const Profile &profile);
+	void delProfile(const QString &profileName);
 
 private:
 	QString cJid, cPassword, cPersonnalServer, cPort, cProfile;
 	QList<Profile> profiles;
-	QList<Profile> profiles2;
 	QDomDocument d;
 	QDomNodeList classes;
-	int n;
+	int n; // another name... (xmppwin class' position in XML tree -- this class system will be removed)
 };
 
 

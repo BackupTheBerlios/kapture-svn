@@ -3,36 +3,49 @@
 
 Stanza::Stanza()
 {
-	to = "";
-	from = "";
-	ns = "";
-	type = "";
-	message = "";
-	subject = "";
-	thread = "";
-	priority = "";
-	show = "";
-	status = "";
+	i = "";
+	t = Jid();
+	f = Jid();
+	ty = "";
+	k = BadStanza;
+	doc = QDomDocument("");
 }
 
-void Stanza::setData(QByteArray n)
+Stanza::Stanza(Kind kind, const QString& type, const QString& id, const QString& to)
 {
-	to = "";
-	from = "";
-	ns = "";
-	type = "";
-	message = "";
-	subject = "";
-	thread = "";
-	priority = "";
-	show = "";
-	status = "";
+	doc = QDomDocument("");
+	doc.appendChild(doc.createElement(kindToTagName(kind)));
 	
-	QDomDocument doc;
-	QByteArray dat = "<stanza>" + n + "</stanza>"; // A QDomDocument must have only one root element.
-	doc.setContent(dat, true);
+	if (!type.isEmpty())
+		doc.documentElement().setAttribute("type", type);
+	if (!id.isEmpty())
+		doc.documentElement().setAttribute("id", id);
+	if (!to.isEmpty())
+		doc.documentElement().setAttribute("to", to);
+	i = id;
+	ty = type;
+	t = Jid(to);
+}
+
+Stanza::Stanza(QByteArray &node)
+{
+	i = "";
+	t = Jid();
+	f = Jid();
+	ty = "";
+	
+	doc.setContent(node, true);
 	QDomElement s = doc.documentElement();
-	s = s.firstChildElement();
+	printf("from = %s, to = %s\n", s.attribute("from").toLatin1().constData(), s.attribute("to").toLatin1().constData());
+	f = Jid(s.attribute("from"));
+	printf("from = %s\n", f.full().toLatin1().constData());
+	t = Jid(s.attribute("to"));
+	i = s.attribute("id");
+	ty = s.attribute("type");
+	k = tagNameToKind(s.tagName());
+	n = node;
+
+/*	s = s.firstChildElement();
 
 	while(!s.isNull())
 	{
@@ -68,6 +81,7 @@ void Stanza::setData(QByteArray n)
 		s = s.nextSibling().toElement();
 		printf("Tag = %s\n", s.localName().toLatin1().constData());
 	}
+	*/
 }
 
 Stanza::~Stanza()
@@ -75,7 +89,105 @@ Stanza::~Stanza()
 
 }
 
-void Stanza::setupPresence(QDomElement s)
+Stanza::Kind Stanza::tagNameToKind(QString tagName) const
+{
+	if (tagName == "iq")
+		return IQ;
+	if (tagName == "presence")
+		return Presence;
+	if (tagName == "message")
+		return Message;
+	return BadStanza;
+}
+
+QString Stanza::kindToTagName(Kind kind) const
+{
+	if (kind == IQ)
+		return "iq";
+	if (kind == Presence)
+		return "presence";
+	if (kind == Message)
+		return "message";
+	return "";
+}
+
+void Stanza::setFrom(const Jid& from)
+{
+	f = from;
+	if (from.isValid())
+		doc.documentElement().setAttribute("from", from.full());
+}
+
+void Stanza::setTo(const Jid& to)
+{
+	t = to;
+	if (to.isValid())
+		doc.documentElement().setAttribute("to", to.full());
+}
+
+void Stanza::setId(const QString& id)
+{
+	i = id;
+	if (!id.isEmpty())
+		doc.documentElement().setAttribute("id", id);
+}
+
+void Stanza::setType(const QString& type)
+{
+	ty = type;
+	if (!type.isEmpty())
+		doc.documentElement().setAttribute("type", type);
+}
+
+void Stanza::setKind(Kind kind)
+{
+	k = kind;
+}
+
+void Stanza::appendChild(const QDomNode& child)
+{
+	doc.documentElement().appendChild(child);
+}
+
+Jid Stanza::from() const
+{
+	return f;
+}
+
+Jid Stanza::to() const
+{
+	return t;
+}
+
+QString Stanza::id() const
+{
+	return i;
+}
+
+QString Stanza::type() const
+{
+	return ty;
+}
+
+Stanza::Kind Stanza::kind() const
+{
+	return k;
+}
+
+QByteArray Stanza::data() const
+{
+	if (!n.isEmpty())
+		return n;
+	else
+		return doc.toByteArray();
+}
+
+QDomDocument Stanza::document() const
+{
+	return doc;
+}
+
+/*void Stanza::setupPresence(QDomElement s)
 {
 	ns = s.attribute("xmlns");
 	to = s.attribute("to");
@@ -95,7 +207,7 @@ void Stanza::setupPresence(QDomElement s)
 	while (!s.isNull())
 	{
 		QString tag = s.localName();
-		/* !!! DO NOT MODIFY s BEFORE ""s = s.nextSibling().toElement(); !!!*/
+		// !!! DO NOT MODIFY s BEFORE "s = s.nextSibling().toElement();" !!!
 		if (tag == "priority")
 		{
 			if (s.firstChild().isText())
@@ -154,7 +266,7 @@ void Stanza::setupMessage(QDomElement s)
 	else
 		printf("error ! ");
 	
-		/* !!! DO NOT MODIFY s BEFORE ""s = s.nextSibling().toElement(); !!!*/
+		// !!! DO NOT MODIFY s BEFORE s = s.nextSibling().toElement(); !!!
 	while (!s.isNull())
 	{
 		QString tag = s.localName();
@@ -194,69 +306,9 @@ void Stanza::setupMessage(QDomElement s)
 	}
 	printf("New message recieved from %s. (type = %s) :\n %s\n", from.toLatin1().constData(), type.toLatin1().constData(), message.toLatin1().constData());
 	
-	/*
+	 *
 	 * Xmpp will have to manage different types of message (chat, error, groupchat, headline, normal)
-	 */
-}
-
-void Stanza::setupIq(QDomElement s)
-{
-	id = s.attribute("id");
-	from = s.attribute("from");
-	type = s.attribute("type");
-
-	if (s.hasChildNodes())
-		s = s.firstChildElement();
-	else
-		printf("error ! ");
-	
-		/* !!! DO NOT MODIFY s BEFORE ""s = s.nextSibling().toElement(); !!!*/
-	while (!s.isNull())
-	{
-		QString tag = s.localName();
-		if (tag == "query")
-		{
-			if (id == "roster_1")
-			{
-				QDomNodeList items = s.childNodes();
-				for (int i = 0; i < items.count(); i++)
-				{
-					contacts << items.at(i).toElement().attribute("jid");
-					nicknames << items.at(i).toElement().attribute("name");
-					printf("New Roster contact : %s (subscription : %s)\n", contacts[i].toLatin1().constData(), items.at(i).toElement().attribute("subscription").toLatin1().constData());
-				}
-			}
-
-			if (s.namespaceURI() == XMLNS_DISCO)
-			{
-				if (type == "get")
-					action = SendDiscoInfo;
-				if (type == "result")
-				{
-					QDomNodeList p = s.childNodes();
-					
-					for (int i = 0; i < p.count(); i++)
-					{
-						if (p.at(i).localName() == "feature")
-							features << p.at(i).toElement().attribute("var");
-					}
-
-					action = ReceivedDiscoInfo;
-				}
-			}
-			else
-			{
-				printf("Action : None\n");
-				action = None;
-			}
-		}
-		
-		if (tag == "body")
-		{
-		}
-		
-		s = s.nextSibling().toElement();
-	}
+	 *
 }
 
 QStringList Stanza::getFeatures()
@@ -329,30 +381,4 @@ QStringList Stanza::getNicknameList()
 {
 	return nicknames;
 }
-
-void Stanza::setType(QString s)
-{
-	stan.setTagName(s);
-	/*type = BadStanza;
-	badStanzaStr = s;
-	if (s == "iq" || s == "IQ")
-		type = IQ;
-	if (s == "message" || s == "MESSAGE")
-		type = Message;
-	if (s == "presence" || s == "PRESENCE")
-		type = Presence;
-	printf(" * Received Stanza : %s.\n", getQStringType().toLatin1().constData());
-	*/
-}
-
-QByteArray Stanza::getData()
-{
-	/*if (type == IQ)
-		return "iq";
-	if (type == Message)
-		return "message";
-	if (type == Presence)
-		return "presence";
-	return badStanzaStr;*/
-	return d.toString().toLatin1();
-}
+*/

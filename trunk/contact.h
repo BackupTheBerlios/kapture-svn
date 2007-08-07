@@ -11,19 +11,24 @@ class Contact : public QObject
 {
 	Q_OBJECT
 public:
-	Contact(QString j);
+	Contact(const QString &j);
+	Contact(const QString &j, const QString &n);
+	Contact(const char *j);
 	~Contact();
-	void newMessage(QString m /*Message*/);
-	Jid *jid;
-	void setPresence(QString status, QString type);
-	//TODO : fix the mistakes in the names (Presence type is available or unavailable)
+	
+	void newMessage(const QString &m /*Message*/); //not a slot ???
+	
+	void setPresence(QString &status, QString &type); //TODO : fix the mistakes in the names (Presence type is available or unavailable)
+	void setResource(QString &resource);
+	void setFeatures(QStringList &features);
+	
 	void startChat();
-	void setResource(QString);
 	bool isAvailable(); // available or unavailable.
-	void setFeatures(QStringList);
-	VCard *getVCard() const;
+	VCard *vCard() const;
+	Jid *jid; // must go in private, a method to get it.
 
 private:
+	Contact();
 	ChatWin *chatWin; 
 	bool isChatting;
 	struct Presence
@@ -40,7 +45,7 @@ public slots:
 	void messageToSend(QString message);
 	void sendFile();
 signals:
-	void sendMessage(QString to, QString message);
+	void sendMessage(QString&, QString&);
 	void sendFileSignal(QString);
 };
 

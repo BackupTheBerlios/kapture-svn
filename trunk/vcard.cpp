@@ -2,7 +2,7 @@
 
 VCard::VCard()
 {
-	nickname = "";
+	n = "";
 }
 
 VCard::~VCard()
@@ -10,14 +10,16 @@ VCard::~VCard()
 
 }
 
-void VCard::setNickname(QString n)
+void VCard::setNickname(const QString& nickname)
 {
-	if (n == "")
-		return;
-	nickname = n;
+	if (nickname == "")
+		n = "";
+	else
+		n = nickname;
+//	printf("VCard::setNickname : Nickname set\n");
 }
 
-QString VCard::getNickname()
+QString VCard::nickname() const
 {
-	return nickname;
+	return n;
 }

@@ -49,14 +49,15 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	{
 		switch(index.column())
 		{
-			case 1: return contacts[index.row()]->getVCard()->getNickname() == "" ? contacts[index.row()]->jid->toQString() : contacts[index.row()]->getVCard()->getNickname();
+			case 1: return contacts[index.row()]->vCard()->nickname() == "" ? contacts[index.row()]->jid->full() : contacts[index.row()]->vCard()->nickname();
+			//case 1 : return QString("Nickname or Jid");
 			//case 2: return contacts[index.row()].getPresenceType();
 			default : return QVariant();
 		}
 	}
 	if (role == Qt::WhatsThisRole)
 	{
-		return contacts[index.row()]->jid->toQString();
+		return contacts[index.row()]->jid->full();
 	}
 	return QVariant();
 }

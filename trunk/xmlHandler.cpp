@@ -19,13 +19,13 @@ bool XmlHandler::startElement(const QString &namespaceURI, const QString &localN
 	newEvent.openingTag = true;
 	for (int i = 0; i < attributes.count(); i++)
 	{
-		newEvent.attributes.append(attributes.qName(i), 
-					   attributes.uri(i), 
-					   attributes.localName(i), 
+		newEvent.attributes.append(attributes.qName(i),
+					   attributes.uri(i),
+					   attributes.localName(i),
 					   attributes.value(i));
 	}
 
-	events.append(newEvent);
+	e.append(newEvent);
 	depht++;
 	return true;
 }
@@ -37,7 +37,7 @@ bool XmlHandler::endElement(const QString &namespaceURI, const QString &localNam
 	newEvent.name = qName;
 	newEvent.openingTag = false;
 	newEvent.node = node;
-	events.append(newEvent);
+	e.append(newEvent);
 	depht--;
 
 	if (depht == 0)
@@ -48,7 +48,7 @@ bool XmlHandler::endElement(const QString &namespaceURI, const QString &localNam
 
 bool XmlHandler::characters(const QString &str)
 {
-	events.last().text = str;
+	e.last().text = str;
 	return true;
 }
 
@@ -58,13 +58,13 @@ bool XmlHandler::fatalError(const QXmlParseException &exception)
 	return true;
 }
 
-QList<XmlHandler::Event> XmlHandler::getEvents()
+QList<XmlHandler::Event> XmlHandler::events()
 {
-	QList<XmlHandler::Event> returnEvents = events;
-	events.clear();
+	QList<XmlHandler::Event> returnEvents = e;
+	e.clear();
 	return returnEvents;
 }
-void XmlHandler::setData(QByteArray dat)
+void XmlHandler::setData(QByteArray &dat)
 {
 	node = dat;
 }

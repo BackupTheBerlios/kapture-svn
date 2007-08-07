@@ -9,7 +9,7 @@ class MouseRosterTableView : public QTableView
 public:
 	MouseRosterTableView(QWidget *parent);
 signals:
-	void doubleClicked(QString to);
+	void doubleClicked(QString& to);
 
 protected:
 	void mouseDoubleClickEvent(QMouseEvent *e);

@@ -60,10 +60,10 @@ QVariant ProfileModel::data(const QModelIndex &index, int role) const
 	{
 		switch(index.column())
 		{
-			case 0: return tmp.getName();
-			case 1: return tmp.getJid();
-			case 2: return tmp.getPersonnalServer();
-			case 3: return tmp.getPort();
+			case 0: return tmp.name();
+			case 1: return tmp.jid();
+			case 2: return tmp.personnalServer();
+			case 3: return tmp.port();
 			//case 4: return profiles[index.row()].getPort();
 			// FIXME:Why doesn't that work ?????
 			default : return QVariant();
@@ -117,8 +117,9 @@ int ProfileModel::columnCount(const QModelIndex &parent) const
 bool ProfileModel::insertRow(int position, const QModelIndex &parent)
 {
 	beginInsertRows(QModelIndex(), position, position);
-	
-	Profile p("");
+
+	QString test = "";
+	Profile p(test);
 	profiles.insert(position, p);
 
 	endInsertRows();

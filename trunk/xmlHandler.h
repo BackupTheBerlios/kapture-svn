@@ -25,7 +25,7 @@ public:
 	// MUST be called to set the stream data and to allow the creation of xmlTree.
 	//stanza s;
 	QString nameSpace; // Not used but will certainly be....
-	void setData(QByteArray data);
+	void setData(QByteArray &data);
 	bool error;
 	struct Event 
 	{
@@ -35,14 +35,14 @@ public:
 		QXmlAttributes attributes;
 		QByteArray node;
 	};
-	QList<Event> events;
-	QList<Event> getEvents();
+	QList<Event> events();
 
 private:
 	QString err; 
 	int errLine;
 	int depht; //depht of the xml stream;
 	QByteArray node;
+	QList<Event> e; //events list.
 	
 };
 

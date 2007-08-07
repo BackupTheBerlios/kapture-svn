@@ -19,19 +19,18 @@ class Xmpp : public QObject
 {
 	Q_OBJECT
 public: 
-	Xmpp(QString jid, QString pServer="", QString pPort="5222");
+	Xmpp(const Jid& jid, const QString& pServer = QString(), const int port = 5222);
+	Xmpp();
 	~Xmpp();
-	void auth(QString password, QString resource);
+	void auth(const QString& password, const QString& resource);
 	bool connectedToServer();
-	QList<QDomElement> elems;
 	void getRoster();
-	void sendMessage(QString to, QString message);
-	void sendFile(QString to, unsigned int size, QString name, QString description = "", QDateTime date = QDateTime(), QString hash = "");
+	void sendMessage(const Jid& to, const QString& message);
+	void sendFile(QString &to, unsigned int size, QString &name, QString description = "", QDateTime date = QDateTime(), QString hash = "");
 	void setPresence(QString show = "", QString status = "");
 	bool isSecured() const;
-	void sendDiscoInfo(QString to, QString id);
-	void askDiscoInfo(QString to, QString id);
-	//void logOut();
+	//void sendDiscoInfo(QString &to, QString &id);
+	//void askDiscoInfo(QString &to, QString &id);
 	enum ErrorType
 	{
 		HostNotFound = 0,
@@ -45,6 +44,27 @@ public:
 		QStringList features;
 	};
 
+	/*!
+	 * Gets the firs stanza and removes it from the list.
+	 * This method should be called when readyRead() is emitted.
+	 */
+	Stanza *getFirstStanza();
+	
+	/*!
+	 * Send the Stanza s to the server.
+	 * Returns true on success, false on failure.
+	 */
+	bool writeStanza(Stanza& s);
+	
+	/*!
+	 * Returns false if there are no more stanza ready to be read left.
+	 */
+	bool stanzaAvailable() const;
+	/*!
+	 * Write Stanza s on the socket.
+	 */
+	void write(Stanza&);
+
 
 public slots:
 	void dataReceived();
@@ -53,23 +73,29 @@ public slots:
 	void tlsIsConnected();
 	void start();
 	void connexionError(QAbstractSocket::SocketError socketError);
-	void newPresence();
+	/*void newPresence();
 	void newMessage();
 	void newIq();
-
+*/
 signals:
 	void messageReceived();
 	void presenceChanged();
 	void connected();
 	void error(Xmpp::ErrorType);
-	void presence(QString, QString, QString, QString, QString);
+	/*!
+	 * This signal is emitted when a new Stanza is ready to be read.
+	 */
+	void readyRead();
+	
+	
+	/*void presence(QString, QString, QString, QString, QString);
 	void message(QString, QString, QString);
 	void iq(QString, QString, QString, QStringList, QStringList);
-	void contactFeaturesReady(Xmpp::ContactFeatures);
+	void contactFeaturesReady(Xmpp::ContactFeatures);*/
 
 private:
 	Stanza *stanza;
-	int sendData(QByteArray mess);
+	int sendData(QByteArray &mess);
 	QByteArray readData();
 	QTcpSocket *tcpSocket;
 	QSslSocket *sslSocket;
@@ -87,7 +113,7 @@ private:
 	int port;
 
 	XmlHandler *handler;
-	struct rooster
+	struct Roster
 	{
 		QString subscription;
 		QString name;
@@ -111,18 +137,21 @@ private:
 		waitErrorType,
 		active
 	};
-	QList<rooster> roosterList;
+	QList<Roster> rosterList;
 	bool isConnectedToServer;
 	bool authenticated;
 	State state;
 	TlsHandler *tls;
 	QList<XmlHandler::Event> events;
 	void processEvent(XmlHandler::Event elem);
-	void processXml(QByteArray);
+	void processXml(QByteArray&);
 	bool isTlsing;
 	bool useTls;
 	QString password;
 	QString resource;
+	QList<QDomElement> elems;
+	QList<Stanza*> stanzaList;
+	Jid j; // Logged User's Jid.
 };
 
 #endif //XMPP_H

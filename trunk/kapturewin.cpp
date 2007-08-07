@@ -15,6 +15,7 @@
 #include <QCheckBox>
 #include <QAbstractButton>
 #include <QImageReader>
+#include <QMessageBox>
 
 #include "kapturewin.h"
 #include "mainframewin.h"
@@ -42,7 +43,7 @@ QImage *imageZoomed = new QImage(60,60,QImage::Format_RGB32);
 KaptureWin::KaptureWin()
 	: QMainWindow()
 {
-	
+//	QMessageBox::critical(this, QString("Je trouve que..."), QString("Ca marche tres bien comme ça."), QMessageBox::Ok);
 	int i = 0;
 	otherVideoDevice = false;
 	for( ;i < qApp->arguments().size(); i++)
@@ -56,7 +57,7 @@ KaptureWin::KaptureWin()
 	}
 	if (!otherVideoDevice)
 		videoDevice = QString("/dev/video0");
-	int defaultSat, defaultFreq, defaultBright, defaultCont, defaultSharp, defaultPan, defaultTilt;
+	int defaultSat, defaultFreq, defaultBright, defaultCont, defaultSharp;
 
 	crIsActivated = false;
 	xmppWinCreated = false;
@@ -76,28 +77,23 @@ KaptureWin::KaptureWin()
 	camera = new Webcam();
 	getDeviceCapabilities(); // Open device and fill the param's comboBoxes (doesn't close it)
 
-	camera->defaultCtrlVal(0, defaultSat); // Saturation to default
-	camera->defaultCtrlVal(2, defaultBright);  // Brightness to default
-	camera->defaultCtrlVal(3, defaultCont);  // Contrast to default
+	camera->defaultCtrlVal(Webcam::Saturation, defaultSat); // Get default Saturation
+	camera->defaultCtrlVal(Webcam::Brightness, defaultBright);  // Get default Brightness
+	camera->defaultCtrlVal(Webcam::Contrast, defaultCont);  // Get default Contrast
 #ifdef USE_UVCVIDEO
-	camera->defaultCtrlVal(1, defaultFreq);  // Frequency to default
-	camera->defaultCtrlVal(4, defaultSharp);  // Sharp to default
-	panSupported = camera->defaultCtrlVal(6, defaultPan);  // Pan to default
-	if(panSupported)
-	{
-		camera->defaultCtrlVal(7, defaultTilt);  // Tilt to default
-		printf(" * Pan = %d\n * Tilt = %d\n", defaultPan, defaultTilt);
-	}
+	camera->defaultCtrlVal(Webcam::PowerLineFreq, defaultFreq);  // Get default Frequency
+	camera->defaultCtrlVal(Webcam::Sharpness, defaultSharp);  // Get default Sharpness
+	panTiltSupported = camera->panTiltSupported();
 #endif
 
-	camera->changeCtrl(0, defaultSat); // Saturation to default
-	camera->changeCtrl(2, defaultBright);  // Brightness to default
-	camera->changeCtrl(3, defaultCont);  // Contrast to default
+	camera->changeCtrl(Webcam::Saturation, defaultSat); // Saturation to default
+	camera->changeCtrl(Webcam::Brightness, defaultBright);  // Brightness to default
+	camera->changeCtrl(Webcam::Contrast, defaultCont);  // Contrast to default
 #ifdef USE_UVCVIDEO
-	camera->changeCtrl(1, defaultFreq);  // Frequency to default
-	camera->changeCtrl(4, defaultSharp);  // Contrast to default
-	if (panSupported)
-		camera->changeCtrl(5, 3); // Reset to the center position
+	camera->changeCtrl(Webcam::PowerLineFreq, defaultFreq);  // Frequency to default
+	camera->changeCtrl(Webcam::Sharpness, defaultSharp);  // Contrast to default
+	if (panTiltSupported)
+		camera->changeCtrl(Webcam::PanTiltReset); // Reset to the center position
 #endif
 
 	ui.satManualValueBox->setValue(defaultSat);
@@ -117,7 +113,7 @@ KaptureWin::KaptureWin()
 	connect(camera,    	SIGNAL(imageReady () ), this, SLOT(getImage() ));
 	connect(ui.crButton,	SIGNAL(clicked () ), this, SLOT(crStartStop() ) );
 #ifdef USE_UVCVIDEO
-	if (panSupported)
+	if (panTiltSupported)
 	{
 		connect(mfw, SIGNAL(turnRightEvent()), camera, SLOT(turnRight()));
 		connect(mfw, SIGNAL(turnLeftEvent()), camera, SLOT(turnLeft()));
@@ -180,7 +176,7 @@ void KaptureWin::getDeviceCapabilities()
 		ui.comboBoxFormat->clear();
 		ui.comboBoxSize->clear();
 
-		formatList = camera->getFormatList(&formatName);
+		formatList = camera->getFormatList(formatName);
 		for (int i = 0; i < formatList.size() ; i++)
 			this->ui.comboBoxFormat->addItem(formatName.at(i));
 	
@@ -275,7 +271,7 @@ void KaptureWin::changeSize(const QString & itemSelected)
 	{
 		ui.crButton->setEnabled(true);
 	}
-	if (camera->isStreaming)
+	if (camera->isStreaming())
 	{
 		camera->stopStreaming();
 		if(checkCar == 'x')
@@ -325,7 +321,7 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 
 	ui.comboBoxSize->clear();
 	printf(" * Changing format to %s\n", itemSelected.toLatin1().constData());
-	if (camera->isStreaming)
+	if (camera->isStreaming())
 	{
 		startStopVideo();
 		wasStreaming = true;
@@ -356,7 +352,7 @@ void KaptureWin::changeFormat(const QString & itemSelected)
 void KaptureWin::startStopVideo()
 {
 	int ret = 0;
-	if(camera->isStreaming)
+	if(camera->isStreaming())
 	{
 		if (camera->stopStreaming() == EXIT_SUCCESS)
 		{
@@ -366,7 +362,7 @@ void KaptureWin::startStopVideo()
 	}
 	else
 	{
-		if (!camera->isOpened)
+		if (!camera->isOpened())
 			camera->open(videoDevice.toLatin1().constData());
 
 		ret = camera->startStreaming();
@@ -404,7 +400,7 @@ void KaptureWin::savePhoto()
 void KaptureWin::getImage()
 {
 	QPixmap pixmap;
-	if (camera->getFrame(&imageFromCamera) == EXIT_FAILURE)
+	if (camera->getFrame(imageFromCamera) == EXIT_FAILURE)
 	{
 		startStopVideo();
 		camera->close();
@@ -458,19 +454,19 @@ int KaptureWin::showZoom() // Shows little zoomed frame and shows the square in 
 		Y = 8;
 	
 	// Fill the image	
-	if(camera->isStreaming)
+	if(camera->isStreaming())
 	{
 		mainImage = mfw->ui.mainFrameLabel->pixmap()->toImage();
 		imageSaved = false;
 	}
 	
-	if ((!camera->isStreaming) && (!imageSaved))
+	if ((!camera->isStreaming()) && (!imageSaved))
 	{
 		mainImage = imageFromCamera;
 		mainImageSav = imageFromCamera;
 		imageSaved = true;
 	}
-	if ((!camera->isStreaming) && (imageSaved))
+	if ((!camera->isStreaming()) && (imageSaved))
 	{
 		mainImage = mainImageSav;
 	}
@@ -595,7 +591,7 @@ void KaptureWin::showColorReplaced()
 	int lwRedValue, lwGreenValue, lwBlueValue, lwRedSeverity, lwGreenSeverity, lwBlueSeverity;
 	QPalette palette;
 	
-	if(camera->isStreaming)
+	if(camera->isStreaming())
 		image = mfw->ui.mainFrameLabel->pixmap()->toImage();
 	else
 		image = imageFromCamera;
@@ -682,7 +678,7 @@ void KaptureWin::sharpChanged()
 void KaptureWin::closeEvent(QCloseEvent *event)
 {
 	printf("\n * Exiting...\n");
-	if (camera->isStreaming)
+	if (camera->isStreaming())
 		startStopVideo();
 	camera->close();
 	((QApplication*) this->parentWidget())->quit();

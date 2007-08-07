@@ -12,7 +12,7 @@ struct Emoticon
 };
 QList<Emoticon> emoticons;
 
-QString changeEmoticons(QString m)
+QString changeEmoticons(QString m/*, QString jid*/)
 {
 	emoticons.append(Emoticon(":)", "smile.png"));
 	emoticons.append(Emoticon(":-)", "smile.png"));
@@ -22,5 +22,10 @@ QString changeEmoticons(QString m)
 	{
 		m.replace(emoticons[i].binette, "<img src=\"" + emoticons[i].link + "\">");
 	}
+	//if (m.startsWith("/me "))
+	//	m = "<font color='green'> *** " + m.split("/me") + "</font>";
+	// FIXME:*message* works a half
+	if (m.at(0) == '*' && m.endsWith('*') && !m.contains(" "))
+		m = "<b>" + m + "</b>";
 	return m;
 }
