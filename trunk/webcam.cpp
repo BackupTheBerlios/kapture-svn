@@ -508,6 +508,7 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 
 bool Webcam::panTiltSupported()
 {
+#ifdef USE_UVCVIDEO
 	struct v4l2_queryctrl queryctrl;
 
 	if(!opened)
@@ -531,6 +532,9 @@ bool Webcam::panTiltSupported()
 	}
 
 	return true;
+#else
+	return false;
+#endif
 
 }
 
