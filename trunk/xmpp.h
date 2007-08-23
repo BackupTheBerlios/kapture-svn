@@ -26,9 +26,7 @@ public:
 	void auth(const QString& password, const QString& resource);
 	bool connectedToServer();
 	void getRoster();
-	void sendMessage(const Jid& to, const QString& message);
-	void sendFile(QString &to, unsigned int size, QString &name, QString description = "", QDateTime date = QDateTime(), QString hash = "");
-	void setPresence(QString show = "", QString status = "");
+	//void sendMessage(const Jid& to, const QString& message);
 	bool isSecured() const;
 	QString getResource() const; //FIXME: --> resource()
 	//void sendDiscoInfo(QString &to, QString &id);
@@ -125,17 +123,11 @@ private:
 	{
 		waitStream = 0,
 		waitFeatures,
-		waitStartTls,
 		waitProceed,
-		isHandShaking,
-		waitMechanisms,
-		waitMechanism,
 		waitSuccess,
-		waitNecessary,
 		waitBind,
 		waitSession,
-		waitJid,
-		waitErrorType,
+		isHandShaking,
 		active
 	};
 	QList<Roster> rosterList;

@@ -76,7 +76,7 @@ Config::Config()
 				cJid = infos.at(i).firstChild().toText().data();
 
 			if (infos.at(i).toElement().tagName() == "password" && infos.at(i).hasChildNodes())
-				cPassword = infos.at(i).firstChild().toText().data();
+				cPassword = QByteArray::fromBase64(infos.at(i).firstChild().toText().data().toLatin1());
 
 			if (infos.at(i).toElement().tagName() == "server" && infos.at(i).hasChildNodes())
 				cPersonnalServer = infos.at(i).firstChild().toText().data();
@@ -167,7 +167,7 @@ void Config::addProfile(const Profile& p)
 		eJid.appendChild(vJid);
 		
 		QDomElement ePassword = doc->createElement("password");
-		QDomText vPassword = doc->createTextNode(p.password());
+		QDomText vPassword = doc->createTextNode(p.password().toLatin1().toBase64());
 		ePassword.appendChild(vPassword);
 		
 		QDomElement eServer = doc->createElement("server");
@@ -206,7 +206,7 @@ void Config::addProfile(const Profile& p)
 		eJid.appendChild(vJid);
 		
 		QDomElement ePassword = d.createElement("password");
-		QDomText vPassword = d.createTextNode(p.password());
+		QDomText vPassword = d.createTextNode(p.password().toLatin1().toBase64());
 		ePassword.appendChild(vPassword);
 		
 		QDomElement eServer = d.createElement("server");

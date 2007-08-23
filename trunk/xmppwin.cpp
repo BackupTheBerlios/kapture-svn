@@ -25,22 +25,31 @@ XmppWin::XmppWin()
 	// Loads predifined Profiles.
 	conf = new Config();
 	if (conf->noConfig)
-		return;
-	profilesa = conf->profileList();
-	for (i = 0; i < profilesa.count(); i++)
 	{
-		/*printf("Profile : %s (%s, %s, %s, %s)\n", profilesa[i].name().toLatin1().constData(),
-							  profilesa[i].jid().toLatin1().constData(),
-							  profilesa[i].password().toLatin1().constData(),
-							  profilesa[i].personnalServer().toLatin1().constData(),
-							  profilesa[i].port().toLatin1().constData());
-		*/
-		ui.profilesComboBox->addItem(profilesa[i].name());
+		QMessageBox::information(this, tr("Configuration"),
+			tr("It seems that it is the firs time you \
+			run the Jabber part of Kapture. Let's add an account."),
+			QMessageBox::Ok);
+		showConfigDial();
+		//updateProfileList();
 	}
-	ui.jid->setText(profilesa[0].jid());
-	ui.password->setText(profilesa[0].password());
-	ui.serverEdit->setText(profilesa[0].personnalServer());
-	ui.portEdit->setText(profilesa[0].port());
+	/*else
+	{
+		profilesa = conf->profileList();
+		for (i = 0; i < profilesa.count(); i++)
+		{
+			ui.profilesComboBox->addItem(profilesa[i].name());
+		}
+		if (profilesa.count() > 0)
+		{	
+			ui.jid->setText(profilesa[0].jid());
+			ui.password->setText(profilesa[0].password());
+			ui.serverEdit->setText(profilesa[0].personnalServer());
+			ui.portEdit->setText(profilesa[0].port());
+		}
+	}
+	*/
+	updateProfileList();
 	
 	connect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeProfile(int)));
 	connected = false;
@@ -261,15 +270,21 @@ void XmppWin::updateProfileList()
 	conf = new Config();
 	if (conf->noConfig)
 		return;
+	
 	profilesa = conf->profileList(); //FIXME: find another name fore profilesa
+	
 	for (int i = 0; i < profilesa.count(); i++)
 	{
 		ui.profilesComboBox->addItem(profilesa[i].name());
 	}
-	ui.jid->setText(profilesa[0].jid());
-	ui.password->setText(profilesa[0].password());
-	ui.serverEdit->setText(profilesa[0].personnalServer());
-	ui.portEdit->setText(profilesa[0].port());
+	
+	if (profilesa.count() > 0)
+	{
+		ui.jid->setText(profilesa[0].jid());
+		ui.password->setText(profilesa[0].password());
+		ui.serverEdit->setText(profilesa[0].personnalServer());
+		ui.portEdit->setText(profilesa[0].port());
+	}
 }
 
 void XmppWin::sendFile(QString &to)

@@ -42,8 +42,6 @@ Xmpp::Xmpp(const Jid &jid, const QString &pServer, const int pPort)
 	}
 
 	port = pPort;
-
-
 	authenticated = false;
 	isTlsing = false;
 	tlsDone = false;
@@ -101,16 +99,17 @@ void Xmpp::auth(const QString &pass, const QString &res)
 	password = pass;
 	resource = res; //TODO:Should be removed.
 	j.setResource(res);
+	connect(port != 5223 ? tcpSocket : sslSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 }
 
 void Xmpp::start()
 {
-	if (xmlReader != NULL)
+	if (tlsDone || !useTls)
+	{
 		delete xmlReader;
-	if (xmlSource != NULL)
 		delete xmlSource;
-	if (xmlHandler != NULL)
 		delete xmlHandler;
+	}
 
 	xmlReader = new QXmlSimpleReader();
 	xmlSource = new QXmlInputSource();
@@ -120,7 +119,6 @@ void Xmpp::start()
 	xmlReader->parse(xmlSource, true);
 	
 	QString firstXml = QString("<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version=\"1.0\">").arg(server);
-	connect(port != 5223 ? tcpSocket : sslSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	state = waitStream;
 	QByteArray data = firstXml.toLatin1();
 	sendData(data);
@@ -253,8 +251,8 @@ void Xmpp::processEvent(Event *event) // FIXME: elem -> *event
 					if (node.localName() == QString("mechanisms"))
 					{
 						printf("Must directly switch to SASL authentication\n");
-						node = node.firstChild();
 						useTls = false;
+						node = node.firstChild();
 						// Must directly switch to SASL authentication
 						printf("%s\n", node.localName().toLatin1().constData());
 						while(node.localName() == QString("mechanism"))
@@ -301,7 +299,35 @@ void Xmpp::processEvent(Event *event) // FIXME: elem -> *event
 				else
 				{
 					if (!saslDone)
-						state = waitMechanisms;
+					{
+						//TODO:Must first check that event->node().firstChild() == mechanisms
+						QDomNode node = event->node().firstChild().firstChild();
+						printf("Tls done or not used. --> sasl (Not Implemented yet...)\n");
+						while(node.localName() == QString("mechanism"))
+						{
+							printf(" * Ok, received a mechanism tag.\n");
+							if (node.firstChild().toText().data() == QString("PLAIN"))
+							{
+								plainMech = true;
+								printf(" * Ok, PLAIN mechanism supported\n");
+
+								// Sstartauth method.
+								QDomDocument doc("");
+								QDomElement e = doc.createElement("auth");
+								doc.appendChild(e);
+								e.setAttribute(QString("xmlns"), QString("urn:ietf:params:xml:ns:xmpp-sasl"));
+								e.setAttribute(QString("mechanism"), QString("PLAIN"));
+								QString text = QString("%1%2%3%4").arg('\0').arg(username).arg('\0').arg(password);
+								QDomText t = doc.createTextNode(text.toLatin1().toBase64());
+								e.appendChild(t);
+								QByteArray sData = doc.toString().toLatin1();
+								sendData(sData);
+								state = waitSuccess;
+								
+							}
+							node = node.nextSibling();
+						} //FIXME: this is impemented two times in this function. Another way to do the same ?
+					}
 					else
 					{
 				//		printf("Wait Ncessary\n");
@@ -490,19 +516,16 @@ void Xmpp::tlsIsConnected()
 {
 	tlsDone = true;
 	isTlsing = false;
-	state = waitStream;
-	// now that TLS is done, I relaunch the auth process.
-	QString firstXml = QString("<?xml version='1.0'?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version='1.0'>").arg(server);
+	//state = waitStream;
+	//now that TLS is done, I relaunch the auth process.
+	//QString firstXml = QString("<?xml version='1.0'?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version='1.0'>").arg(server);
 	//printf(" * toSend = %s\n", firstXml.toLatin1().constData()); 
-	QByteArray sData = firstXml.toLatin1();
-	sendData(sData);
+	//QByteArray sData = firstXml.toLatin1();
+	//sendData(sData);
+	start();
 }
 
-void Xmpp::setPresence(QString show, QString status)
-{
-}
-
-void Xmpp::sendMessage(const Jid &to, const QString &message)
+/*void Xmpp::sendMessage(const Jid &to, const QString &message)
 {
 	printf("Send message from Xmpp\n");
 	QDomDocument d("");
@@ -519,38 +542,7 @@ void Xmpp::sendMessage(const Jid &to, const QString &message)
 
 	QByteArray sData = d.toString().toLatin1();
 }
-
-void Xmpp::sendFile(QString &to, unsigned int size, QString &name, QString description, QDateTime date, QString hash)
-{
-
-
-	QDomDocument d("");
-	QDomElement iq = d.createElement("iq");
-	iq.setAttribute("to", to);
-	iq.setAttribute("type", "set");
-	iq.setAttribute("id", "transfer1");
-
-	QDomElement file = d.createElement("file");
-	file.setAttribute("size", QString("%1").arg(size));
-	file.setAttribute("name", name);
-	
-	if(description != "")
-	{
-		QDomElement desc = d.createElement("desc");
-		QDomText text = d.createTextNode(description);
-		desc.appendChild(text);
-		file.appendChild(desc);
-	}
-	/*
-	 * Ranged transfers are not supported (yet)
-	 */
-	iq.appendChild(file);
-	d.appendChild(iq);
-
-	QByteArray sData = d.toString().toLatin1();
-	sendData(sData);
-}
-
+*/
 void Xmpp::connexionError(QAbstractSocket::SocketError socketError)
 {
 	switch (socketError)
