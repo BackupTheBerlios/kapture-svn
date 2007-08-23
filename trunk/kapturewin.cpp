@@ -57,7 +57,7 @@ KaptureWin::KaptureWin()
 	}
 	if (!otherVideoDevice)
 		videoDevice = QString("/dev/video0");
-	int defaultSat, defaultFreq, defaultBright, defaultCont, defaultSharp;
+	int defaultSat, defaultBright, defaultCont;
 
 	crIsActivated = false;
 	xmppWinCreated = false;
@@ -81,6 +81,7 @@ KaptureWin::KaptureWin()
 	camera->defaultCtrlVal(Webcam::Brightness, defaultBright);  // Get default Brightness
 	camera->defaultCtrlVal(Webcam::Contrast, defaultCont);  // Get default Contrast
 #ifdef USE_UVCVIDEO
+	int defaultFreq, defaultSharp;
 	camera->defaultCtrlVal(Webcam::PowerLineFreq, defaultFreq);  // Get default Frequency
 	camera->defaultCtrlVal(Webcam::Sharpness, defaultSharp);  // Get default Sharpness
 	panTiltSupported = camera->panTiltSupported();
@@ -167,7 +168,7 @@ void KaptureWin::mError(int ret)
 
 void KaptureWin::getDeviceCapabilities()
 {
-	int selected;
+	int selected = 0;
 	if (!(result = camera->open(videoDevice.toLatin1().constData())))
 	{
 		if(waitCamera.isActive())
@@ -196,18 +197,11 @@ void KaptureWin::getDeviceCapabilities()
 			{
 				selected = i;
 				camera->setFormat(320, 240, formatList.at(ui.comboBoxFormat->currentIndex()));
-				modified = true;
 			}
 		}
 		// I set the first frame size if the default size doesn't exist with the first format
-		if(!modified)
-		{
-			changeSize(ui.comboBoxSize->itemText(0));
-			ui.comboBoxSize->setCurrentIndex(0);
-
-		}
-		else
-			ui.comboBoxSize->setCurrentIndex(selected);
+		changeSize(ui.comboBoxSize->itemText(selected));
+		ui.comboBoxSize->setCurrentIndex(selected);
 
 		camera->getSizesList();
 

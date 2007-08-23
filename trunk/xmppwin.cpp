@@ -19,6 +19,8 @@ XmppWin::XmppWin()
 	ui.tableView->horizontalHeader()->hide();
 	ui.tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+	ui.jabberConnect->setEnabled(true);
+	ui.jabberDisconnect->setEnabled(false);
 
 	// Loads predifined Profiles.
 	conf = new Config();
@@ -70,6 +72,7 @@ void XmppWin::jabberConnect()
 	}
 	
 	client = new Client(*jid, ui.serverEdit->text(), ui.portEdit->text());
+	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	connect(client, SIGNAL(connected()), this, SLOT(clientAuthenticated()));
 	client->setResource(jid->resource());
 	client->setPassword(ui.password->text());
@@ -110,25 +113,12 @@ void XmppWin::clientAuthenticated()
 	ui.tlsIconLabel->setPixmap(*pixmap);
 	ui.tlsIconLabel->setEnabled(true);
 
-	connect(client, SIGNAL(readyRead()), this, SLOT(processStanza()));
-	
 	QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
 	client->getRoster();
 	connect(client, SIGNAL(rosterReady(Roster)), this, SLOT(setRoster(Roster)));
 	connect(client, SIGNAL(presenceReady(const Presence&)), this, SLOT(processPresence(const Presence&)));
 	connect(client, SIGNAL(messageReady(const Message&)), this, SLOT(processMessage(const Message&)));
 	connected = true;
-}
-
-void XmppWin::processStanza()
-{
-	printf("void XmppWin::processStanza()\n");
-	while (!client->noStanza())
-	{
-		Stanza *stanza = client->getFirstStanza();
-		const QByteArray data = stanza->data();
-		printf("Data = %s\n", data.constData());
-	}
 }
 
 void XmppWin::setRoster(Roster roster)
@@ -141,6 +131,7 @@ void XmppWin::setRoster(Roster roster)
 	for (int i = 0; i < contactList.count(); i++)
 	{
 		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
+		connect(contactList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
 	}
 	m->setData(contactList);
 	ui.tableView->setModel(m);
@@ -233,16 +224,13 @@ void XmppWin::error(Xmpp::ErrorType e)
 	{
 	case Xmpp::HostNotFound:
 		QMessageBox::critical(this, tr("Jabber"), tr("An error occured while connecting : \nHost not found."), QMessageBox::Ok);
-		ui.jabberConnect->setEnabled(true);
-		ui.jabberDisconnect->setEnabled(false);
-		delete client;
 		break;
 	default :
 		QMessageBox::critical(this, tr("Jabber"), tr("An unknown error occured while connecting."), QMessageBox::Ok);
-		ui.jabberConnect->setEnabled(true);
-		ui.jabberDisconnect->setEnabled(false);
-		delete client;
 	}
+	ui.jabberConnect->setEnabled(true);
+	ui.jabberDisconnect->setEnabled(false);
+	delete client;
 }
 
 void XmppWin::showConfigDial()
@@ -287,7 +275,8 @@ void XmppWin::updateProfileList()
 void XmppWin::sendFile(QString &to)
 {
 //	QString id = "askinfo1";
-//	client->askDiscoInfo(to, id);
+	QFile f("/home/detlev/mac.JPG");
+	client->sendFile(to, f);
 }
 
 void XmppWin::contactFeaturesSave(Xmpp::ContactFeatures c)

@@ -1,4 +1,19 @@
+/*
+ *      Kapture
+ *
+ *      Copyright (C) 2006-2007
+ *          Detlev Casanova (detlev.casanova@gmail.com)
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ */
+
 #include "task.h"
+#include <cstdlib>
+#include <ctime>
 
 
 Task::Task(Task *parent)
@@ -9,7 +24,9 @@ Task::Task(Task *parent)
 
 Task::~Task()
 {
-
+	for (int i = 0; i < taskList.count(); i++)
+		delete taskList[i];
+	taskList.clear();
 }
 
 void Task::appendTask(Task* t)
@@ -52,4 +69,19 @@ void Task::removeChild(Task* childTask)
 		}
 	}
 
+}
+
+QString Task::randomString(int size)
+{
+	srand((unsigned)time(0));
+	char *c;
+	c = new char[size+1];
+	for (int i = 0; i < size; i++)
+	{
+		int r;
+		r = (rand()%26)+96;
+		c[i] = r;
+	}
+	c[size] = '\0';
+	return QString(c);
 }

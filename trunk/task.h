@@ -15,6 +15,7 @@ public:
 	virtual bool canProcess(const Stanza&) const {return false;};
 	virtual void processStanza(const Stanza&);
 	void removeChild(Task* childTask);
+	QString randomString(int size);
 signals:
 	void finished();
 

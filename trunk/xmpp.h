@@ -4,8 +4,9 @@
 #include <QtCore>
 #include <QtNetwork>
 
-#include "xmlHandler.h"
-#include "tlsHandler.h"
+#include "xmlhandler.h"
+#include "event.h"
+#include "tlshandler.h"
 #include "stanza.h"
 #include "jid.h"
 
@@ -29,6 +30,7 @@ public:
 	void sendFile(QString &to, unsigned int size, QString &name, QString description = "", QDateTime date = QDateTime(), QString hash = "");
 	void setPresence(QString show = "", QString status = "");
 	bool isSecured() const;
+	QString getResource() const; //FIXME: --> resource()
 	//void sendDiscoInfo(QString &to, QString &id);
 	//void askDiscoInfo(QString &to, QString &id);
 	enum ErrorType
@@ -54,16 +56,12 @@ public:
 	 * Send the Stanza s to the server.
 	 * Returns true on success, false on failure.
 	 */
-	bool writeStanza(Stanza& s);
-	
+	void write(Stanza& s);
+
 	/*!
 	 * Returns false if there are no more stanza ready to be read left.
 	 */
 	bool stanzaAvailable() const;
-	/*!
-	 * Write Stanza s on the socket.
-	 */
-	void write(Stanza&);
 
 
 public slots:
@@ -112,7 +110,10 @@ private:
 	QString personnalServer;
 	int port;
 
-	XmlHandler *handler;
+	QXmlSimpleReader *xmlReader;
+	QXmlInputSource *xmlSource;
+	XmlHandler *xmlHandler;
+
 	struct Roster
 	{
 		QString subscription;
@@ -142,8 +143,7 @@ private:
 	bool authenticated;
 	State state;
 	TlsHandler *tls;
-	QList<XmlHandler::Event> events;
-	void processEvent(XmlHandler::Event elem);
+	void processEvent(Event *elem);
 	void processXml(QByteArray&);
 	bool isTlsing;
 	bool useTls;

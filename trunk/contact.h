@@ -46,7 +46,7 @@ public slots:
 	void sendFile();
 signals:
 	void sendMessage(QString&, QString&);
-	void sendFileSignal(QString);
+	void sendFileSignal(QString&);
 };
 
 #endif //CONTACT_H

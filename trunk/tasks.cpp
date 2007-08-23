@@ -1,3 +1,16 @@
+/*
+ *      Kapture
+ *
+ *      Copyright (C) 2006-2007
+ *          Detlev Casanova (detlev.casanova@gmail.com)
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ */
+
 #include "tasks.h"
 
 RosterTask::RosterTask(Task* parent)
@@ -14,22 +27,21 @@ RosterTask::~RosterTask()
 void RosterTask::getRoster(Xmpp* p, Jid& j)
 {
 	QString type = "get";
-	QString id = "roster_1";
-	QString to = "";
-	Stanza *s = new Stanza(Stanza::IQ, type, id, to);
-	s->setFrom(j);
-	QDomDocument d("");
-	QDomElement c = d.createElement("query");
-	c.setAttribute("xmlns", "jabber:iq:roster");
-	s->appendChild(c);
-	printf("Ask for roster : %s\n", s->data().constData());
+	id = randomString(6);
 	
-	p->write(*s);
+	Stanza stanza(Stanza::IQ, type, id, QString());
+	QDomDocument doc("");
+	stanza.setFrom(j);
+	QDomElement c = doc.createElement("query");
+	c.setAttribute("xmlns", "jabber:iq:roster");
+	stanza.node().firstChild().appendChild(c);
+	
+	p->write(stanza);
 }
 
 bool RosterTask::canProcess(const Stanza& s) const
 {
-	if (s.id() == "roster_1" && s.type() == "result")
+	if (s.id() == id && s.type() == "result")
 		return true;
 	else
 		return false;
@@ -41,7 +53,7 @@ void RosterTask::processStanza(const Stanza& s)
 	QString j;
 	QString n;
 	QString subs;
-	QDomElement query = s.document().firstChildElement().firstChildElement();
+	QDomElement query = s.node().firstChildElement();
 	if (query.localName() == "query")
 	{
 		QDomNodeList items = query.childNodes();
@@ -90,10 +102,10 @@ PresenceTask::~PresenceTask()
 
 void PresenceTask::setPresence(Xmpp* p, const QString& show, const QString& status, const QString& type)
 {
-	QString id = "";
-	QString to = "";
-	Stanza *stanza = new Stanza(Stanza::Presence, type, id, to);
-	QDomDocument doc("");
+	Stanza stanza(Stanza::Presence, type, QString(), QString());
+	QDomNode node = stanza.node();
+	QDomDocument doc = node.ownerDocument();
+
 	QDomElement e = doc.createElement("presence");
 	
 	if (show != "")
@@ -101,7 +113,7 @@ void PresenceTask::setPresence(Xmpp* p, const QString& show, const QString& stat
 		QDomElement s = doc.createElement("show");
 		QDomText val = doc.createTextNode(show);
 		s.appendChild(val);
-		stanza->appendChild(s);
+		node.appendChild(s);
 	}
 	
 	if (status != "")
@@ -109,10 +121,10 @@ void PresenceTask::setPresence(Xmpp* p, const QString& show, const QString& stat
 		QDomElement s = doc.createElement("status");
 		QDomText val = doc.createTextNode(status);
 		s.appendChild(val);
-		stanza->appendChild(s);
+		node.appendChild(s);
 	}
 	
-	p->write(*stanza);
+	p->write(stanza);
 	emit finished();
 }
 
@@ -150,9 +162,9 @@ void PullPresenceTask::processStanza(const Stanza& stanza)
 	from = stanza.from();
 	Jid to = stanza.to();
 	type = stanza.type() == "" ? "available" : stanza.type();
-	QDomDocument doc = stanza.document();
+	QDomNode node = stanza.node();
 
-	QDomElement s = doc.firstChildElement();
+	QDomElement s = node.toElement();//.firstChildElement();
 	if (!s.hasChildNodes())
 	{
 		show = "";
@@ -160,7 +172,7 @@ void PullPresenceTask::processStanza(const Stanza& stanza)
 		emit presenceFinished();
 		return;
 	}
-
+	printf("Set presence\n");
 	s = s.firstChildElement();
 	while(!s.isNull())
 	{
@@ -223,7 +235,7 @@ void PullMessageTask::processStanza(const Stanza& stanza)
 	ty = stanza.type();
 	f = stanza.from();
 	t = stanza.to();
-	QDomElement s = stanza.document().firstChildElement();
+	QDomElement s = stanza.node().toElement();
 	
 	if (!s.hasChildNodes())
 		m = "";
@@ -283,20 +295,93 @@ MessageTask::~MessageTask()
 
 void MessageTask::sendMessage(Xmpp* p, const Message& message)
 {
-	QString id = "mess_1"; //FIXME:Must send a random string.
+	QString id = randomString(6); //FIXME:Must send a random string.
 	Jid to = message.to();
-	Stanza *stanza = new Stanza(Stanza::Message, message.type(), id, to.full());
-
+	Stanza stanza(Stanza::Message, message.type(), id, to.full());
 	QDomDocument doc("");
-	QDomElement e = doc.createElement("message"); // Just to create childs.
-	
 	QDomElement s = doc.createElement("body");
 	QDomText val = doc.createTextNode(message.message());
 	s.appendChild(val);
-	stanza->appendChild(s);
+	stanza.node().firstChild().appendChild(s);
 
 	// TODO:Thread, subjects... later.
 	
-	p->write(*stanza);
+	p->write(stanza);
 	emit finished();
+}
+
+//-------------------------------------
+// FileTransferTask
+//-------------------------------------
+/*
+ *
+ */
+
+#define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
+
+FileTransferTask::FileTransferTask(Task* parent)
+	:Task(parent)
+{
+
+}
+
+FileTransferTask::~FileTransferTask()
+{
+
+}
+
+void FileTransferTask::transferFile(Xmpp* p, const Jid& to, const QFile& file)
+{
+/*Init stream initiation...*/
+/*
+ * <feature var='http://jabber.org/protocol/si'/>
+ * <feature var='http://jabber.org/protocol/si/profile/file-transfer'/>
+ */
+	//f = file;
+	Stanza stanza(Stanza::IQ, "get", "askInfo1", to.full());
+	QDomNode node = stanza.node();
+	QDomDocument d = node.ownerDocument();
+	QDomElement query = d.createElement("query");
+	query.setAttribute("xmlns", XMLNS_DISCO);
+	node.appendChild(query);
+
+	state = WaitDiscoInfo;
+	p->write(stanza);
+}
+
+bool FileTransferTask::canProcess(const Stanza& s) const
+{
+	if (s.kind() != Stanza::IQ)
+		return false;
+	QString ns = s.node().firstChildElement().firstChildElement().namespaceURI();
+	if (ns == "http://jabber.org/protocol/disco#info")
+		return true;
+	/*
+	 * Other namespaces should be supported here.
+	 * http://jabber.org/protocol/disco#info is only for features discovering.
+	 */
+	return false;
+}
+
+void FileTransferTask::processStanza(const Stanza& s)
+{
+	switch (state)
+	{
+	case WaitDiscoInfo:
+		if (s.type() == "result")
+			printf("Ok, result received.\n");
+		break;
+	}
+}
+
+void FileTransferTask::initStream()
+{
+/*
+ * Stream Initiation
+ *  - Discovers if Receiver implements the desired profile.
+ *  - Offers a stream initiation.
+ *  - Receiver accepts stream initiation.
+ *  - Sender and receiver prepare for using negotiated profile and stream.
+ *  See XEP 0095 : http://www.xmpp.org/extensions/xep-0095.html
+ */
 }

@@ -18,46 +18,36 @@ public:
 	/*!
 	 * Create a new Stanza with kind Kind, type Type, id Id and to To.
 	 */
-	Stanza(Kind kind, const QString& type, const QString& id, const QString& to);
+	Stanza(Kind kind, const QString& type, const QString& id, const QString& to, const QString& namespaceURI = QString());
 	/*!
-	 * Create a new Stanza from an xml tree.
+	 * Create a new Stanza from an xml node.
 	 */
-	Stanza(QByteArray &node);
+	Stanza(const QDomNode &node);
 	/*!
 	 * Destructor.
 	 */
 	~Stanza();
 	
-	Kind tagNameToKind(QString tagName) const;
-	QString kindToTagName(Kind kind) const;
-	
+	Kind kind() const;
+	Jid from() const;
+	Jid to() const;
+	QString id() const;
+	QString type() const;
+	QDomNode node() const;
+
+	void setKind(Kind);
 	void setType(QString &s);
 	void setFrom(const Jid&);
 	void setTo(const Jid&);
 	void setId(const QString&);
 	void setType(const QString&);
-	void setKind(Kind);
-	void appendChild(const QDomNode&);
-
-	Jid from() const;
-	Jid to() const;
-	QString id() const;
-	QString type() const;
-	Kind kind() const;
-	QByteArray data() const;
-	QDomDocument document() const;
+	void setNode(const QDomNode&);
 
 private:
-	/*!
-	 * Stanza's xml tree.
-	 */
-	QByteArray n; // node
-	Kind k; // kind
-	Jid t; // to
-	QString i; // id
-	Jid f; // from
-	QString ty; // type
-	QDomDocument doc; // Xml Tree.
+	Kind tagNameToKind(QString tagName) const;
+	QString kindToTagName(Kind kind) const;
+
+	QDomNode n; // Xml Tree.
 
 };
 

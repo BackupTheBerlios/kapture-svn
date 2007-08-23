@@ -1,19 +1,35 @@
+/*
+ *      Kapture
+ *
+ *      Copyright (C) 2006-2007
+ *          Detlev Casanova (detlev.casanova@gmail.com)
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ */
+
 #include "stanza.h"
+#include <QString>
 
 
 Stanza::Stanza()
 {
-	i = "";
+/*	i = "";
 	t = Jid();
 	f = Jid();
 	ty = "";
 	k = BadStanza;
 	doc = QDomDocument("");
+	tn = "";
+*/
 }
 
-Stanza::Stanza(Kind kind, const QString& type, const QString& id, const QString& to)
+Stanza::Stanza(Kind kind, const QString& type, const QString& id, const QString& to, const QString& namespaceURI)
 {
-	doc = QDomDocument("");
+	QDomDocument doc("");
 	doc.appendChild(doc.createElement(kindToTagName(kind)));
 	
 	if (!type.isEmpty())
@@ -22,66 +38,39 @@ Stanza::Stanza(Kind kind, const QString& type, const QString& id, const QString&
 		doc.documentElement().setAttribute("id", id);
 	if (!to.isEmpty())
 		doc.documentElement().setAttribute("to", to);
-	i = id;
-	ty = type;
-	t = Jid(to);
+	if (!namespaceURI.isEmpty())
+		doc.documentElement().setAttribute("xmlns", namespaceURI);
+
+	n = doc;
+	
+//	i = id;
+//	ty = type;
+//	t = Jid(to);
+//	tn = kindToTagName(kind);
 }
 
-Stanza::Stanza(QByteArray &node)
+//Stanza::Stanza(const QByteArray &node)
+Stanza::Stanza(const QDomNode &node)
 {
-	i = "";
+	n = node;
+/*	i = "";
 	t = Jid();
 	f = Jid();
 	ty = "";
 	
-	doc.setContent(node, true);
-	QDomElement s = doc.documentElement();
-	printf("from = %s, to = %s\n", s.attribute("from").toLatin1().constData(), s.attribute("to").toLatin1().constData());
+	tn = node.localName();
+	k = tagNameToKind(tn);
+	if (k == BadStanza)
+	{
+		return;
+	}
+
 	f = Jid(s.attribute("from"));
-	printf("from = %s\n", f.full().toLatin1().constData());
 	t = Jid(s.attribute("to"));
 	i = s.attribute("id");
 	ty = s.attribute("type");
-	k = tagNameToKind(s.tagName());
-	n = node;
-
-/*	s = s.firstChildElement();
-
-	while(!s.isNull())
-	{
-		kind = s.localName().toLower();
-		if (kind != "iq" &&
-		    kind != "message" &&
-		    kind != "presence")
-		{
-			printf("This isn't a stanza : localName = %s\n", kind.toLatin1().constData());
-			kind = "INVALID";
-			return;
-		}
-		printf("Kind : %s\n", kind.toLower().toLatin1().constData());
-		
-		if (kind == "presence")
-		{
-			setupPresence(s);
-			emit presenceReady();
-		}
-		if (kind == "message")
-		{
-			setupMessage(s);
-			if (!message.isNull())
-				emit messageReady();
-			//else
-			//	emit composing();
-		}
-		if (kind == "iq")
-		{
-			setupIq(s);
-			emit iqReady();
-		}
-		s = s.nextSibling().toElement();
-		printf("Tag = %s\n", s.localName().toLatin1().constData());
-	}
-	*/
+	ns = s.namespaceURI();
+*/
 }
 
 Stanza::~Stanza()
@@ -113,78 +102,68 @@ QString Stanza::kindToTagName(Kind kind) const
 
 void Stanza::setFrom(const Jid& from)
 {
-	f = from;
+	//f = from;
 	if (from.isValid())
-		doc.documentElement().setAttribute("from", from.full());
+		n.toElement().setAttribute("from", from.full());
 }
 
 void Stanza::setTo(const Jid& to)
 {
-	t = to;
+	//t = to;
 	if (to.isValid())
-		doc.documentElement().setAttribute("to", to.full());
+		 n.toElement().setAttribute("to", to.full());
 }
 
 void Stanza::setId(const QString& id)
 {
-	i = id;
+	//i = id;
 	if (!id.isEmpty())
-		doc.documentElement().setAttribute("id", id);
+		 n.toElement().setAttribute("id", id);
 }
 
 void Stanza::setType(const QString& type)
 {
-	ty = type;
+	//ty = type;
 	if (!type.isEmpty())
-		doc.documentElement().setAttribute("type", type);
+		 n.toElement().setAttribute("type", type);
 }
 
 void Stanza::setKind(Kind kind)
 {
-	k = kind;
-}
-
-void Stanza::appendChild(const QDomNode& child)
-{
-	doc.documentElement().appendChild(child);
+	//k = kind;
+	 n.toElement().setTagName(kindToTagName(kind));
 }
 
 Jid Stanza::from() const
 {
+	Jid f = Jid(n.toElement().attribute("from"));
 	return f;
 }
 
 Jid Stanza::to() const
 {
+	Jid t = Jid(n.toElement().attribute("to"));
 	return t;
 }
 
 QString Stanza::id() const
 {
-	return i;
+	return n.toElement().attribute("id");
 }
 
 QString Stanza::type() const
 {
-	return ty;
+	return n.toElement().attribute("type");
 }
 
 Stanza::Kind Stanza::kind() const
 {
-	return k;
+	return tagNameToKind(n.localName());
 }
 
-QByteArray Stanza::data() const
+QDomNode Stanza::node() const
 {
-	if (!n.isEmpty())
-		return n;
-	else
-		return doc.toByteArray();
-}
-
-QDomDocument Stanza::document() const
-{
-	return doc;
+	return n;
 }
 
 /*void Stanza::setupPresence(QDomElement s)

@@ -1,3 +1,16 @@
+/*
+ *      Kapture
+ *
+ *      Copyright (C) 2006-2007
+ *          Detlev Casanova (detlev.casanova@gmail.com)
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ */
+
 #include <QtXml>
 #include <QDomDocument>
 
@@ -30,7 +43,7 @@ Xmpp::Xmpp(const Jid &jid, const QString &pServer, const int pPort)
 
 	port = pPort;
 
-	handler = new XmlHandler();
+
 	authenticated = false;
 	isTlsing = false;
 	tlsDone = false;
@@ -68,6 +81,10 @@ Xmpp::~Xmpp()
 		sendData(data);
 	}
 	tcpSocket->close();
+	sslSocket->close();
+//	delete tcpSocket;
+//	delete sslSocket;
+	delete tls;
 }
 
 /*
@@ -88,6 +105,20 @@ void Xmpp::auth(const QString &pass, const QString &res)
 
 void Xmpp::start()
 {
+	if (xmlReader != NULL)
+		delete xmlReader;
+	if (xmlSource != NULL)
+		delete xmlSource;
+	if (xmlHandler != NULL)
+		delete xmlHandler;
+
+	xmlReader = new QXmlSimpleReader();
+	xmlSource = new QXmlInputSource();
+	xmlHandler = new XmlHandler();
+	xmlReader->setContentHandler(xmlHandler);
+	xmlSource->setData(QString(""));
+	xmlReader->parse(xmlSource, true);
+	
 	QString firstXml = QString("<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version=\"1.0\">").arg(server);
 	connect(port != 5223 ? tcpSocket : sslSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
 	state = waitStream;
@@ -175,63 +206,33 @@ void Xmpp::dataReceived()
 
 void Xmpp::processXml(QByteArray &data)
 {
-	QXmlInputSource xmlSource;
-	QXmlSimpleReader xml;
-	
 	printf(" * Data : %s\n", data.constData());
 
-	if (state < active)
+	xmlSource->setData(data);
+
+	if (!xmlReader->parseContinue())
 	{
-		xmlSource.setData(data);
-		xml.setContentHandler(handler);
-		
-		handler->setData(data);
-		
-		xml.parse(xmlSource);
-		//	printf(" * Parsing OK (SAX).\n");
-		
-		events += handler->events();
-	
-		while (!events.isEmpty())
-		{
-			processEvent(events.takeFirst());
-		}
+		printf("Parsing error\n");
+		return;
 	}
-	else
-	{
-/*
- * FIXME : That can happen :
-<presence xmlns='jabber:client' to='linux@localhost/Kapture' from='linux2@localhost/Psi'>
- <x xmlns='jabber:x:delay' from='linux2@localhost/Psi' stamp='20070807T09:22:29'/>
- <priority>5</priority>
- <x xmlns='vcard-temp:x:update'>
-  <nickname>Gnu/Linux2</nickname>
- </x>
-</presence>
-<presence xmlns='jabber:client' to='linux@localhost/Kapture' from='linux3@localhost/Psi'>
- <x xmlns='jabber:x:delay' from='linux3@localhost/Psi' stamp='20070807T09:22:29'/>
- <priority>5</priority>
- <x xmlns='vcard-temp:x:update'>
-  <nickname>linux3</nickname>
- </x>
-</presence>
-*
-* There are 2 presences in a row !
-*/
-		Stanza *s = new Stanza(data);
-		stanzaList << s;
-		emit readyRead();
-	}
-	data.clear();
+
+	Event *event;
+	while ((event = xmlHandler->read()) != 0)
+		processEvent(event);
 }
 
-void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
+void Xmpp::processEvent(Event *event) // FIXME: elem -> *event
 {
-	//printf("Elem = %s\n", elem.name.toLatin1().constData());
+	/*
+	 * WARNING: An event is NOT still the same as before.
+	 * Now, an event contains all data from depth = 1 
+	 * to depth back to 1.
+	 */
+	printf("Elem = %s\n", event->node().localName().toLatin1().constData());
 	switch (state)
 	{
 		case waitStream:
-			if (elem.name == QString("stream:stream"))
+			if (event->type() == Event::Stream)
 			{
 				printf(" * Ok, received the stream tag.\n");
 				state = waitFeatures;
@@ -240,47 +241,113 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 			//	printf(" ! Didn't receive the stream ! \n");
 			break;
 		case waitFeatures:
-			if (elem.name == QString("stream:features"))
+			if (event->node().localName() == "features")
 			{
 				printf(" * Ok, received the features tag.\n");
 				if (!tlsDone && useTls)
-					state = waitStartTls;
-				else 
+				{
+					QDomNode node = event->node().firstChild();
+					printf("Next Status : ");
+					//state = waitStartTls;
+					printf("%s\n", node.localName().toLatin1().constData());
+					if (node.localName() == QString("mechanisms"))
+					{
+						printf("Must directly switch to SASL authentication\n");
+						node = node.firstChild();
+						useTls = false;
+						// Must directly switch to SASL authentication
+						printf("%s\n", node.localName().toLatin1().constData());
+						while(node.localName() == QString("mechanism"))
+						{
+							printf(" * Ok, received a mechanism tag.\n");
+							if (node.firstChild().toText().data() == QString("PLAIN"))
+							{
+								plainMech = true;
+								printf(" * Ok, PLAIN mechanism supported\n");
+
+								// Sstartauth method.
+								QDomDocument doc("");
+								QDomElement e = doc.createElement("auth");
+								doc.appendChild(e);
+								e.setAttribute(QString("xmlns"), QString("urn:ietf:params:xml:ns:xmpp-sasl"));
+								e.setAttribute(QString("mechanism"), QString("PLAIN"));
+								QString text = QString("%1%2%3%4").arg('\0').arg(username).arg('\0').arg(password);
+								QDomText t = doc.createTextNode(text.toLatin1().toBase64());
+								e.appendChild(t);
+								QByteArray sData = doc.toString().toLatin1();
+								sendData(sData);
+								state = waitSuccess;
+								
+							}
+							node = node.nextSibling();
+						}
+					
+					}
+					if (node.localName() == QString("starttls"))
+					{
+						printf(" * Ok, received the starttls tag.\n");
+						// Send starttls tag
+						QDomDocument doc("");
+						QDomElement e = doc.createElement("starttls");
+						doc.appendChild(e);
+						e.setAttribute(QString("xmlns"), QString("urn:ietf:params:xml:ns:xmpp-tls"));
+						QByteArray sData = doc.toString().toLatin1();
+						sendData(sData);
+						// Next state
+						state = waitProceed;
+						// Even if TLS isn't required, I use TLS.
+					}
+				}
+				else
+				{
 					if (!saslDone)
 						state = waitMechanisms;
 					else
-						state = waitNecessary;
+					{
+				//		printf("Wait Ncessary\n");
+				//		state = waitNecessary;
+						QDomNode node = event->node().firstChild();
+						while(!node.isNull())
+						{
+							if (node.localName() == QString("bind"))
+							{
+								printf(" * Ok, bind needed.\n");
+								needBind = true;
+							}
+							if (node.localName() == QString("session"))
+							{
+								printf(" * Ok, session needed.\n");
+								needSession = true;
+							}
+							node = node.nextSibling();
+						}
+						if (needBind)
+						{
+							QDomDocument doc("");
+							QDomElement e = doc.createElement("iq");
+							e.setAttribute("type", "set"); // Trying without id.
 
-			}
-			break;
-		case waitStartTls:
-			if (elem.name == QString("starttls"))
-			{
-				printf(" * Ok, received the starttls tag.\n");
-				// Send starttls tag
-				QDomDocument doc("");
-				QDomElement e = doc.createElement("starttls");
-				doc.appendChild(e);
-				e.setAttribute(QString("xmlns"), QString("urn:ietf:params:xml:ns:xmpp-tls"));
-				QByteArray sData = doc.toString().toLatin1();
-				sendData(sData);
+							QDomElement e2 = doc.createElement("bind");
+							e2.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-bind");
 				
-				// Next state
-				state = waitProceed;
+							QDomElement e3 = doc.createElement("resource");
+							QDomText t = doc.createTextNode(resource);
 				
-				/*
-				 * Even if TLS isn't required, I use TLS.
-				 */
-			}
-			if (elem.name == QString("mechanisms"))
-			{
-				useTls = false;
-				// Must directly switch to SASL authentication 
-				state = waitMechanism;
+							e3.appendChild(t);
+							e2.appendChild(e3);
+							e.appendChild(e2);
+							doc.appendChild(e);
+							QByteArray sData = doc.toString().toLatin1();
+							sendData(sData);
+				
+							state = waitBind;
+						}
+					}
+				}
 			}
 			break;
 		case waitProceed:
-			if (elem.name == QString("proceed"))
+			if (event->node().localName() == QString("proceed"))
 			{
 				//printf(" * Ok, received the proceed tag.\n");
 				printf(" * Proceeding...\n * Enabling TLS connection.\n");
@@ -295,94 +362,80 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 				isTlsing = true;
 			}
 			break;
-		case waitMechanisms:
-			if (elem.name == QString("mechanisms"))
-			{
-				printf(" * Ok, received the mechanisms tag.\n");
-				state = waitMechanism;
-			}
-			break;
-		case waitMechanism:
-			if (elem.name == QString("mechanism"))
-			{
-				printf(" * Ok, received a mechanism tag.\n");
-				if (elem.text == QString("PLAIN"))
-				{
-					plainMech = true;
-					printf(" * Ok, PLAIN mechanism supported\n");
-					
-					// Sstartauth method.
-					QDomDocument doc("");
-					QDomElement e = doc.createElement("auth");
-					doc.appendChild(e);
-					e.setAttribute(QString("xmlns"), QString("urn:ietf:params:xml:ns:xmpp-sasl"));
-					e.setAttribute(QString("mechanism"), QString("PLAIN"));
-					QString text = QString("%1%2%3%4").arg('\0').arg(username).arg('\0').arg(password);
-					QDomText t = doc.createTextNode(text.toLatin1().toBase64());
-					e.appendChild(t);
-					QByteArray sData = doc.toString().toLatin1();
-					sendData(sData);
-					state = waitSuccess;
-				}
-			}
-			break;
 		case waitSuccess:
-			if (elem.name == QString("success"))
+			if (event->node().localName() == QString("success"))
 			{
 				printf(" * Ok, SASL established.\n");
 				saslDone = true;
 				start();
 			}
-			if (elem.name == QString("failure"))
+			if (event->node().localName() == QString("failure"))
 			{
 				printf(" ! Check Username and password.\n");
 				QByteArray sData = "</stream:stream>";
 				sendData(sData);
 			}
 			break;
-		case waitNecessary:
-			if (elem.name == QString("bind"))
-			{
-				printf(" * Ok, bind needed.\n");
-				needBind = true;
-			}
-			if (elem.name == QString("session"))
-			{
-				printf(" * Ok, session needed.\n");
-				needSession = true;
-			}
-			if (needBind && elem.name == QString("stream:features") /*&& !elem.openingTag*/)
-			{
-				QDomDocument doc("");
-				QDomElement e = doc.createElement("iq");
-				e.setAttribute("type", "set"); // Trying without id.
-				
-				QDomElement e2 = doc.createElement("bind");
-				e2.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-bind");
-				
-				QDomElement e3 = doc.createElement("resource");
-				QDomText t = doc.createTextNode(resource);
-				
-				e3.appendChild(t);
-				e2.appendChild(e3);
-				e.appendChild(e2);
-				doc.appendChild(e);
-				QByteArray sData = doc.toString().toLatin1();
-				sendData(sData);
-				
-				state = waitBind;
-			}
-			break;
 		case waitBind:
-			if (elem.name == QString("bind"))
+			if (event->node().localName() == QString("iq"))
 			{
-				state = waitJid;
+				if (event->node().toElement().attribute("type") != QString("result"))
+				{
+					printf("Authentification Error.\n");
+					QByteArray sData = "</stream:stream>";
+					sendData(sData);
+					return;
+				}
+				if (event->node().firstChild().localName() == QString("bind"))
+				{
+					QDomNode node = event->node().firstChild();
+					if (node.firstChild().localName() == QString("jid"))
+					{
+						node = node.firstChild().firstChild();
+						QString u, r, s;
+						if (!node.toText().data().isEmpty())
+						{
+							u = node.toText().data().split('@')[0]; // Username
+							s = node.toText().data().split('@')[1].split('/')[0]; // Server
+							r = node.toText().data().split('/')[1]; // Resource
+							printf("'%s'@'%s'/'%s'\n", u.toLatin1().constData(), s.toLatin1().constData(), r.toLatin1().constData());
+						}
+						if (u == username && s == server)
+						{
+							printf("Jid OK !\n");
+							resource = r;
+							jidDone = true;
+						}
+					}
+
+					if (needSession && jidDone)
+					{
+						printf(" * Launching Session...\n");
+						QDomDocument doc("");
+						QDomElement e = doc.createElement("iq");
+						e.setAttribute("to", server);
+						e.setAttribute("type", "set");
+						e.setAttribute("id", "sess_1");
+
+						QDomElement e2 = doc.createElement("session");
+						e2.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-session");
+
+						e.appendChild(e2);
+						doc.appendChild(e);
+
+						QByteArray sData = doc.toString().toLatin1();
+						sendData(sData);
+
+						state = waitSession;
+					}
+					
+				}
 			}
 			break;
 		case waitSession:
-			if (elem.name == QString("iq"))
+			if (event->node().localName() == QString("iq"))
 			{
-				if (elem.attributes.value("type") == "result")
+				if (event->node().toElement().attribute("type") == "result")
 				{
 					printf(" * Connection is now active !\n");
 					
@@ -399,65 +452,24 @@ void Xmpp::processEvent(XmlHandler::Event elem) // FIXME: elem -> event
 				}
 				else
 				{
-					if (elem.attributes.value("type") == "error")
+					if (event->node().toElement().attribute("type") == "error")
 					{
 						printf(" ! An error occured ! \n");
-						//emit error;
 					}
 				}
 
 			}
 			break;
-		case waitJid:
-			if (elem.name == QString("jid"))
-			{
-				QString u, r, s;
-				if (!elem.text.isEmpty())
-				{
-					u = elem.text.split('@')[0]; // Username
-					s = elem.text.split('@')[1].split('/')[0]; // Server
-					r = elem.text.split('/')[1]; // Resource
-					printf("'%s'@'%s'/'%s'\n", u.toLatin1().constData(), s.toLatin1().constData(), r.toLatin1().constData());
-				}
-				
-				if (u == username && s == server)
-				{
-					printf("Jid OK !\n");
-					resource = r;
-					jidDone = true;
-				}
-			}
-
-			if (needSession && jidDone)
-			{
-				printf(" * Launching Session...\n");
-				QDomDocument doc("");
-				QDomElement e = doc.createElement("iq");
-				e.setAttribute("to", server);
-				e.setAttribute("type", "set");
-				e.setAttribute("id", "sess_1");
-
-				QDomElement e2 = doc.createElement("session");
-				e2.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-session");
-
-				e.appendChild(e2);
-				doc.appendChild(e);
-
-				QByteArray sData = doc.toString().toLatin1();
-				sendData(sData);
-
-				state = waitSession;
-			}
-			break;
-		case waitErrorType:
-			if (elem.name == "internal-server-error")
-			{
-				printf("Login error : unkown user.\n");
-				//emit error;
-			}
-			break;
-
+		case active:
+			Stanza *s = new Stanza(event->node());
+			stanzaList << s;
+			emit readyRead();
 	}
+}
+
+QString Xmpp::getResource() const
+{
+	return resource;
 }
 
 void Xmpp::sendDataFromTls(/*QByteArray data*/)
@@ -511,16 +523,6 @@ void Xmpp::sendMessage(const Jid &to, const QString &message)
 void Xmpp::sendFile(QString &to, unsigned int size, QString &name, QString description, QDateTime date, QString hash)
 {
 
-	/*
-	 * Stream Initiation
-	 *  - Discovers if Receiver implements the desired profile.
-	 *  - Offers a stream initiation.
-	 *  - Receiver accepts stream initiation.
-	 *  - Sender and receiver prepare for using negotiated profile and stream.
-	 *  See XEP 0095 : http://www.xmpp.org/extensions/xep-0095.html
-	 *
-	 *  Should have new states for the Xmpp::processEvent(...) function.
-	 */
 
 	QDomDocument d("");
 	QDomElement iq = d.createElement("iq");
@@ -592,8 +594,8 @@ Stanza *Xmpp::getFirstStanza()
 
 void Xmpp::write(Stanza& s)
 {
-	s.setFrom(j);
-	QByteArray sData = s.data();
+	QByteArray sData = s.node().toDocument().toByteArray();
+	printf("Write : %s\n", sData.constData());
 	sendData(sData);
 }
 

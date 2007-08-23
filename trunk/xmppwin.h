@@ -29,7 +29,6 @@ public slots:
 	void clientAuthenticated();
 	void processPresence(const Presence&);
 	void processMessage(const Message&);
-	void processStanza();
 	void sendMessage(QString&, QString&);
 	void startChat(QString &to);
 	void error(Xmpp::ErrorType);

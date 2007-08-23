@@ -1,3 +1,16 @@
+/*
+ *      Kapture
+ *
+ *      Copyright (C) 2006-2007
+ *          Detlev Casanova (detlev.casanova@gmail.com)
+ *
+ *      This program is free software; you can redistribute it and/or modify
+ *      it under the terms of the GNU General Public License as published by
+ *      the Free Software Foundation; either version 2 of the License, or
+ *      (at your option) any later version.
+ *
+ */
+
 #include "client.h"
 #include "presence.h"
 #include "message.h"
@@ -11,7 +24,8 @@ Client::Client(Jid &jid, QString server, QString port)
 
 Client::~Client()
 {
-
+	delete xmpp;
+	delete task;
 }
 
 void Client::authenticate()
@@ -19,6 +33,7 @@ void Client::authenticate()
 	if (j.isValid())
 		xmpp = new Xmpp(j, pS, p);
 
+	connect(xmpp, SIGNAL(error(Xmpp::ErrorType)), this, SIGNAL(error(Xmpp::ErrorType)));
 	if (r.isEmpty())
 		r = "Kapture";
 	if (!pass.isEmpty())
@@ -30,8 +45,14 @@ void Client::authenticate()
 	pmTask = new PullMessageTask(task);
 	connect(pmTask, SIGNAL(messageFinished()), this, SLOT(messageFinished()));
 	
-	connect(xmpp, SIGNAL(connected()), this, SIGNAL(connected()));
+	connect(xmpp, SIGNAL(connected()), this, SLOT(authFinished()));
 	connect(xmpp, SIGNAL(readyRead()), this, SLOT(read()));
+}
+
+void Client::authFinished()
+{
+	j.setResource(xmpp->getResource());
+	emit connected();
 }
 
 /*void Client::connected()
@@ -144,6 +165,12 @@ void Client::read()
 		printf("Client:: : %s\n", s->from().full().toLatin1().constData());
 		task->processStanza(*s);
 	}
+}
+
+void Client::sendFile(QString& to, QFile& file)
+{
+	ftTask = new FileTransferTask(task);
+	ftTask->transferFile(xmpp, to, file);
 }
 
 /*void Client::processIq(const QDomDocument& d)

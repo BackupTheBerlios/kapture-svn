@@ -1,6 +1,7 @@
 #include <QtXml>
 #include <QString>
 //#include "stanza.h"
+#include "event.h"
 
 #ifndef XMLHANDLER_H
 #define XMLHANDLER_H
@@ -27,23 +28,18 @@ public:
 	QString nameSpace; // Not used but will certainly be....
 	void setData(QByteArray &data);
 	bool error;
-	struct Event 
-	{
-		QString name;
-		QString text;
-		bool openingTag;
-		QXmlAttributes attributes;
-		QByteArray node;
-	};
-	QList<Event> events();
+
+	Event* read();
 
 private:
 	QString err; 
 	int errLine;
-	int depht; //depht of the xml stream;
-	QByteArray node;
-	QList<Event> e; //events list.
-	
+	int depth; //depth of the xml stream;
+	QList<Event*> eventList; //events list.
+
+	QDomDocument doc;
+	QDomElement current;
+	QDomElement root;
 };
 
 #endif //XMLHANDLER_H
