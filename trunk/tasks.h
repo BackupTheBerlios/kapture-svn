@@ -87,12 +87,12 @@ public:
 	void sendMessage(Xmpp* p, const Message& message);
 };
 
-class FileTransferTask : Task
+class StreamTask : Task
 {
 public:
-	FileTransferTask(Task* parent);
-	~FileTransferTask();
-	void transferFile(Xmpp*, const Jid&, const QFile&);
+	StreamTask(Task* parent);
+	~StreamTask();
+	void initStream(const Jid &to, Xmpp* p);
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
 
@@ -105,11 +105,11 @@ private:
 	 *  - Sender and receiver prepare for using negotiated profile and stream.
 	 *  See XEP 0095 : http://www.xmpp.org/extensions/xep-0095.html
 	 */
-	void initStream();
 	QFile f;
 	enum States {
 		WaitDiscoInfo = 0
 	} state;
+	QString id;
 
 };
 #endif

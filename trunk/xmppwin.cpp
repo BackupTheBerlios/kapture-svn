@@ -80,6 +80,11 @@ void XmppWin::jabberConnect()
 		return;
 	}
 	
+	/*QPixmap *pixmap = new QPixmap("gears.gif");
+	ui.tlsIconLabel->setToolTip(tr("Connecting..."));
+	ui.tlsIconLabel->setPixmap(*pixmap);
+	ui.tlsIconLabel->setEnabled(true);
+*/
 	client = new Client(*jid, ui.serverEdit->text(), ui.portEdit->text());
 	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	connect(client, SIGNAL(connected()), this, SLOT(clientAuthenticated()));

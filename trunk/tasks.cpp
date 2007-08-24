@@ -311,7 +311,7 @@ void MessageTask::sendMessage(Xmpp* p, const Message& message)
 }
 
 //-------------------------------------
-// FileTransferTask
+// StreamTask
 //-------------------------------------
 /*
  *
@@ -319,37 +319,18 @@ void MessageTask::sendMessage(Xmpp* p, const Message& message)
 
 #define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
 
-FileTransferTask::FileTransferTask(Task* parent)
+StreamTask::StreamTask(Task* parent)
 	:Task(parent)
 {
 
 }
 
-FileTransferTask::~FileTransferTask()
+StreamTask::~StreamTask()
 {
 
 }
 
-void FileTransferTask::transferFile(Xmpp* p, const Jid& to, const QFile& file)
-{
-/*Init stream initiation...*/
-/*
- * <feature var='http://jabber.org/protocol/si'/>
- * <feature var='http://jabber.org/protocol/si/profile/file-transfer'/>
- */
-	//f = file;
-	Stanza stanza(Stanza::IQ, "get", "askInfo1", to.full());
-	QDomNode node = stanza.node();
-	QDomDocument d = node.ownerDocument();
-	QDomElement query = d.createElement("query");
-	query.setAttribute("xmlns", XMLNS_DISCO);
-	node.appendChild(query);
-
-	state = WaitDiscoInfo;
-	p->write(stanza);
-}
-
-bool FileTransferTask::canProcess(const Stanza& s) const
+bool StreamTask::canProcess(const Stanza& s) const
 {
 	if (s.kind() != Stanza::IQ)
 		return false;
@@ -363,18 +344,22 @@ bool FileTransferTask::canProcess(const Stanza& s) const
 	return false;
 }
 
-void FileTransferTask::processStanza(const Stanza& s)
+void StreamTask::processStanza(const Stanza& s)
 {
 	switch (state)
 	{
 	case WaitDiscoInfo:
-		if (s.type() == "result")
+		if (s.type() == "result" && 
+	 	    s.kind() == Stanza::IQ &&
+		    s.id() == id)
+		{
 			printf("Ok, result received.\n");
+		}
 		break;
 	}
 }
 
-void FileTransferTask::initStream()
+void StreamTask::initStream(const Jid &to, Xmpp* p)
 {
 /*
  * Stream Initiation
@@ -384,4 +369,15 @@ void FileTransferTask::initStream()
  *  - Sender and receiver prepare for using negotiated profile and stream.
  *  See XEP 0095 : http://www.xmpp.org/extensions/xep-0095.html
  */
+	id = randomString(8);
+	Stanza stanza(Stanza::IQ, "get", id, to.full());
+	QDomNode node = stanza.node().firstChild();
+	QDomDocument d = node.ownerDocument();
+	QDomElement query = d.createElement("query");
+	query.setAttribute("xmlns", XMLNS_DISCO);
+	node.appendChild(query);
+
+	state = WaitDiscoInfo;
+	p->write(stanza);
 }
+

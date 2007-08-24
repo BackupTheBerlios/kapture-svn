@@ -167,10 +167,13 @@ void Client::read()
 	}
 }
 
-void Client::sendFile(QString& to, QFile& file)
+void Client::sendFile(QString& to, QFile&)
 {
-	ftTask = new FileTransferTask(task);
-	ftTask->transferFile(xmpp, to, file);
+	sTask = new StreamTask(task);
+	sTask->initStream(to, xmpp);
+
+	//ftTask = new FileTransferTask(task);
+	//ftTask->transferFile(xmpp, to, file);
 }
 
 /*void Client::processIq(const QDomDocument& d)

@@ -59,7 +59,7 @@ private:
 	MessageTask *mTask;
 	PullPresenceTask *ppTask;
 	PullMessageTask *pmTask;
-	FileTransferTask *ftTask;
+	StreamTask *sTask;
 	//void processIq(const QDomDocument& d);
 	//void processPresence(const QDomDocument& d);
 	//void processMessage(const QDomDocument& d);
