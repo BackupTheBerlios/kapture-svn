@@ -554,6 +554,8 @@ FileTransferTask::FileTransferTask(Task *parent, const Jid& t, Xmpp *xmpp)
 	to = t;
 	p = xmpp;
 	writtenData = 0;
+	prc = 0;
+	prc2 = 0;
 }
 
 FileTransferTask::~FileTransferTask()
@@ -574,9 +576,7 @@ bool FileTransferTask::canProcess(const Stanza& s) const
 
 void FileTransferTask::processStanza(const Stanza&)
 {
-	printf("Send 64 bytes (DEBUG : %lld sent, %lld left)\n", writtenData, f->size() - writtenData);
 	f->open(QIODevice::ReadOnly);
-	
 	if (f->size() < STEP)
 	{
 		socks5Socket->write(f->readAll());
@@ -604,7 +604,11 @@ void FileTransferTask::writeNext(qint64 sizeWritten)
 		socks5Socket->disconnectFromHost();
 		emit finished();
 	}
-	printf("Pourcentage : %02f %%.\n", ((float)writtenData/(float)f->size())*100);
+	//TODO: a rubbish bin is cleaner than that !
+	prc = (int)(((float)writtenData/(float)f->size())*100);
+	if (prc2 != (int)(((float)writtenData/(float)f->size())*100))
+		printf("Pourcentage : %d %%.\n", prc);
+	prc2 = (int)(((float)writtenData/(float)f->size())*100);
 }
 
 void FileTransferTask::start(const QString& profile, const QString& SID, const QString& file)

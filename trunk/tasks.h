@@ -157,6 +157,6 @@ private:
 	QString s;
 	QFile *f;
 	qint64 writtenData;
-
+	int prc, prc2;
 };
 #endif
