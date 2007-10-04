@@ -26,11 +26,8 @@ public:
 	void auth(const QString& password, const QString& resource);
 	bool connectedToServer();
 	void getRoster();
-	//void sendMessage(const Jid& to, const QString& message);
 	bool isSecured() const;
 	QString getResource() const; //FIXME: --> resource()
-	//void sendDiscoInfo(QString &to, QString &id);
-	//void askDiscoInfo(QString &to, QString &id);
 	enum ErrorType
 	{
 		HostNotFound = 0,
@@ -60,6 +57,7 @@ public:
 	 * Returns false if there are no more stanza ready to be read left.
 	 */
 	bool stanzaAvailable() const;
+	Jid node() const;
 
 
 public slots:
@@ -69,10 +67,6 @@ public slots:
 	void tlsIsConnected();
 	void start();
 	void connexionError(QAbstractSocket::SocketError socketError);
-	/*void newPresence();
-	void newMessage();
-	void newIq();
-*/
 signals:
 	void messageReceived();
 	void presenceChanged();

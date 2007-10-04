@@ -64,7 +64,7 @@ bool XmlHandler::endElement(const QString&, const QString&, const QString& qName
 	{
 		Event *e = new Event(Event::Stan, root);
 		eventList << e;
-		printf("NEW STANZA EVENT\n");
+//		printf("NEW STANZA EVENT\n");
 		current = QDomElement();
 		root = QDomElement();
 		return true;
@@ -74,7 +74,7 @@ bool XmlHandler::endElement(const QString&, const QString&, const QString& qName
 	{
 		Event *e = new Event(Event::EndOfStream);
 		eventList << e;
-		printf("NEW ENDSREAM EVENT\n");
+//		printf("NEW ENDSREAM EVENT\n");
 		return true;
 	}
 	current = current.parentNode().toElement();

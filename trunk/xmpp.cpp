@@ -205,6 +205,13 @@ void Xmpp::dataReceived()
 void Xmpp::processXml(QByteArray &data)
 {
 	printf(" * Data : %s\n", data.constData());
+/*
+ * FIXME:must remove all end-of-line characters.
+ * If not, QDomNode has some troubles when 
+ * receiving informations for file transfer.
+ */
+	data.replace('\n', "");
+	data.replace('\r', "");
 
 	xmlSource->setData(data);
 
@@ -219,7 +226,7 @@ void Xmpp::processXml(QByteArray &data)
 		processEvent(event);
 }
 
-void Xmpp::processEvent(Event *event) // FIXME: elem -> *event
+void Xmpp::processEvent(Event *event)
 {
 	/*
 	 * WARNING: An event is NOT still the same as before.
@@ -302,7 +309,7 @@ void Xmpp::processEvent(Event *event) // FIXME: elem -> *event
 					{
 						//TODO:Must first check that event->node().firstChild() == mechanisms
 						QDomNode node = event->node().firstChild().firstChild();
-						printf("Tls done or not used. --> sasl (Not Implemented yet...)\n");
+						printf("Tls done or not used. --> sasl\n");
 						while(node.localName() == QString("mechanism"))
 						{
 							printf(" * Ok, received a mechanism tag.\n");
@@ -431,6 +438,7 @@ void Xmpp::processEvent(Event *event) // FIXME: elem -> *event
 							printf("Jid OK !\n");
 							resource = r;
 							jidDone = true;
+							j.setResource(r);
 						}
 					}
 
@@ -488,6 +496,8 @@ void Xmpp::processEvent(Event *event) // FIXME: elem -> *event
 			break;
 		case active:
 			Stanza *s = new Stanza(event->node());
+			QDomDocument doc = event->node().toDocument();
+			printf("Xmpp::processEvent : node = %s\n", doc.toString().toLatin1().constData());
 			stanzaList << s;
 			emit readyRead();
 	}
@@ -594,6 +604,11 @@ void Xmpp::write(Stanza& s)
 bool Xmpp::stanzaAvailable() const
 {
 	return !stanzaList.isEmpty();
+}
+
+Jid Xmpp::node() const
+{
+	return j;
 }
 
 /*void Xmpp::sendDiscoInfo(QString &to, QString &id)

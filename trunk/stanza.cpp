@@ -41,7 +41,7 @@ Stanza::Stanza(Kind kind, const QString& type, const QString& id, const QString&
 	if (!namespaceURI.isEmpty())
 		doc.documentElement().setAttribute("xmlns", namespaceURI);
 
-	n = doc;
+	n = doc; //FIXME : should be doc.firstChild().
 	
 //	i = id;
 //	ty = type;
@@ -104,7 +104,7 @@ void Stanza::setFrom(const Jid& from)
 {
 	//f = from;
 	if (from.isValid())
-		n.toElement().setAttribute("from", from.full());
+		n.firstChild().toElement().setAttribute("from", from.full());
 }
 
 void Stanza::setTo(const Jid& to)

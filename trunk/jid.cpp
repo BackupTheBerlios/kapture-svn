@@ -38,18 +38,32 @@ Jid::Jid(const QString& j)
 
 	valid = true;
         
+
 	if(j.split('/').count() == 0)
 	{
+		printf("NOT VALID\n");
 		valid = false;
         }
         
 	if(j.split('/').count() == 1)
 	{
-		n = j.split('@').at(0);
-		d = j.split('@').at(1);
+		if (j.split('@').count() == 1)
+		{
+			valid = false;
+			n = "";
+			r = "";
+			d = j;
+		}
+		else
+		{
+			n = j.split('@').at(0);
+			d = j.split('@').at(1);
+		}
 		// FIXME:Must manage errors
-		r = "";
-		printf("n = %s, d = %s, r = %s\n", n.toLatin1().constData(), d.toLatin1().constData(), r.toLatin1().constData());
+		//r = "";
+		//n = "";
+		//valid = false;
+		//printf("n = %s, d = %s, r = %s\n", n.toLatin1().constData(), d.toLatin1().constData(), r.toLatin1().constData());
 	}
 	
 	if(j.split('/').count() == 2)

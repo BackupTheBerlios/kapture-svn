@@ -10,10 +10,15 @@
  *      (at your option) any later version.
  *
  */
+#include <QFileDialog>
+#include <QFile>
 
 #include "client.h"
 #include "presence.h"
 #include "message.h"
+
+#define XMLNS_SI "http://jabber.org/protocol/si"
+#define XMLNS_FILETRANSFER "http://jabber.org/protocol/si/profile/file-transfer"
 
 Client::Client(Jid &jid, QString server, QString port)
 {
@@ -167,13 +172,40 @@ void Client::read()
 	}
 }
 
-void Client::sendFile(QString& to, QFile&)
+void Client::sendFile(QString& to)
 {
-	sTask = new StreamTask(task);
-	sTask->initStream(to, xmpp);
+	sTask = new StreamTask(task, xmpp, to);
+	sTask->discoInfo();
+	connect(sTask, SIGNAL(infoDone()), this, SLOT(slotInfoDone()));
 
 	//ftTask = new FileTransferTask(task);
 	//ftTask->transferFile(xmpp, to, file);
+}
+
+void Client::slotInfoDone()
+{
+	if (sTask->supports(XMLNS_SI) && sTask->supports(XMLNS_FILETRANSFER))
+	{
+		//Ask file here (show file open dialog).
+		//QFileDialog *fileDialog = new QFileDialog(this);
+		fileName = QFileDialog::getOpenFileName(0,
+		         tr("Send File"), QDir::homePath(), tr("All Files (*.*)"));
+		f = new QFile(fileName);
+		if (f->exists())
+		{
+			sTask->initStream(*f);
+			connect(sTask, SIGNAL(finished()), this, SLOT(transferFile()));
+		}
+		else
+			printf("Unable to negatiate transfer protocol.\n");
+	}
+}
+
+void Client::transferFile()
+{
+	ftTask = new FileTransferTask(task, sTask->toJid(), xmpp);
+	ftTask->start(sTask->negProfile(), sTask->sid(), fileName);
+//	connect(...);
 }
 
 /*void Client::processIq(const QDomDocument& d)

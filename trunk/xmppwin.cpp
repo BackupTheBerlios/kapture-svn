@@ -71,7 +71,7 @@ void XmppWin::jabberConnect()
 	
 	jid = new Jid(ui.jid->text());
 	
-	printf("Jid = %s\n", jid->full().toLatin1().constData());
+	//printf("Jid = %s\n", jid->full().toLatin1().constData());
 	if (!jid->isValid())
 	{
 		QMessageBox::critical(this, tr("Jabber"), tr("This is an invalid Jid."), QMessageBox::Ok);
@@ -127,7 +127,7 @@ void XmppWin::clientAuthenticated()
 	ui.tlsIconLabel->setPixmap(*pixmap);
 	ui.tlsIconLabel->setEnabled(true);
 
-	QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
+	//QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
 	client->getRoster();
 	connect(client, SIGNAL(rosterReady(Roster)), this, SLOT(setRoster(Roster)));
 	connect(client, SIGNAL(presenceReady(const Presence&)), this, SLOT(processPresence(const Presence&)));
@@ -209,7 +209,7 @@ void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList con
 
 void XmppWin::sendMessage(QString &to, QString &message)
 {
-	printf("Send message from XmppWin\n");
+	//printf("Send message from XmppWin\n");
 	if (connected)
 		client->sendMessage(to, message);
 	else
@@ -294,9 +294,7 @@ void XmppWin::updateProfileList()
 
 void XmppWin::sendFile(QString &to)
 {
-//	QString id = "askinfo1";
-	QFile f("/home/detlev/mac.JPG");
-	client->sendFile(to, f);
+	client->sendFile(to);
 }
 
 void XmppWin::contactFeaturesSave(Xmpp::ContactFeatures c)

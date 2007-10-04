@@ -22,7 +22,7 @@ public:
 	bool noStanza() const;
 	void getRoster();
 	void setInitialPresence(QString& show, QString& status);
-	void sendFile(QString&, QFile&);
+	void sendFile(QString&);
 	Stanza *getFirstStanza();
 	Task *rootTask() const;
 
@@ -33,6 +33,8 @@ public slots:
 	void presenceFinished();
 	void messageFinished();
 	void authFinished();
+	void slotInfoDone();
+	void transferFile();
 
 signals:
 	/*!
@@ -52,6 +54,7 @@ private:
 	QString pS; 	// Personnam Server
 	int p;      	// Port
 	QString pass;	// Password
+	QFile *f;
 	Xmpp *xmpp;
 	Task *task;
 	RosterTask *rTask;
@@ -60,6 +63,8 @@ private:
 	PullPresenceTask *ppTask;
 	PullMessageTask *pmTask;
 	StreamTask *sTask;
+	FileTransferTask *ftTask;
+	QString fileName;
 	//void processIq(const QDomDocument& d);
 	//void processPresence(const QDomDocument& d);
 	//void processMessage(const QDomDocument& d);

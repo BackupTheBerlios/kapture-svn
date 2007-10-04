@@ -36,15 +36,15 @@ void Task::appendTask(Task* t)
 
 void Task::processStanza(const Stanza& s)
 {
-	printf("Task:: : %s\n", s.from().full().toLatin1().constData());
+//	printf("Task:: : %s\n", s.from().full().toLatin1().constData());
 	processed = false;
-	printf("Count = %d\n", taskList.count());
+//	printf("Count = %d\n", taskList.count());
 	for (int i = 0; i < taskList.count(); i++)
 	{
-		printf("void Task::processStanza(const Stanza& s) : Kind = %s\n", s.kind() == Stanza::Presence ? "Presence" : "NoPresence");
+	//	printf("void Task::processStanza(const Stanza& s) : Kind = %s\n", s.kind() == Stanza::Presence ? "Presence" : "NoPresence");
 		if (taskList[i]->canProcess(s))
 		{
-			printf("Ok, processing...\n");
+//			printf("Ok, processing...\n");
 			taskList[i]->processStanza(s);
 			processed = true;
 			break;
@@ -63,7 +63,7 @@ void Task::removeChild(Task* childTask)
 	{
 		if (taskList[i] == childTask)
 		{
-			printf("Ok, removing...\n");
+//			printf("Ok, removing...\n");
 			taskList.removeAt(i);
 			break;
 		}
@@ -79,7 +79,7 @@ QString Task::randomString(int size)
 	for (int i = 0; i < size; i++)
 	{
 		int r;
-		r = (rand()%26)+96;
+		r = (rand()%26)+97;
 		c[i] = r;
 	}
 	c[size] = '\0';

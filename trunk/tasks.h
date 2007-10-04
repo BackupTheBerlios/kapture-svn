@@ -10,6 +10,7 @@
 #include "presence.h"
 #include "message.h"
 #include "stanza.h"
+#include "socks5.h"
 
 class RosterTask : public Task
 {
@@ -87,14 +88,24 @@ public:
 	void sendMessage(Xmpp* p, const Message& message);
 };
 
-class StreamTask : Task
+class StreamTask : public Task
 {
+	Q_OBJECT
 public:
-	StreamTask(Task* parent);
+	StreamTask(Task* parent, Xmpp *xmpp, const Jid& t);
 	~StreamTask();
-	void initStream(const Jid &to, Xmpp* p);
+	void initStream(const QFile&);
+	void discoInfo();
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
+	bool supports(const QString& profile);
+	QString negProfile() const;
+	Jid toJid() const;
+	QString sid() const;
+	//QFile file() const;
+
+signals:
+	void infoDone();
 
 private:
 	/*
@@ -107,9 +118,45 @@ private:
 	 */
 	QFile f;
 	enum States {
-		WaitDiscoInfo = 0
+		WaitDiscoInfo = 0,
+		WaitAcceptFileTransfer
 	} state;
 	QString id;
+	QStringList featureList;
+	Xmpp *p;
+	Jid to;
+	QString profileToUse;
+	QString SID; //id
+
+};
+
+class FileTransferTask : public Task
+{
+	Q_OBJECT
+public:
+	FileTransferTask(Task *parent, const Jid& t, Xmpp *xmpp);
+	~FileTransferTask();
+	void start(const QString&, const QString&, const QString&);
+	bool canProcess(const Stanza&) const;
+	void processStanza(const Stanza&);
+
+public slots:
+	void newConnection();
+	void dataAvailable();
+	void readS5();
+	void writeNext(qint64);
+
+private:
+	void startByteStream(const QString&);
+	QString id;
+	Jid to;
+	Xmpp *p;
+	QTcpServer *test;
+	QTcpSocket *socks5Socket;
+	Socks5 *socks5;
+	QString s;
+	QFile *f;
+	qint64 writtenData;
 
 };
 #endif

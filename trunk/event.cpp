@@ -16,7 +16,6 @@
 Event::Event(Type type, QDomNode node)
 	: t(type), n(node)
 {
-	printf("Node = %s\n", n.localName().toLatin1().constData());
 }
 
 Event::~Event()
