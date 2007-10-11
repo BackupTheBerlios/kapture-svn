@@ -38,6 +38,7 @@ public slots:
 	void sendFile(QString&);
 	void contactFeaturesSave(Xmpp::ContactFeatures);
 	void setRoster(Roster);
+	void prcentChanged(Jid&, QString&, int);
 
 private:
 	Ui::xmppWin ui;

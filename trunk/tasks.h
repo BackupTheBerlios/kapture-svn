@@ -145,6 +145,8 @@ public slots:
 	void dataAvailable();
 	void readS5();
 	void writeNext(qint64);
+signals:
+	void prcentChanged(Jid&, QString&, int); // should have an ID
 
 private:
 	void startByteStream(const QString&);
@@ -158,5 +160,23 @@ private:
 	QFile *f;
 	qint64 writtenData;
 	int prc, prc2;
+	QString fileName;
 };
+
+/*class PullFileTransferTask : public Task
+{
+	Q_OBJECT
+public:
+	PullFileTransferTask();
+	~PullFileTransferTask();
+	bool canProcess(const Stanza&) const;
+	void processStanza(const Stanza&);
+
+signals:
+
+public slots:
+
+private:
+
+};*/
 #endif

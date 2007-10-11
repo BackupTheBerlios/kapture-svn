@@ -30,6 +30,7 @@ QByteArray Socks5::read() const
 
 void Socks5::process(const QByteArray& data)
 {
+	d.clear();
 	if (data.size() < 3)
 		return;
 	//Check version.
@@ -66,61 +67,61 @@ void Socks5::process(const QByteArray& data)
 		state = WaitRequest;
 		break;
 	case WaitRequest :
-		for(int i = 0; i < data.count(); i++)
-			printf("0x%x ", data.at(i));
-		printf("\n");
 		switch (data.at(1))
 		{
 		case 1 : //CONNECT
-			printf("Asking to connect trough TCP/IP ");
-			//pos = 3; // Position 2 is reserved.
 			switch(data.at(3))
 			{
 			case 3 : //DOMAIN NAME
-				printf("and giving a domain name of %d characters :\n", data.at(4));
-				for(int i = 5; i <= data.at(4) + 4; i++)
-					printf("%c", data.at(i));
-				printf("\n");
-				printf("Port = 0x%x 0x%x\n", data.at(data.count() - 2), data.at(data.count() - 1));
-				
 				QByteArray result  = sha1(QString("%1%2%3").arg(s).arg(f.full()).arg(t.full()));
-				QByteArray result2 = QByteArray::fromHex(data);
-				
-				for (int i = 0; i < 20; i++)
-					printf("%02x", (unsigned char) result2[i]); // FIXME:a part is missing.
-				printf("\n");
-				if (result == result2)
+				for (int i = 5; i <= (int)data.at(4) + 4; i++)
 				{
+					printf("0x%02x ", data.at(i));
+					sha.append((char)data.at(i));
+				}
+				sha.resize((int)data.at(4));
+				printf("\nReceived =   %s\nCalculated = %s\n", sha.toHex().constData(), result.toHex().constData());
+
+				if (result == sha)
+				{
+					printf("The same !\n");
 					//SOCKS V5
-					d.append((char)0x5);
+					/*d.append((char)0x05);
 					//SUCCESS
 					d.append((char)0x0);
 					//RESERVED
 					d.append((char)0x0);
 					//ATYP
-					d.append((char)0x3);
+					d.append((char)0x03);
 					//BND.ADDR
-					d.append(result.toHex());
+					d.append(sha);
 					//BND.PORT
+					d.append((char)40);
 					d.append((char)0x0);
 					d.append((char)0x0);
+					printf("d = %s\n", d.toHex().constData());*/
+					d = data;
+					d[1] = (char)0x00;
 
 				}
 				else
 				{
+					printf("Not the same !!!\n");
 					//SOCKS V5
-					d.append((char)0x5);
+					/*d.append((char)0x5);
 					//FAILURE
-					d.append((char)0x5);
+					d.append((char)0x03);
 					//RESERVED
 					d.append((char)0x0);
 					//ATYP
 					d.append((char)0x3);
 					//BND.ADDR
-					d.append(result.toHex());
+					d.append(sha);
 					//BND.PORT
 					d.append((char)0x0);
-					d.append((char)0x0);
+					d.append((char)0x0);*/
+					
+					//emit error();
 				
 				}
 				break;
@@ -141,10 +142,10 @@ QByteArray Socks5::sha1(const QString& clear)
 	unsigned char sha1_encoded[20];
 
 	SHA1((const unsigned char*)text, strlen(text), sha1_encoded);
-	for (int i = 0; i < 20; i++)
-		printf("%02x", sha1_encoded[i]); // FIXME:a part is missing.
-	printf("\n");
+	QByteArray ret = QByteArray((const char*)sha1_encoded, 20);
+	ret = ret.toHex();
+	ret.resize(40);
 		
-	return QByteArray((const char*)sha1_encoded);
+	return ret;
 }
 

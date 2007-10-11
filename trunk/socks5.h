@@ -24,6 +24,7 @@ private :
 	void process(const QByteArray&);
 	bool noAuthSupported;
 	QString s; //SID.
+	QByteArray sha;
 	Jid f; //Initiator.
 	Jid t; //Target.
 };

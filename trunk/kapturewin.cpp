@@ -188,7 +188,6 @@ void KaptureWin::getDeviceCapabilities()
 		
 		camera->setFormat(0, 0, formatList.at(0));
 		QList<QSize> sizes = camera->getSizesList();
-		bool modified = false;
 		for (int i = 0; i < sizes.size(); i++)
 		{
 			sprintf(formatString, "%dx%d", sizes.at(i).width(), sizes.at(i).height() );
@@ -669,7 +668,7 @@ void KaptureWin::sharpChanged()
 	camera->changeCtrl(4, ui.sharpManualValueBox->value());
 }
 
-void KaptureWin::closeEvent(QCloseEvent *event)
+void KaptureWin::closeEvent(QCloseEvent*)
 {
 	printf("\n * Exiting...\n");
 	if (camera->isStreaming())

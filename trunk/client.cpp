@@ -203,9 +203,18 @@ void Client::slotInfoDone()
 
 void Client::transferFile()
 {
+	// Should manage more than 1 transfer at a time.
 	ftTask = new FileTransferTask(task, sTask->toJid(), xmpp);
 	ftTask->start(sTask->negProfile(), sTask->sid(), fileName);
-//	connect(...);
+	connect(ftTask, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SIGNAL(prcentChanged(Jid&, QString&, int)));
+	connect(ftTask, SIGNAL(finished()), this, SLOT(transferFinished()));
+}
+
+void Client::transferFinished()
+{
+	//emit transferTerminated;
+	delete ftTask;
+	delete sTask;
 }
 
 /*void Client::processIq(const QDomDocument& d)

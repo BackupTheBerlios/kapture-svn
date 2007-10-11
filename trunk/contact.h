@@ -2,6 +2,7 @@
 #define CONTACT_H
 
 #include <QObject>
+#include <QProgressBar>
 
 #include "chatwin.h"
 #include "jid.h"
@@ -26,6 +27,7 @@ public:
 	bool isAvailable(); // available or unavailable.
 	VCard *vCard() const;
 	Jid *jid; // must go in private, a method to get it.
+	void setTranferFileState(QString, int);
 
 private:
 	Contact();
@@ -40,6 +42,8 @@ private:
 	} presence;
 	QStringList features;
 	VCard *vcard;
+	QProgressBar *fileTransferBar;
+	bool done;
 
 public slots:
 	void messageToSend(QString message);

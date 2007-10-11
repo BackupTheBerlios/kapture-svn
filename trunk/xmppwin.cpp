@@ -8,7 +8,6 @@
 
 XmppWin::XmppWin()
 {
-	int i = 0;
 	ui.setupUi(this);
 	connect(ui.jabberConnect, SIGNAL(clicked()), this, SLOT(jabberConnect()));
 	connect(ui.password, SIGNAL(returnPressed()), this, SLOT(jabberConnect()));
@@ -294,6 +293,7 @@ void XmppWin::updateProfileList()
 
 void XmppWin::sendFile(QString &to)
 {
+	connect(client, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SLOT(prcentChanged(Jid&, QString&, int)));
 	client->sendFile(to);
 }
 
@@ -303,4 +303,16 @@ void XmppWin::contactFeaturesSave(Xmpp::ContactFeatures c)
 	while (!(c.jid == contactList[i]->jid))
 		i++;
 	contactList[i]->setFeatures(c.features);
+}
+
+void XmppWin::prcentChanged(Jid& jid, QString& fileName, int prc)
+{
+	for (int i = 0; i < contactList.count(); i++)
+	{
+		if (contactList[i]->jid->equals(jid))
+		{
+			contactList[i]->setTranferFileState(fileName, prc); //FileName should really be an ID
+			break;
+		}
+	}
 }

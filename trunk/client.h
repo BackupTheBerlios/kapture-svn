@@ -34,6 +34,7 @@ public slots:
 	void messageFinished();
 	void authFinished();
 	void slotInfoDone();
+	void transferFinished();
 	void transferFile();
 
 signals:
@@ -45,6 +46,7 @@ signals:
 	void presenceReady(const Presence&);
 	void messageReady(const Message&);
 	void error(Xmpp::ErrorType);
+	void prcentChanged(Jid&, QString&, int); 
 
 private:
 	Client();

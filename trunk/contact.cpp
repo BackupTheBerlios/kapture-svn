@@ -10,6 +10,7 @@
  *      (at your option) any later version.
  *
  */
+#include <QLabel>
 
 #include "contact.h"
 #include "utils.h"
@@ -19,6 +20,7 @@ Contact::Contact(const QString& j)
 	jid = new Jid(j);
 	isChatting = false;
 	vcard = new VCard();
+	done = false;
 }
 
 Contact::Contact(const QString &j, const QString &n)
@@ -27,6 +29,7 @@ Contact::Contact(const QString &j, const QString &n)
 	isChatting = false;
 	vcard = new VCard();
 	vcard->setNickname(n);
+	done = false;
 }
 
 Contact::Contact(const char *j)
@@ -34,11 +37,12 @@ Contact::Contact(const char *j)
 	jid = new Jid(j);
 	isChatting = false;
 	vcard = new VCard();
+	done = false;
 }
 
 Contact::Contact()
 {
-
+	done = false;
 }
 
 Contact::~Contact()
@@ -135,3 +139,30 @@ VCard *Contact::vCard() const
 {
 	return vcard;
 }
+
+void Contact::setTranferFileState(QString fileName, int prc)
+{
+	printf("prc = %d\n", prc);
+	if (prc == 0 && !done)
+	{
+		printf("It's hapening now.\n");
+		fileTransferBar = new QProgressBar(chatWin);
+		fileTransferBar->setAlignment(Qt::AlignHorizontal_Mask);
+		fileTransferBar->setRange(0, 100);
+
+		QLabel *lab = new QLabel();
+		lab->setScaledContents(true);
+		fileName.truncate(20);
+		lab->setText(fileName + "..." + " : ");
+
+		QHBoxLayout *hboxlayout = new QHBoxLayout(chatWin); // a QHBoxLayout should already be present in the window at the right place.
+		hboxlayout->addWidget(lab);
+		hboxlayout->addWidget(fileTransferBar);
+
+		chatWin->ui.vboxLayout->insertLayout(1, hboxlayout);
+		done = true;
+		//Add the trasfer bar
+	}
+	fileTransferBar->setValue(prc);
+}
+

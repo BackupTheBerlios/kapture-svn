@@ -494,7 +494,7 @@ void StreamTask::initStream(const QFile& f)
 	
 	QDomElement file = doc.createElement("file");
 	file.setAttribute("xmlns", XMLNS_FILETRANSFER);
-	file.setAttribute("name", f.fileName());
+	file.setAttribute("name", f.fileName()); //FIXME Should not send the PATH in th file name.
 	file.setAttribute("size", QString("%1").arg((int)f.size()));
 
 	QDomElement feature = doc.createElement("feature");
@@ -567,7 +567,7 @@ bool FileTransferTask::canProcess(const Stanza& s) const
 			s.id().toLatin1().constData(),
 			id.toLatin1().constData(),
 			s.node().toElement().namespaceURI().toLatin1().constData());
-	if (s.kind() == Stanza::IQ && s.id() == id)
+	if (s.kind() == Stanza::IQ && s.id() == id) //Check more....
 		return true;
 	return false;
 }
@@ -579,10 +579,12 @@ void FileTransferTask::processStanza(const Stanza&)
 	f->open(QIODevice::ReadOnly);
 	if (f->size() < STEP)
 	{
+		emit prcentChanged(to, fileName, 0);
 		socks5Socket->write(f->readAll());
 		writtenData = f->size();
 		disconnect(socks5Socket);
 		socks5Socket->disconnectFromHost();
+		emit prcentChanged(to, fileName, 100);
 		emit finished();
 	}
 	else
@@ -590,12 +592,26 @@ void FileTransferTask::processStanza(const Stanza&)
 		socks5Socket->write(f->read(STEP));
 		connect(socks5Socket, SIGNAL(bytesWritten(qint64)), this, SLOT(writeNext(qint64)));
 	}
+	prc = 0;
+	prc2 = 0;
+	emit prcentChanged(to, fileName, 0); // should have an ID
 }
 
 void FileTransferTask::writeNext(qint64 sizeWritten)
 {
 	writtenData = writtenData + sizeWritten;
 	QByteArray data = f->read(STEP);
+
+	prc = (int)(((float)writtenData/(float)f->size())*100);
+	if (prc2 != prc)
+	{
+		printf("Pourcentage : %d %%.\n", prc);
+		QString fileN = f->fileName();
+		printf("prc = %d\n", prc);
+		emit prcentChanged(to, fileN, prc);
+	}
+	prc2 = (int)(((float)writtenData/(float)f->size())*100);
+	
 	if (data.size() != 0)
 		socks5Socket->write(data);
 	else
@@ -604,11 +620,6 @@ void FileTransferTask::writeNext(qint64 sizeWritten)
 		socks5Socket->disconnectFromHost();
 		emit finished();
 	}
-	//TODO: a rubbish bin is cleaner than that !
-	prc = (int)(((float)writtenData/(float)f->size())*100);
-	if (prc2 != (int)(((float)writtenData/(float)f->size())*100))
-		printf("Pourcentage : %d %%.\n", prc);
-	prc2 = (int)(((float)writtenData/(float)f->size())*100);
 }
 
 void FileTransferTask::start(const QString& profile, const QString& SID, const QString& file)
@@ -618,6 +629,7 @@ void FileTransferTask::start(const QString& profile, const QString& SID, const Q
 	s = SID;
 	printf("File name = %s\n", file.toLatin1().constData());
 	f = new QFile(file);
+	fileName = file;
 }
 
 void FileTransferTask::startByteStream(const QString &SID)
@@ -667,24 +679,11 @@ void FileTransferTask::dataAvailable() //Should be in a different class (SOCKS5)
 	QByteArray data = socks5Socket->readAll();
 	printf("Data (%d bytes)\n", data.size());
 	socks5->write(data);
-
-	/*if (data.at(0) == 0x5)
-		printf("Ok, SOCKS5.\n");
-	else
-		printf("OUCH ! Bad SOCKS5 request.\n");
-	for (int i = 0; i < data.size(); i++)
-	{
-		printf("0x%x ", data.at(i));
-	}
-	printf("\n");
-	char answer1 = 0x5;
-	char answer2 = 0x0;
-	QByteArray truc = QByteArray(1, answer1);
-	truc.append(answer2);
-	sock5->write(truc);*/
 }
 
 void FileTransferTask::readS5()
 {
-	socks5Socket->write(socks5->read());
+	QByteArray data = socks5->read();
+	printf("Sending : %s (%d)\n", data.toHex().constData(), data.count());
+	socks5Socket->write(data);
 }
