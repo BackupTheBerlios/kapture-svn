@@ -208,13 +208,16 @@ void Client::transferFile()
 	ftTask->start(sTask->negProfile(), sTask->sid(), fileName);
 	connect(ftTask, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SIGNAL(prcentChanged(Jid&, QString&, int)));
 	connect(ftTask, SIGNAL(finished()), this, SLOT(transferFinished()));
+
+	task->removeChild(sTask);
+	delete sTask;
 }
 
 void Client::transferFinished()
 {
 	//emit transferTerminated;
+	task->removeChild(ftTask);
 	delete ftTask;
-	delete sTask;
 }
 
 /*void Client::processIq(const QDomDocument& d)

@@ -66,7 +66,7 @@ public slots:
 	void clearDataReceived();
 	void tlsIsConnected();
 	void start();
-	void connexionError(QAbstractSocket::SocketError socketError);
+	void connectionError(QAbstractSocket::SocketError socketError);
 signals:
 	void messageReceived();
 	void presenceChanged();

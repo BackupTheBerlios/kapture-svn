@@ -334,7 +334,7 @@ StreamTask::StreamTask(Task* parent, Xmpp *xmpp, const Jid& t)
 
 StreamTask::~StreamTask()
 {
-
+	
 }
 
 bool StreamTask::canProcess(const Stanza& s) const
@@ -559,7 +559,11 @@ FileTransferTask::FileTransferTask(Task *parent, const Jid& t, Xmpp *xmpp)
 }
 
 FileTransferTask::~FileTransferTask()
-{}
+{
+	delete socks5Socket;
+	delete socks5;
+	delete test;
+}
 
 bool FileTransferTask::canProcess(const Stanza& s) const
 {

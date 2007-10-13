@@ -145,7 +145,8 @@ void Contact::setTranferFileState(QString fileName, int prc)
 	printf("prc = %d\n", prc);
 	if (prc == 0 && !done)
 	{
-		printf("It's hapening now.\n");
+		/*printf("It's hapening now.\n");
+		//Add the transfer bar
 		fileTransferBar = new QProgressBar(chatWin);
 		fileTransferBar->setAlignment(Qt::AlignHorizontal_Mask);
 		fileTransferBar->setRange(0, 100);
@@ -161,8 +162,13 @@ void Contact::setTranferFileState(QString fileName, int prc)
 
 		chatWin->ui.vboxLayout->insertLayout(1, hboxlayout);
 		done = true;
-		//Add the trasfer bar
 	}
 	fileTransferBar->setValue(prc);
+	if (prc == 100)
+	{
+		delete fileTransferBar;
+		//delete lab;
+		//delete hboxlayout;*/
+	}
 }
 

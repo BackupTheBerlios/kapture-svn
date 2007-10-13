@@ -25,8 +25,8 @@ Xmpp::Xmpp(const Jid &jid, const QString &pServer, const int pPort)
 	timeOut = 5000; // Default timeout set to 5 seconds
 	tcpSocket = new QTcpSocket();
 	sslSocket = new QSslSocket();
-	connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connexionError(QAbstractSocket::SocketError)));
-	connect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connexionError(QAbstractSocket::SocketError)));
+	connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
+	connect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
 
 	username = jid.node();
 	server = jid.domain();
@@ -553,7 +553,7 @@ void Xmpp::tlsIsConnected()
 	QByteArray sData = d.toString().toLatin1();
 }
 */
-void Xmpp::connexionError(QAbstractSocket::SocketError socketError)
+void Xmpp::connectionError(QAbstractSocket::SocketError socketError)
 {
 	switch (socketError)
 	{

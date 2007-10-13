@@ -97,6 +97,7 @@ void XmppWin::jabberDisconnect()
 	ui.jabberConnect->setEnabled(true);
 	ui.jabberDisconnect->setEnabled(false);
 	delete client;
+	delete jid;
 	QString status = "";
 	QString type = "";
 	for (int i = 0; i < contactList.count(); i++)
@@ -244,6 +245,7 @@ void XmppWin::error(Xmpp::ErrorType e)
 	ui.jabberConnect->setEnabled(true);
 	ui.jabberDisconnect->setEnabled(false);
 	delete client;
+	delete jid;
 }
 
 void XmppWin::showConfigDial()
