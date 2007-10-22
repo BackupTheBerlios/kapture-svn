@@ -3,10 +3,12 @@
 
 #include <QObject>
 #include <QProgressBar>
+#include <QLabel>
 
 #include "chatwin.h"
 #include "jid.h"
 #include "vcard.h"
+#include "filetransferwidget.h"
 
 class Contact : public QObject
 {
@@ -42,7 +44,8 @@ private:
 	} presence;
 	QStringList features;
 	VCard *vcard;
-	QProgressBar *fileTransferBar;
+	
+	QList<FileTransferWidget*> transferList;
 	bool done;
 
 public slots:

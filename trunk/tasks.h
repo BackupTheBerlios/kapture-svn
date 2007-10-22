@@ -2,6 +2,7 @@
 #define TASKS_H
 
 #include <QFile>
+#include <QTimer>
 
 #include "task.h"
 #include "xmpp.h"
@@ -106,6 +107,7 @@ public:
 
 signals:
 	void infoDone();
+	void error(int, const QString&);
 
 private:
 	/*
@@ -141,19 +143,20 @@ public:
 	void processStanza(const Stanza&);
 
 public slots:
+	void noConnection();
 	void newConnection();
 	void dataAvailable();
 	void readS5();
 	void writeNext(qint64);
 signals:
-	void prcentChanged(Jid&, QString&, int); // should have an ID
+	void prcentChanged(Jid&, QString&, int);
 
 private:
 	void startByteStream(const QString&);
 	QString id;
 	Jid to;
 	Xmpp *p;
-	QTcpServer *test;
+	//QTcpServer *test;
 	QTcpSocket *socks5Socket;
 	Socks5 *socks5;
 	QString s;
@@ -161,6 +164,8 @@ private:
 	qint64 writtenData;
 	int prc, prc2;
 	QString fileName;
+	QList<QTcpServer*> serverList;
+	QTimer *timeOut;
 };
 
 /*class PullFileTransferTask : public Task

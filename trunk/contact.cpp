@@ -145,30 +145,28 @@ void Contact::setTranferFileState(QString fileName, int prc)
 	printf("prc = %d\n", prc);
 	if (prc == 0 && !done)
 	{
-		/*printf("It's hapening now.\n");
 		//Add the transfer bar
-		fileTransferBar = new QProgressBar(chatWin);
-		fileTransferBar->setAlignment(Qt::AlignHorizontal_Mask);
-		fileTransferBar->setRange(0, 100);
+		
+		FileTransferWidget *ftw = new FileTransferWidget(fileName);
+		transferList.append(ftw);
 
-		QLabel *lab = new QLabel();
-		lab->setScaledContents(true);
-		fileName.truncate(20);
-		lab->setText(fileName + "..." + " : ");
-
-		QHBoxLayout *hboxlayout = new QHBoxLayout(chatWin); // a QHBoxLayout should already be present in the window at the right place.
-		hboxlayout->addWidget(lab);
-		hboxlayout->addWidget(fileTransferBar);
-
-		chatWin->ui.vboxLayout->insertLayout(1, hboxlayout);
+		chatWin->ui.vboxLayout->insertLayout(transferList.count(), transferList.last()->box());
 		done = true;
 	}
-	fileTransferBar->setValue(prc);
-	if (prc == 100)
+	
+	for (int i = 0; i < transferList.count(); i++)
 	{
-		delete fileTransferBar;
-		//delete lab;
-		//delete hboxlayout;*/
+		if (transferList.at(i)->fileName() == fileName)
+		{
+			transferList.at(i)->setPourcentage(prc);
+			if (prc == 100)
+			{
+				delete transferList.at(i);
+				transferList.removeAt(i);
+				done = false;
+			}
+			break;
+		}
 	}
 }
 

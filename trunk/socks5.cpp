@@ -85,21 +85,6 @@ void Socks5::process(const QByteArray& data)
 				if (result == sha)
 				{
 					printf("The same !\n");
-					//SOCKS V5
-					/*d.append((char)0x05);
-					//SUCCESS
-					d.append((char)0x0);
-					//RESERVED
-					d.append((char)0x0);
-					//ATYP
-					d.append((char)0x03);
-					//BND.ADDR
-					d.append(sha);
-					//BND.PORT
-					d.append((char)40);
-					d.append((char)0x0);
-					d.append((char)0x0);
-					printf("d = %s\n", d.toHex().constData());*/
 					d = data;
 					d[1] = (char)0x00;
 
@@ -107,20 +92,6 @@ void Socks5::process(const QByteArray& data)
 				else
 				{
 					printf("Not the same !!!\n");
-					//SOCKS V5
-					/*d.append((char)0x5);
-					//FAILURE
-					d.append((char)0x03);
-					//RESERVED
-					d.append((char)0x0);
-					//ATYP
-					d.append((char)0x3);
-					//BND.ADDR
-					d.append(sha);
-					//BND.PORT
-					d.append((char)0x0);
-					d.append((char)0x0);*/
-					
 					//emit error();
 				
 				}

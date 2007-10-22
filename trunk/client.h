@@ -25,6 +25,10 @@ public:
 	void sendFile(QString&);
 	Stanza *getFirstStanza();
 	Task *rootTask() const;
+	enum streamErrorType {
+			Unknown = 1,
+			Declined
+			};
 
 public slots:
 	void read();
@@ -36,6 +40,7 @@ public slots:
 	void slotInfoDone();
 	void transferFinished();
 	void transferFile();
+	void streamTaskError(int, const QString&);
 
 signals:
 	/*!
@@ -47,6 +52,7 @@ signals:
 	void messageReady(const Message&);
 	void error(Xmpp::ErrorType);
 	void prcentChanged(Jid&, QString&, int); 
+	void streamError(streamErrorType);
 
 private:
 	Client();

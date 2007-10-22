@@ -175,11 +175,25 @@ void Client::read()
 void Client::sendFile(QString& to)
 {
 	sTask = new StreamTask(task, xmpp, to);
+	connect(sTask, SIGNAL(error(int, const QString&)), this, SLOT(streamTaskError(int, const QString&)));
 	sTask->discoInfo();
 	connect(sTask, SIGNAL(infoDone()), this, SLOT(slotInfoDone()));
+}
 
-	//ftTask = new FileTransferTask(task);
-	//ftTask->transferFile(xmpp, to, file);
+void Client::streamTaskError(int errCode, const QString&)
+{
+	switch (errCode)
+	{
+	case 1:
+		emit streamError(Unknown);
+		printf("Unknown error\n");
+		break;
+	case 403:
+		emit streamError(Declined);
+		printf("User Declined sending invitation.\n");
+		break;
+	}
+	delete sTask;
 }
 
 void Client::slotInfoDone()

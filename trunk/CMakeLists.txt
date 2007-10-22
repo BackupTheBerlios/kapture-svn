@@ -37,7 +37,7 @@ tlshandler.cpp xmlhandler.cpp event.cpp stanza.cpp rosterModel.cpp
 chatwin.cpp mouserostertableview.cpp contact.cpp utils.cpp jid.cpp
 xmppconfigdialog.cpp config.cpp profile.cpp profilemodel.cpp
 mouseprofilestableview.cpp vcard.cpp task.cpp tasks.cpp roster.cpp
-presence.cpp message.cpp socks5.cpp)
+presence.cpp message.cpp socks5.cpp filetransferwidget.cpp)
 
 ADD_EXECUTABLE(Kapture ${Kapture_SRCS} ${Kapture_UIS_H} ${MOC_FILES})
 target_link_libraries(Kapture ${QT_LIBRARIES})

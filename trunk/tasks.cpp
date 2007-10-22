@@ -353,7 +353,7 @@ bool StreamTask::canProcess(const Stanza& s) const
 			id.toLatin1().constData(),
 			s.node().toElement().namespaceURI().toLatin1().constData());
 
-	if (s.type() == "result" &&
+	if (s.kind() == Stanza::IQ &&
 	    s.id() == id &&
 	    s.node().toElement().namespaceURI() == "jabber:client")
 	    	return true;
@@ -369,9 +369,7 @@ void StreamTask::processStanza(const Stanza& s)
 	switch (state)
 	{
 	case WaitDiscoInfo:
-		if (s.type() == "result" && 
-	 	    s.kind() == Stanza::IQ &&
-		    s.id() == id)
+		if (s.type() == "result")
 		{
 			printf("Ok, result received.\n");
 			//printf("TEST = %s\n", s.node().localName().toLatin1().constData());
@@ -397,48 +395,65 @@ void StreamTask::processStanza(const Stanza& s)
 			}
 			emit infoDone();
 		}
+		if (s.type() == "error")
+		{
+			//emit error(DiscoInfoError);
+		}
 		break;
 	case WaitAcceptFileTransfer:
-		QDomNode node = s.node().firstChild();
-		if (node.localName() != "si")
+		if (s.type() == "result")
 		{
-			printf("Not SI tag, stop.\n");
-			//emit error();
-			return;
+			QDomNode node = s.node().firstChild();
+			if (node.localName() != "si")
+			{
+				printf("Not SI tag, stop.\n");
+				//emit error();
+				return;
+			}
+			if (node.localName() == "file")
+				node = node.nextSibling();
+			node = node.firstChild();
+			if (node.localName() != "feature")
+			{
+				printf("Not FEATURE tag, stop.\n");
+				//emit error();
+				return;
+			}
+			node = node.firstChild();
+			if (node.localName() != "x")
+			{
+				printf("Not X tag, stop.\n");
+				//emit error();
+				return;
+			}
+			node = node.firstChild();
+			if (node.localName() != "field")
+			{
+				printf("Not FIELD tag, stop.\n");
+				//emit error();
+				return;
+			}
+			node = node.firstChild();
+			if (node.localName() != "value")
+			{
+				printf("Not VALUE tag, stop.\n");
+				//emit error();
+				return;
+			}
+			profileToUse = node.firstChild().toText().data();
+			printf("Ok, Using %s profile to transfer file.\n", profileToUse.toLatin1().constData());
+			emit finished();
 		}
-		if (node.localName() == "file")
-			node = node.nextSibling();
-		node = node.firstChild();
-		if (node.localName() != "feature")
+		if (s.type() == "error")
 		{
-			printf("Not FEATURE tag, stop.\n");
-			//emit error();
-			return;
+			QDomNode node = s.node().firstChild();
+			if (node.localName() == "error")
+			{
+				int errCode = node.toElement().attribute("code", "1").toInt();
+				QString errorString = node.firstChild().toText().data();
+				emit error(errCode, errorString);
+			}
 		}
-		node = node.firstChild();
-		if (node.localName() != "x")
-		{
-			printf("Not X tag, stop.\n");
-			//emit error();
-			return;
-		}
-		node = node.firstChild();
-		if (node.localName() != "field")
-		{
-			printf("Not FIELD tag, stop.\n");
-			//emit error();
-			return;
-		}
-		node = node.firstChild();
-		if (node.localName() != "value")
-		{
-			printf("Not VALUE tag, stop.\n");
-			//emit error();
-			return;
-		}
-		profileToUse = node.firstChild().toText().data();
-		printf("Ok, Using %s profile to transfer file.\n", profileToUse.toLatin1().constData());
-		emit finished();
 		break;
 		
 	}
@@ -562,7 +577,13 @@ FileTransferTask::~FileTransferTask()
 {
 	delete socks5Socket;
 	delete socks5;
-	delete test;
+	// Remove all server sockets
+	for (int i = 0; i < serverList.count(); i++)
+	{
+		delete serverList.at(i);
+		serverList.removeAt(i);
+	}
+	//delete serverList;
 }
 
 bool FileTransferTask::canProcess(const Stanza& s) const
@@ -649,6 +670,7 @@ void FileTransferTask::startByteStream(const QString &SID)
 	query.setAttribute("sid", SID);
 	query.setAttribute("mode", "tcp");
 	
+	timeOut = new QTimer();
 	QNetworkInterface *truc = new QNetworkInterface();
 	for (int i = 0; i < truc->allAddresses().count(); i++)
 	{
@@ -658,27 +680,54 @@ void FileTransferTask::startByteStream(const QString &SID)
 		streamHost.setAttribute("host", truc->allAddresses().at(i).toString());
 		streamHost.setAttribute("port", "8015");
 		query.appendChild(streamHost);
+		
+		QTcpServer *tcpServer = new QTcpServer();
+		tcpServer->listen(QHostAddress(truc->allAddresses().at(i).toString()), 8015);
+		connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newConnection()));
+		serverList << tcpServer;
 	}
-	
+	timeOut->setInterval(15000);
+	connect(timeOut, SIGNAL(timeout()), this, SLOT(noConnection()));
+	timeOut->start();
+
 	stanza.node().firstChild().appendChild(query);
-	test = new QTcpServer();
-	test->listen(QHostAddress("127.0.0.1"), 8015);
-	test->listen(QHostAddress("192.168.3.2"), 8015);
-	test->listen(QHostAddress("192.168.123.150"), 8015);
-	connect(test, SIGNAL(newConnection()), this, SLOT(newConnection()));
 	p->write(stanza);
+}
+
+void FileTransferTask::noConnection()
+{
+	// Must retry with a proxy.
+	printf("Unable to connect to the target, trying with a proxy.\n");
+	//emit notConnected();
 }
 
 void FileTransferTask::newConnection()
 {
 	printf("New Connection Received.\n");
-	socks5 = new Socks5(s, p->node(), to);
-	connect(socks5, SIGNAL(readyRead()), this, SLOT(readS5()));
-	socks5Socket = test->nextPendingConnection();
-	connect(socks5Socket, SIGNAL(readyRead()), this, SLOT(dataAvailable()));
+	
+	timeOut->stop(); // Connection received, no need to wait anymore.
+	delete timeOut; // Unused now.
+
+	QTcpServer *server;
+	for (int i = 0; i < serverList.count(); i++)
+	{
+		if (serverList.at(i)->hasPendingConnections())
+		{
+			server = serverList.at(i);
+			socks5 = new Socks5(s, p->node(), to);
+			connect(socks5, SIGNAL(readyRead()), this, SLOT(readS5()));
+			socks5Socket = server->nextPendingConnection();
+			connect(socks5Socket, SIGNAL(readyRead()), this, SLOT(dataAvailable()));
+			break;
+		}
+		else
+		{
+			delete serverList.at(i);
+		}
+	}
 }
 
-void FileTransferTask::dataAvailable() //Should be in a different class (SOCKS5)
+void FileTransferTask::dataAvailable()
 {
 	QByteArray data = socks5Socket->readAll();
 	printf("Data (%d bytes)\n", data.size());

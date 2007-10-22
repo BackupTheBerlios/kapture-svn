@@ -3,9 +3,9 @@ To have a fully featured application, run
 	cmake -DUVCVIDEO=/path/to/uvcvideo /path/to/Kapture/sources 
 
 If you do not have nor use the uvcvideo driver, you will miss some features.
-Download it at http://linux-uvc.berlios.de/
+Download it at http://linux-uvc.berlios.de/ if you use an UVC compliant video camera.
 
-You must have QT <= 4.2 installed to use this software.
-You now also must have OpenSSL installed.
+You must have QT <= 4.3 installed to use this software.
+You now also must have OpenSSL library and headers installed.
 
 Have fun !
