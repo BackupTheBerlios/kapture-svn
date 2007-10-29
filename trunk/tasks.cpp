@@ -18,6 +18,9 @@
 #define XMLNS_FEATURENEG "http://jabber.org/protocol/feature-neg"
 #define XMLNS_SI "http://jabber.org/protocol/si"
 #define XMLNS_FILETRANSFER "http://jabber.org/protocol/si/profile/file-transfer"
+#define XMLNS_DISCO_INFO "http://jabber.org/protocol/disco#info"
+#define XMLNS_DISCO_ITEMS "http://jabber.org/protocol/disco#items"
+#define TIMEOUT 30000
 
 RosterTask::RosterTask(Task* parent)
 	:Task(parent)
@@ -323,7 +326,6 @@ void MessageTask::sendMessage(Xmpp* p, const Message& message)
  *
  */
 
-#define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
 
 StreamTask::StreamTask(Task* parent, Xmpp *xmpp, const Jid& t)
 	:Task(parent)
@@ -344,18 +346,13 @@ bool StreamTask::canProcess(const Stanza& s) const
 	
 	QString ns = s.node().firstChildElement().firstChildElement().namespaceURI();
 	
-	if (ns == XMLNS_DISCO)
-		return true;
-	
-
 	printf("Type = %s, Id = %s (expected %s), namespace = %s\n", s.type().toLatin1().constData(),
 			s.id().toLatin1().constData(),
 			id.toLatin1().constData(),
 			s.node().toElement().namespaceURI().toLatin1().constData());
 
-	if (s.kind() == Stanza::IQ &&
-	    s.id() == id &&
-	    s.node().toElement().namespaceURI() == "jabber:client")
+	if (s.id() == id /*&&
+	    s.node().toElement().namespaceURI() == "jabber:client"*/)
 	    	return true;
 	/*
 	 * Other namespaces should be supported here.
@@ -371,19 +368,10 @@ void StreamTask::processStanza(const Stanza& s)
 	case WaitDiscoInfo:
 		if (s.type() == "result")
 		{
-			printf("Ok, result received.\n");
-			//printf("TEST = %s\n", s.node().localName().toLatin1().constData());
-			//if (s.node().hasChildNodes())
-			//	printf("It has childNodes !!!!!\n");
 			QDomNode node = s.node().firstChild();
-			//if (!node.isNull())
-			//	printf("TEST = %s\n", node.localName().toLatin1().constData());
-			if (node.localName() != "query" || node.namespaceURI() != XMLNS_DISCO)
+			if (node.localName() != "query" || node.namespaceURI() != XMLNS_DISCO_INFO)
 			{
-			//	printf("localName = %s, namespace = %s\n", node.localName().toLatin1().constData(), node.namespaceURI().toLatin1().constData());
-				//emit error();
 				printf("Bad stanza. Stoppping here.\n");
-				//emit finished();
 				return;
 			}
 			node = node.firstChild();
@@ -455,7 +443,23 @@ void StreamTask::processStanza(const Stanza& s)
 			}
 		}
 		break;
-		
+	case WaitProxies :
+		if (s.type() == "result" && s.node().firstChildElement().firstChildElement().namespaceURI() == XMLNS_DISCO_ITEMS)
+		{
+			QDomNode node = s.node().firstChild();
+			node = node.firstChild();
+			while (!node.isNull())
+			{
+				if (node.localName() == "item")
+					proxyList << node.toElement().attribute("jid");
+				node = node.nextSibling();
+			}
+			//emit infoDone();
+		}
+		printf("Proxies are : \n");
+		for (int i = 0; i < proxyList.count(); i++)
+			printf(" * %s\n", proxyList[i].toLatin1().constData());
+		break;
 	}
 }
 
@@ -474,7 +478,7 @@ void StreamTask::discoInfo()
 	QDomNode node = stanza.node().firstChild();
 	QDomDocument d = node.ownerDocument();
 	QDomElement query = d.createElement("query");
-	query.setAttribute("xmlns", XMLNS_DISCO);
+	query.setAttribute("xmlns", XMLNS_DISCO_INFO);
 	node.appendChild(query);
 
 	state = WaitDiscoInfo;
@@ -492,6 +496,40 @@ bool StreamTask::supports(const QString& profile)
 QString StreamTask::negProfile() const
 {
 	return profileToUse;
+}
+
+void StreamTask::initProxyStream(const QFile&)
+{
+/*
+<iq type='get' 
+    from='initiator@host1/foo'
+    to='host1' 
+    id='server_items'>
+  <query xmlns='http://jabber.org/protocol/disco#items'/>
+</iq>
+*/
+	id = randomString(8);
+	Stanza stanza(Stanza::IQ, "get", id, p->node().domain());
+	QDomNode node = stanza.node().firstChild();
+	QDomDocument doc("");
+
+	QDomElement query = doc.createElement("query");
+	query.setAttribute("xmlns", XMLNS_DISCO_ITEMS);
+	
+	node.appendChild(query);
+	state = WaitProxies;
+	p->write(stanza);
+
+}
+
+bool StreamTask::useProxy() const
+{
+	return prox;
+}
+
+void StreamTask::setUseProxy(bool pr)
+{
+	prox = pr;
 }
 
 void StreamTask::initStream(const QFile& f)
@@ -678,6 +716,7 @@ void FileTransferTask::startByteStream(const QString &SID)
 		QDomElement streamHost = doc.createElement("streamhost");
 		streamHost.setAttribute("jid", p->node().full());
 		streamHost.setAttribute("host", truc->allAddresses().at(i).toString());
+		//streamHost.setAttribute("host", "1.2.3.4");
 		streamHost.setAttribute("port", "8015");
 		query.appendChild(streamHost);
 		
@@ -686,7 +725,7 @@ void FileTransferTask::startByteStream(const QString &SID)
 		connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newConnection()));
 		serverList << tcpServer;
 	}
-	timeOut->setInterval(15000);
+	timeOut->setInterval(TIMEOUT);
 	connect(timeOut, SIGNAL(timeout()), this, SLOT(noConnection()));
 	timeOut->start();
 
@@ -698,7 +737,7 @@ void FileTransferTask::noConnection()
 {
 	// Must retry with a proxy.
 	printf("Unable to connect to the target, trying with a proxy.\n");
-	//emit notConnected();
+	emit notConnected();
 }
 
 void FileTransferTask::newConnection()
@@ -714,17 +753,21 @@ void FileTransferTask::newConnection()
 		if (serverList.at(i)->hasPendingConnections())
 		{
 			server = serverList.at(i);
-			socks5 = new Socks5(s, p->node(), to);
-			connect(socks5, SIGNAL(readyRead()), this, SLOT(readS5()));
-			socks5Socket = server->nextPendingConnection();
-			connect(socks5Socket, SIGNAL(readyRead()), this, SLOT(dataAvailable()));
+			socks5Socket = serverList.at(i)->nextPendingConnection();
+			// As this connection is a child of the server,
+			// the QTcpServer cannot be deleted before we
+			// are finished with the QTcpSocket.
 			break;
 		}
-		else
-		{
-			delete serverList.at(i);
-		}
 	}
+
+	socks5 = new Socks5(s, p->node(), to);
+	connect(socks5, SIGNAL(readyRead()), this, SLOT(readS5()));
+	for (int i = 0; i < serverList.count(); i++)
+	{
+		serverList.at(i)->close();
+	}
+	connect(socks5Socket, SIGNAL(readyRead()), this, SLOT(dataAvailable()));
 }
 
 void FileTransferTask::dataAvailable()

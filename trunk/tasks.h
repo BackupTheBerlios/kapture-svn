@@ -96,6 +96,7 @@ public:
 	StreamTask(Task* parent, Xmpp *xmpp, const Jid& t);
 	~StreamTask();
 	void initStream(const QFile&);
+	void initProxyStream(const QFile& f);
 	void discoInfo();
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
@@ -103,7 +104,8 @@ public:
 	QString negProfile() const;
 	Jid toJid() const;
 	QString sid() const;
-	//QFile file() const;
+	bool useProxy() const;
+	void setUseProxy(bool);
 
 signals:
 	void infoDone();
@@ -121,14 +123,17 @@ private:
 	QFile f;
 	enum States {
 		WaitDiscoInfo = 0,
-		WaitAcceptFileTransfer
+		WaitAcceptFileTransfer,
+		WaitProxies
 	} state;
 	QString id;
 	QStringList featureList;
+	QStringList proxyList;
 	Xmpp *p;
 	Jid to;
 	QString profileToUse;
 	QString SID; //id
+	bool prox;
 
 };
 
@@ -150,6 +155,7 @@ public slots:
 	void writeNext(qint64);
 signals:
 	void prcentChanged(Jid&, QString&, int);
+	void notConnected();
 
 private:
 	void startByteStream(const QString&);

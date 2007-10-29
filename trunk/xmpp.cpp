@@ -526,33 +526,9 @@ void Xmpp::tlsIsConnected()
 {
 	tlsDone = true;
 	isTlsing = false;
-	//state = waitStream;
-	//now that TLS is done, I relaunch the auth process.
-	//QString firstXml = QString("<?xml version='1.0'?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version='1.0'>").arg(server);
-	//printf(" * toSend = %s\n", firstXml.toLatin1().constData()); 
-	//QByteArray sData = firstXml.toLatin1();
-	//sendData(sData);
 	start();
 }
 
-/*void Xmpp::sendMessage(const Jid &to, const QString &message)
-{
-	printf("Send message from Xmpp\n");
-	QDomDocument d("");
-	QDomElement e = d.createElement("message");
-	e.setAttribute("from", username + "@" + server + "/" + resource);
-	e.setAttribute("to", to.full());
-	e.setAttribute("type", "chat"); // The only one supported for now.
-	QDomElement b = d.createElement("body");
-	QDomText t = d.createTextNode(message);
-
-	b.appendChild(t);
-	e.appendChild(b);
-	d.appendChild(e);
-
-	QByteArray sData = d.toString().toLatin1();
-}
-*/
 void Xmpp::connectionError(QAbstractSocket::SocketError socketError)
 {
 	switch (socketError)
@@ -610,102 +586,3 @@ Jid Xmpp::node() const
 {
 	return j;
 }
-
-/*void Xmpp::sendDiscoInfo(QString &to, QString &id)
-{
- *
- * <feature var='http://jabber.org/protocol/si'/>
- * <feature var='http://jabber.org/protocol/si/profile/file-transfer'/>
- *
-	QDomDocument d("");
-	QDomElement iq = d.createElement("iq");
-	iq.setAttribute("type", "result");
-	iq.setAttribute("from", username + '@' + server + '/' + resource);
-	iq.setAttribute("to", to);
-	iq.setAttribute("id", id);
-	QDomElement query = d.createElement("query");
-	query.setAttribute("xmlns", XMLNS_DISCO);
-
-	*QDomElement feature = d.createElement("feature");
-	feature.setAttribute("var", "http://jabber.org/protocol/si");
-	query.appendChild(feature);
-
-	QDomElement feature2 = d.createElement("feature");
-	feature2.setAttribute("var", "http://jabber.org/protocol/si/profile/file-transfer");
-	query.appendChild(feature2);*
-	
-	iq.appendChild(query);
-	d.appendChild(iq);
-
-	QByteArray sData = d.toString().toLatin1();
-	sendData(sData);
-}
-
-void Xmpp::askDiscoInfo(QString &to, QString &id)
-{
-	QDomDocument d("");
-	QDomElement iq = d.createElement("iq");
-	iq.setAttribute("type", "get");
-	iq.setAttribute("from", username + '@' + server + '/' + resource);
-	iq.setAttribute("to", to);
-	iq.setAttribute("id", id);
-	QDomElement query = d.createElement("query");
-	query.setAttribute("xmlns", XMLNS_DISCO);
-
-	iq.appendChild(query);
-	d.appendChild(iq);
-
-	QByteArray sData = d.toString().toLatin1();
-	sendData(sData);
-}
-
-void Xmpp::newPresence()
-{
-	QString pFrom = stanza->getFrom();
-	QString pTo = stanza->getTo();
-	QString pStatus = stanza->getStatus();
-	QString pType = stanza->getType();
-	QString pNickname = stanza->getNickname();
-
-	emit presence(pFrom, pTo, pStatus, pType, pNickname);
-}
-
-void Xmpp::newMessage()
-{
-	QString mFrom = stanza->getFrom();
-	QString mTo = stanza->getTo();
-	QString mMessage = stanza->getMessage();
-	
-	emit message(mFrom, mTo, mMessage);
-}
-
-void Xmpp::newIq()
-{
-	ContactFeatures tmp;
-	
-	QString iFrom = stanza->getFrom();
-	QString iTo = stanza->getTo();
-	QString iId = stanza->getId();
-	int action = stanza->getAction();
-	QStringList contacts = stanza->getContacts();
-	QStringList nicknames = stanza->getNicknameList();
-	Jid *from = new Jid(iFrom);
-	
-	int i = 0;
-	bool exists = false;
-
-	switch (action) {
-		case 0 :
-			printf("Send disco Info\n");
-			sendDiscoInfo(iFrom, iId);
-			break;
-		case 1 :
-			tmp.jid = new Jid(iFrom);
-			tmp.features = stanza->getFeatures();
-			emit contactFeaturesReady(tmp);
-			break;
-		default :
-			emit iq(iFrom, iTo, iId, contacts, nicknames);
-	}
-}
-*/

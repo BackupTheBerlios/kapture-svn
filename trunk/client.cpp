@@ -175,6 +175,7 @@ void Client::read()
 void Client::sendFile(QString& to)
 {
 	sTask = new StreamTask(task, xmpp, to);
+	sTask->setUseProxy(false);
 	connect(sTask, SIGNAL(error(int, const QString&)), this, SLOT(streamTaskError(int, const QString&)));
 	sTask->discoInfo();
 	connect(sTask, SIGNAL(infoDone()), this, SLOT(slotInfoDone()));
@@ -207,7 +208,10 @@ void Client::slotInfoDone()
 		f = new QFile(fileName);
 		if (f->exists())
 		{
-			sTask->initStream(*f);
+			if (sTask->useProxy())
+				sTask->initProxyStream(*f);
+			else
+				sTask->initStream(*f);
 			connect(sTask, SIGNAL(finished()), this, SLOT(transferFile()));
 		}
 		else
@@ -222,9 +226,24 @@ void Client::transferFile()
 	ftTask->start(sTask->negProfile(), sTask->sid(), fileName);
 	connect(ftTask, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SIGNAL(prcentChanged(Jid&, QString&, int)));
 	connect(ftTask, SIGNAL(finished()), this, SLOT(transferFinished()));
+	connect(ftTask, SIGNAL(notConnected()), this, SLOT(notConnected()));
 
 	task->removeChild(sTask);
 	delete sTask;
+}
+
+void Client::notConnected()
+{
+	printf("Unable to connect to the target, trying with a proxy.\n");
+	Jid to = sTask->toJid();
+	delete ftTask;
+	delete sTask;
+	
+	sTask = new StreamTask(task, xmpp, to);
+	sTask->setUseProxy(true);
+	connect(sTask, SIGNAL(error(int, const QString&)), this, SLOT(streamTaskError(int, const QString&)));
+	sTask->discoInfo();
+	connect(sTask, SIGNAL(infoDone()), this, SLOT(slotInfoDone()));
 }
 
 void Client::transferFinished()

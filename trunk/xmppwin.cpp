@@ -30,24 +30,7 @@ XmppWin::XmppWin()
 			run the Jabber part of Kapture. Let's add an account."),
 			QMessageBox::Ok);
 		showConfigDial();
-		//updateProfileList();
 	}
-	/*else
-	{
-		profilesa = conf->profileList();
-		for (i = 0; i < profilesa.count(); i++)
-		{
-			ui.profilesComboBox->addItem(profilesa[i].name());
-		}
-		if (profilesa.count() > 0)
-		{	
-			ui.jid->setText(profilesa[0].jid());
-			ui.password->setText(profilesa[0].password());
-			ui.serverEdit->setText(profilesa[0].personnalServer());
-			ui.portEdit->setText(profilesa[0].port());
-		}
-	}
-	*/
 	updateProfileList();
 	
 	connect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeProfile(int)));
@@ -70,7 +53,6 @@ void XmppWin::jabberConnect()
 	
 	jid = new Jid(ui.jid->text());
 	
-	//printf("Jid = %s\n", jid->full().toLatin1().constData());
 	if (!jid->isValid())
 	{
 		QMessageBox::critical(this, tr("Jabber"), tr("This is an invalid Jid."), QMessageBox::Ok);
@@ -79,11 +61,6 @@ void XmppWin::jabberConnect()
 		return;
 	}
 	
-	/*QPixmap *pixmap = new QPixmap("gears.gif");
-	ui.tlsIconLabel->setToolTip(tr("Connecting..."));
-	ui.tlsIconLabel->setPixmap(*pixmap);
-	ui.tlsIconLabel->setEnabled(true);
-*/
 	client = new Client(*jid, ui.serverEdit->text(), ui.portEdit->text());
 	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	connect(client, SIGNAL(connected()), this, SLOT(clientAuthenticated()));
@@ -127,7 +104,6 @@ void XmppWin::clientAuthenticated()
 	ui.tlsIconLabel->setPixmap(*pixmap);
 	ui.tlsIconLabel->setEnabled(true);
 
-	//QMessageBox::information(this, tr("Jabber"), tr("You are now connected to the server.\n You certainly will have some troubles now... :-)"), QMessageBox::Ok);
 	client->getRoster();
 	connect(client, SIGNAL(rosterReady(Roster)), this, SLOT(setRoster(Roster)));
 	connect(client, SIGNAL(presenceReady(const Presence&)), this, SLOT(processPresence(const Presence&)));
@@ -169,13 +145,11 @@ void XmppWin::processPresence(const Presence& presence)
 		if (contactList[i]->jid->equals(presence.from()))
 		{
 			contactList[i]->jid->setResource(presence.from().resource());
-			//contactList[i]->vCard()->setNickname(pNickname);
 			QString status = presence.status();
 			QString type = presence.type();
 			contactList[i]->setPresence(status, type);
 			m->setData(contactList);
 			ui.tableView->update(m->index(i, 0));
-			//printf("Found node ! --> setting type : %s\n", pType.toLatin1().constData());
 			ui.tableView->resizeColumnsToContents();
 			 /* 
 			 * The whole resource's system will be reviewd later.
@@ -195,21 +169,9 @@ void XmppWin::processMessage(const Message& m)
 		}
 	}
 }
-/*
-void XmppWin::processIq(QString iFrom, QString iTo, QString iId, QStringList contacts, QStringList nicknames)
-{
-	 * Still a lot to implement.
-	 * Next one : File Transfert, See http://www.xmpp.org/extensions/xep-0096.html (XEP 0096 : File Transfert)
-	 * Wish : Jingle support : Video Over IP, See http://www.xmpp.org/extensions/xep-0166.html
-	 * 					  and http://www.xmpp.org/extensions/xep-0180.html
-	 * 					   or http://www.xmpp.org/extensions/xep-0181.html
-	 *
-}
-*/
 
 void XmppWin::sendMessage(QString &to, QString &message)
 {
-	//printf("Send message from XmppWin\n");
 	if (connected)
 		client->sendMessage(to, message);
 	else

@@ -171,8 +171,3 @@ QString Jid::bare() const // node@domain/resource --> bare = node@domain. Replac
 {
 	return n + '@' + d;
 }
-
-/*Jid & Jid::operator=(QString& jid)
-{
-	return Jid(jid);
-}*/

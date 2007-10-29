@@ -11,6 +11,7 @@ Socks5::Socks5(const QString& sid, const Jid& from, const Jid& to)
 	s = sid;
 	f = from;
 	t = to;
+	printf("Create Socks5\n");
 }
 
 Socks5::~Socks5()

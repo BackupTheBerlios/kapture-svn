@@ -41,6 +41,7 @@ public slots:
 	void transferFinished();
 	void transferFile();
 	void streamTaskError(int, const QString&);
+	void notConnected();
 
 signals:
 	/*!
