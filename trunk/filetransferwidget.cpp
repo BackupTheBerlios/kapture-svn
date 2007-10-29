@@ -25,7 +25,8 @@ FileTransferWidget::FileTransferWidget(QString& fileName)
 
 FileTransferWidget::~FileTransferWidget()
 {
-
+	delete lab;
+	delete fileTransferBar;
 }
 
 void FileTransferWidget::setPourcentage(int prc)

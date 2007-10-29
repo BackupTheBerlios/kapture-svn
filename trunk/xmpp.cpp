@@ -115,6 +115,7 @@ void Xmpp::start()
 	xmlSource = new QXmlInputSource();
 	xmlHandler = new XmlHandler();
 	xmlReader->setContentHandler(xmlHandler);
+	xmlReader->setFeature("http://trolltech.com/xml/features/report-whitespace-only-CharData", false);
 	xmlSource->setData(QString(""));
 	xmlReader->parse(xmlSource, true);
 	
@@ -129,7 +130,7 @@ void Xmpp::start()
  */
 int Xmpp::sendData(QByteArray &mess)
 {
-	printf("SENT : %s\n", mess.constData());
+	//printf("SENT : %s\n", mess.constData());
 	if (tlsDone)
 	{
 		//printf("Xmpp : Giving clear data to tlsHandler\n");
@@ -210,8 +211,11 @@ void Xmpp::processXml(QByteArray &data)
  * If not, QDomNode has some troubles when 
  * receiving informations for file transfer.
  */
-	data.replace('\n', "");
-	data.replace('\r', "");
+	//data.replace('\n', "");
+	//data.replace('\r', "");
+	//data.replace("> <", "><");
+	
+	//printf(" * Data : %s\n", data.constData());
 
 	xmlSource->setData(data);
 
@@ -233,7 +237,7 @@ void Xmpp::processEvent(Event *event)
 	 * Now, an event contains all data from depth = 1 
 	 * to depth back to 1.
 	 */
-	printf("Elem = %s\n", event->node().localName().toLatin1().constData());
+	//printf("Elem = %s\n", event->node().localName().toLatin1().constData());
 	switch (state)
 	{
 		case waitStream:

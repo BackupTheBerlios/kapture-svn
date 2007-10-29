@@ -175,7 +175,6 @@ void Client::read()
 void Client::sendFile(QString& to)
 {
 	sTask = new StreamTask(task, xmpp, to);
-	sTask->setUseProxy(false);
 	connect(sTask, SIGNAL(error(int, const QString&)), this, SLOT(streamTaskError(int, const QString&)));
 	sTask->discoInfo();
 	connect(sTask, SIGNAL(infoDone()), this, SLOT(slotInfoDone()));
@@ -208,10 +207,7 @@ void Client::slotInfoDone()
 		f = new QFile(fileName);
 		if (f->exists())
 		{
-			if (sTask->useProxy())
-				sTask->initProxyStream(*f);
-			else
-				sTask->initStream(*f);
+			sTask->initStream(*f);
 			connect(sTask, SIGNAL(finished()), this, SLOT(transferFile()));
 		}
 		else
@@ -223,7 +219,7 @@ void Client::transferFile()
 {
 	// Should manage more than 1 transfer at a time.
 	ftTask = new FileTransferTask(task, sTask->toJid(), xmpp);
-	ftTask->start(sTask->negProfile(), sTask->sid(), fileName);
+	ftTask->start(sTask->negProfile(), sTask->sid(), fileName, sTask->proxies(), sTask->ips(), sTask->ports());
 	connect(ftTask, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SIGNAL(prcentChanged(Jid&, QString&, int)));
 	connect(ftTask, SIGNAL(finished()), this, SLOT(transferFinished()));
 	connect(ftTask, SIGNAL(notConnected()), this, SLOT(notConnected()));
@@ -234,16 +230,10 @@ void Client::transferFile()
 
 void Client::notConnected()
 {
-	printf("Unable to connect to the target, trying with a proxy.\n");
+	printf("Unable to connect to the target.\n");
 	Jid to = sTask->toJid();
 	delete ftTask;
 	delete sTask;
-	
-	sTask = new StreamTask(task, xmpp, to);
-	sTask->setUseProxy(true);
-	connect(sTask, SIGNAL(error(int, const QString&)), this, SLOT(streamTaskError(int, const QString&)));
-	sTask->discoInfo();
-	connect(sTask, SIGNAL(infoDone()), this, SLOT(slotInfoDone()));
 }
 
 void Client::transferFinished()
@@ -252,80 +242,3 @@ void Client::transferFinished()
 	task->removeChild(ftTask);
 	delete ftTask;
 }
-
-/*void Client::processIq(const QDomDocument& d)
-{
-	printf("process IQ\n");
-}
-
-
-void Stanza::setupIq(QDomElement s)
-{
-	id = s.attribute("id");
-	from = s.attribute("from");
-	type = s.attribute("type");
-
-	if (s.hasChildNodes())
-		s = s.firstChildElement();
-	else
-		printf("error ! ");
-	
-		// !!! DO NOT MODIFY s BEFORE ""s = s.nextSibling().toElement(); !!!
-	while (!s.isNull())
-	{
-		QString tag = s.localName();
-		if (tag == "query")
-		{
-			if (id == "roster_1")
-			{
-				QDomNodeList items = s.childNodes();
-				for (int i = 0; i < items.count(); i++)
-				{
-					contacts << items.at(i).toElement().attribute("jid");
-					nicknames << items.at(i).toElement().attribute("name");
-					printf("New Roster contact : %s (subscription : %s)\n", contacts[i].toLatin1().constData(), items.at(i).toElement().attribute("subscription").toLatin1().constData());
-				}
-			}
-
-			if (s.namespaceURI() == XMLNS_DISCO)
-			{
-				if (type == "get")
-					action = SendDiscoInfo;
-				if (type == "result")
-				{
-					QDomNodeList p = s.childNodes();
-					
-					for (int i = 0; i < p.count(); i++)
-					{
-						if (p.at(i).localName() == "feature")
-							features << p.at(i).toElement().attribute("var");
-					}
-
-					action = ReceivedDiscoInfo;
-				}
-			}
-			else
-			{
-				printf("Action : None\n");
-				action = None;
-			}
-		}
-		
-		if (tag == "body")
-		{
-		}
-		
-		s = s.nextSibling().toElement();
-	}
-}
-*/
-
-/*void Client::processPresence(const QDomDocument& d)
-{
-	printf("process Presence\n");
-}
-
-void Client::processMessage(const QDomDocument& d)
-{
-	printf("process Message\n");
-}*/

@@ -96,7 +96,6 @@ public:
 	StreamTask(Task* parent, Xmpp *xmpp, const Jid& t);
 	~StreamTask();
 	void initStream(const QFile&);
-	void initProxyStream(const QFile& f);
 	void discoInfo();
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
@@ -104,8 +103,9 @@ public:
 	QString negProfile() const;
 	Jid toJid() const;
 	QString sid() const;
-	bool useProxy() const;
-	void setUseProxy(bool);
+	QStringList proxies() const;
+	QStringList ports() const;
+	QStringList ips() const;
 
 signals:
 	void infoDone();
@@ -124,16 +124,25 @@ private:
 	enum States {
 		WaitDiscoInfo = 0,
 		WaitAcceptFileTransfer,
-		WaitProxies
+		WaitProxies,
+		WaitIsProxy,
+		WaitProxyIp
 	} state;
 	QString id;
 	QStringList featureList;
+	QStringList itemList;
 	QStringList proxyList;
+	QStringList proxyList2;
+	QStringList ipList;
+	QStringList portList;
+	QStringList zeroconfList;
 	Xmpp *p;
 	Jid to;
 	QString profileToUse;
 	QString SID; //id
-	bool prox;
+	void getProxies();
+	void isAProxy(QString);
+	void getProxyIp(QString);
 
 };
 
@@ -143,7 +152,7 @@ class FileTransferTask : public Task
 public:
 	FileTransferTask(Task *parent, const Jid& t, Xmpp *xmpp);
 	~FileTransferTask();
-	void start(const QString&, const QString&, const QString&);
+	void start(const QString&, const QString&, const QString&, const QStringList, const QStringList, const QStringList);
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
 
@@ -153,6 +162,8 @@ public slots:
 	void dataAvailable();
 	void readS5();
 	void writeNext(qint64);
+	void connectedToProxy();
+	void notifyStart();
 signals:
 	void prcentChanged(Jid&, QString&, int);
 	void notConnected();
@@ -172,22 +183,13 @@ private:
 	QString fileName;
 	QList<QTcpServer*> serverList;
 	QTimer *timeOut;
+	QStringList proxies;
+	QStringList ips;
+	QStringList ports;
+	QString usedProxy;
+	QString usedIP;
+	QString usedPort;
+	bool connectToProxy;
 };
 
-/*class PullFileTransferTask : public Task
-{
-	Q_OBJECT
-public:
-	PullFileTransferTask();
-	~PullFileTransferTask();
-	bool canProcess(const Stanza&) const;
-	void processStanza(const Stanza&);
-
-signals:
-
-public slots:
-
-private:
-
-};*/
 #endif

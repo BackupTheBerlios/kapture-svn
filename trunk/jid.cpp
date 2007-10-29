@@ -19,7 +19,7 @@ Jid::Jid()
 
 }
 
-Jid::Jid(const char *j)
+Jid::Jid(const char*)
 {
 
 }

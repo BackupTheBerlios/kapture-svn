@@ -142,7 +142,7 @@ VCard *Contact::vCard() const
 
 void Contact::setTranferFileState(QString fileName, int prc)
 {
-	printf("prc = %d\n", prc);
+	//printf("prc = %d\n", prc);
 	if (prc == 0 && !done)
 	{
 		//Add the transfer bar
@@ -161,6 +161,7 @@ void Contact::setTranferFileState(QString fileName, int prc)
 			transferList.at(i)->setPourcentage(prc);
 			if (prc == 100)
 			{
+				chatWin->ui.vboxLayout->removeItem(transferList.at(i)->box());
 				delete transferList.at(i);
 				transferList.removeAt(i);
 				done = false;

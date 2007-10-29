@@ -13,13 +13,15 @@ public :
 	~Socks5();
 	void write(const QByteArray&);
 	QByteArray read() const;
+	void connect();
 
 signals :
 	void readyRead();
+	void established();
 
 private :
 	QByteArray sha1(const QString& clear);
-	enum State {Init = 0, WaitRequest} state;
+	enum State {InitClient = 0, WaitRequestClient, WaitMethod, WaitConnection} state;
 	QByteArray d;
 	void process(const QByteArray&);
 	bool noAuthSupported;

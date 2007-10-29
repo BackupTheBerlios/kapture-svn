@@ -20,6 +20,7 @@
 #define XMLNS_FILETRANSFER "http://jabber.org/protocol/si/profile/file-transfer"
 #define XMLNS_DISCO_INFO "http://jabber.org/protocol/disco#info"
 #define XMLNS_DISCO_ITEMS "http://jabber.org/protocol/disco#items"
+#define XMLNS_BYTESTREAMS "http://jabber.org/protocol/bytestreams"
 #define TIMEOUT 30000
 
 RosterTask::RosterTask(Task* parent)
@@ -346,10 +347,10 @@ bool StreamTask::canProcess(const Stanza& s) const
 	
 	QString ns = s.node().firstChildElement().firstChildElement().namespaceURI();
 	
-	printf("Type = %s, Id = %s (expected %s), namespace = %s\n", s.type().toLatin1().constData(),
-			s.id().toLatin1().constData(),
-			id.toLatin1().constData(),
-			s.node().toElement().namespaceURI().toLatin1().constData());
+	//printf("Type = %s, Id = %s (expected %s), namespace = %s\n", s.type().toLatin1().constData(),
+	//		s.id().toLatin1().constData(),
+	//		id.toLatin1().constData(),
+	//		s.node().toElement().namespaceURI().toLatin1().constData());
 
 	if (s.id() == id /*&&
 	    s.node().toElement().namespaceURI() == "jabber:client"*/)
@@ -430,7 +431,7 @@ void StreamTask::processStanza(const Stanza& s)
 			}
 			profileToUse = node.firstChild().toText().data();
 			printf("Ok, Using %s profile to transfer file.\n", profileToUse.toLatin1().constData());
-			emit finished();
+			getProxies();
 		}
 		if (s.type() == "error")
 		{
@@ -451,16 +452,97 @@ void StreamTask::processStanza(const Stanza& s)
 			while (!node.isNull())
 			{
 				if (node.localName() == "item")
-					proxyList << node.toElement().attribute("jid");
+					itemList << node.toElement().attribute("jid");
 				node = node.nextSibling();
 			}
 			//emit infoDone();
 		}
 		printf("Proxies are : \n");
-		for (int i = 0; i < proxyList.count(); i++)
-			printf(" * %s\n", proxyList[i].toLatin1().constData());
+		for (int i = 0; i < itemList.count(); i++)
+			printf(" * %s\n", itemList[i].toLatin1().constData());
+		if (itemList.count() <= 0)
+		{
+			emit finished();
+			return;
+		}
+		state = WaitIsProxy;
+		isAProxy(itemList.takeFirst());
 		break;
+	case WaitIsProxy :
+		if (s.type() == "result" && s.node().firstChildElement().firstChildElement().namespaceURI() == XMLNS_DISCO_INFO)
+		{
+			QDomNode node = s.node().firstChild();
+			node = node.firstChild();
+			printf("node = %s\n", node.localName().toLatin1().constData());
+			while (!node.isNull())
+			{
+				printf("* Indentity = %s, Category = %s, type = %s\n", 
+				        node.localName().toLatin1().constData(),
+					node.toElement().attribute("category").toLatin1().constData(), 
+					node.toElement().attribute("type").toLatin1().constData());
+
+				if ((node.localName() == "identity") &&
+				    (node.toElement().attribute("category") == "proxy") &&
+				    (node.toElement().attribute("type") == "bytestreams"))
+				{
+					proxyList << s.node().toElement().attribute("from");
+					proxyList2 << s.node().toElement().attribute("from");
+				}
+				node = node.nextSibling();
+			}
+			printf("itemList.count() = %d\n", itemList.count());
+			if (itemList.empty())
+			{
+				printf(" ************* Number of Proxies = %d\n", proxyList.count());
+				if (proxyList.count() <= 0)
+				{
+					emit finished();
+					return;
+				}
+				else
+				{
+					state = WaitProxyIp;
+					getProxyIp(proxyList.takeFirst());
+				}
+			}
+			else
+				isAProxy(itemList.takeFirst());
+		}
+		break;
+	case WaitProxyIp :
+		if (s.type() == "result" && s.node().firstChildElement().firstChildElement().namespaceURI() == XMLNS_BYTESTREAMS)
+		{
+			QDomNode node = s.node().firstChild();
+			node = node.firstChild();
+			if (node.localName() == "streamhost")
+			{
+				ipList << node.toElement().attribute("host", "UNKNOWN");
+				portList << node.toElement().attribute("port", "UNKNOWN");
+				//zeroconfList << node.toElement().attribute("zeroconf", "UNKNOWN");
+			}
+			if (proxyList.empty())
+				emit finished();
+			else
+			{
+				getProxyIp(proxyList.takeFirst());
+			}
+		}
 	}
+}
+
+QStringList StreamTask::proxies() const
+{
+	return proxyList2;
+}
+
+QStringList StreamTask::ips() const
+{
+	return ipList;
+}
+
+QStringList StreamTask::ports() const
+{
+	return portList;
 }
 
 void StreamTask::discoInfo()
@@ -498,7 +580,7 @@ QString StreamTask::negProfile() const
 	return profileToUse;
 }
 
-void StreamTask::initProxyStream(const QFile&)
+void StreamTask::getProxies()
 {
 /*
 <iq type='get' 
@@ -519,17 +601,34 @@ void StreamTask::initProxyStream(const QFile&)
 	node.appendChild(query);
 	state = WaitProxies;
 	p->write(stanza);
-
 }
 
-bool StreamTask::useProxy() const
+void StreamTask::isAProxy(QString host)
 {
-	return prox;
+	id = randomString(8);
+	Stanza stanza(Stanza::IQ, "get", id, host);
+	QDomNode node = stanza.node().firstChild();
+	QDomDocument doc("");
+
+	QDomElement query = doc.createElement("query");
+	query.setAttribute("xmlns", XMLNS_DISCO_INFO);
+	
+	node.appendChild(query);
+	p->write(stanza);
 }
 
-void StreamTask::setUseProxy(bool pr)
+void StreamTask::getProxyIp(QString proxy)
 {
-	prox = pr;
+	id = randomString(8);
+	Stanza stanza(Stanza::IQ, "get", id, proxy);
+	QDomNode node = stanza.node().firstChild();
+	QDomDocument doc("");
+
+	QDomElement query = doc.createElement("query");
+	query.setAttribute("xmlns", XMLNS_BYTESTREAMS);
+	
+	node.appendChild(query);
+	p->write(stanza);
 }
 
 void StreamTask::initStream(const QFile& f)
@@ -609,6 +708,7 @@ FileTransferTask::FileTransferTask(Task *parent, const Jid& t, Xmpp *xmpp)
 	writtenData = 0;
 	prc = 0;
 	prc2 = 0;
+	connectToProxy = true;
 }
 
 FileTransferTask::~FileTransferTask()
@@ -621,7 +721,6 @@ FileTransferTask::~FileTransferTask()
 		delete serverList.at(i);
 		serverList.removeAt(i);
 	}
-	//delete serverList;
 }
 
 bool FileTransferTask::canProcess(const Stanza& s) const
@@ -637,27 +736,74 @@ bool FileTransferTask::canProcess(const Stanza& s) const
 
 #define STEP 512
 
-void FileTransferTask::processStanza(const Stanza&)
+void FileTransferTask::processStanza(const Stanza& s)
 {
-	f->open(QIODevice::ReadOnly);
-	if (f->size() < STEP)
+	if (s.type() != "result")
 	{
-		emit prcentChanged(to, fileName, 0);
-		socks5Socket->write(f->readAll());
-		writtenData = f->size();
-		disconnect(socks5Socket);
-		socks5Socket->disconnectFromHost();
-		emit prcentChanged(to, fileName, 100);
-		emit finished();
+		;
+		//emit error();
+	}
+
+	QDomNode node = s.node().firstChild().firstChild();
+	
+	if (!connectToProxy)
+	{
+		f->open(QIODevice::ReadOnly);
+		if (f->size() < STEP)
+		{
+			emit prcentChanged(to, fileName, 0);
+			socks5Socket->write(f->readAll());
+			writtenData = f->size();
+			disconnect(socks5Socket);
+			socks5Socket->disconnectFromHost();
+			emit prcentChanged(to, fileName, 100);
+			emit finished();
+		}
+		else
+		{
+			socks5Socket->write(f->read(STEP));
+			connect(socks5Socket, SIGNAL(bytesWritten(qint64)), this, SLOT(writeNext(qint64)));
+		}
+		prc = 0;
+		prc2 = 0;
+		emit prcentChanged(to, fileName, 0); // should have an ID
 	}
 	else
 	{
-		socks5Socket->write(f->read(STEP));
-		connect(socks5Socket, SIGNAL(bytesWritten(qint64)), this, SLOT(writeNext(qint64)));
+		if (node.localName() != "streamhost-used")
+		{
+			//emit error();
+			return;
+		}
+		timeOut->stop(); // Connection received, no need to wait anymore.
+		delete timeOut; // Unused now.
+		
+		printf("Must be using a proxy.\n");
+		// Search the used proxy.
+		int i;
+		for (i = 0; i < proxies.count(); i++)
+		{
+			if (proxies.at(i) == node.toElement().attribute("jid"))
+			{
+				usedProxy = proxies.at(i);
+				usedIP	  = ips.at(i);
+				usedPort  = ports.at(i);
+				break;
+			}
+		}
+		socks5Socket = new QTcpSocket();
+		socks5Socket->connectToHost(usedIP, usedPort.toLatin1().toInt());
+		connect(socks5Socket, SIGNAL(connected()), this, SLOT(connectedToProxy()));
 	}
-	prc = 0;
-	prc2 = 0;
-	emit prcentChanged(to, fileName, 0); // should have an ID
+}
+
+void FileTransferTask::connectedToProxy()
+{
+	socks5 = new Socks5(s, p->node(), to);
+	connect(socks5, SIGNAL(readyRead()), this, SLOT(readS5()));
+	connect(socks5, SIGNAL(established()), this, SLOT(notifyStart()));
+	connect(socks5Socket, SIGNAL(readyRead()), this, SLOT(dataAvailable()));
+	socks5->connect();
 }
 
 void FileTransferTask::writeNext(qint64 sizeWritten)
@@ -668,9 +814,7 @@ void FileTransferTask::writeNext(qint64 sizeWritten)
 	prc = (int)(((float)writtenData/(float)f->size())*100);
 	if (prc2 != prc)
 	{
-		printf("Pourcentage : %d %%.\n", prc);
 		QString fileN = f->fileName();
-		printf("prc = %d\n", prc);
 		emit prcentChanged(to, fileN, prc);
 	}
 	prc2 = (int)(((float)writtenData/(float)f->size())*100);
@@ -685,10 +829,16 @@ void FileTransferTask::writeNext(qint64 sizeWritten)
 	}
 }
 
-void FileTransferTask::start(const QString& profile, const QString& SID, const QString& file)
+void FileTransferTask::start(const QString& profile, const QString& SID, const QString& file,
+			     const QStringList prox, const QStringList ip, const QStringList p)
 {
+	printf("%d proxies\n", prox.count());
+	proxies = prox;
+	ips = ip;
+	ports = p;
 	if (profile == "http://jabber.org/protocol/bytestreams")
 		startByteStream(SID);
+	
 	s = SID;
 	printf("File name = %s\n", file.toLatin1().constData());
 	f = new QFile(file);
@@ -697,7 +847,6 @@ void FileTransferTask::start(const QString& profile, const QString& SID, const Q
 
 void FileTransferTask::startByteStream(const QString &SID)
 {
-//TODO: Rename test and truc.
 	// Get network address.
 	id = randomString(6);
 	Stanza stanza(Stanza::IQ, "set", id, to.full());
@@ -709,21 +858,30 @@ void FileTransferTask::startByteStream(const QString &SID)
 	query.setAttribute("mode", "tcp");
 	
 	timeOut = new QTimer();
-	QNetworkInterface *truc = new QNetworkInterface();
-	for (int i = 0; i < truc->allAddresses().count(); i++)
+	QNetworkInterface *interface = new QNetworkInterface();
+	for (int i = 0; i < interface->allAddresses().count(); i++)
 	{
-		printf("IP : %s\n", truc->allAddresses().at(i).toString().toLatin1().constData());
+		printf("IP : %s\n", interface->allAddresses().at(i).toString().toLatin1().constData());
 		QDomElement streamHost = doc.createElement("streamhost");
 		streamHost.setAttribute("jid", p->node().full());
-		streamHost.setAttribute("host", truc->allAddresses().at(i).toString());
-		//streamHost.setAttribute("host", "1.2.3.4");
+		streamHost.setAttribute("host", interface->allAddresses().at(i).toString());
 		streamHost.setAttribute("port", "8015");
 		query.appendChild(streamHost);
 		
 		QTcpServer *tcpServer = new QTcpServer();
-		tcpServer->listen(QHostAddress(truc->allAddresses().at(i).toString()), 8015);
+		tcpServer->listen(QHostAddress(interface->allAddresses().at(i).toString()), 8015);
 		connect(tcpServer, SIGNAL(newConnection()), this, SLOT(newConnection()));
 		serverList << tcpServer;
+	}
+	for (int i = 0; i < proxies.count(); i++)
+	{
+		printf("add a Proxy in the list\n");
+		printf("IP : %s\n", ips.at(i).toLatin1().constData());
+		QDomElement streamHost = doc.createElement("streamhost");
+		streamHost.setAttribute("jid", proxies[i]);
+		streamHost.setAttribute("host", ips[i]);
+		streamHost.setAttribute("port", ports[i]);
+		query.appendChild(streamHost);
 	}
 	timeOut->setInterval(TIMEOUT);
 	connect(timeOut, SIGNAL(timeout()), this, SLOT(noConnection()));
@@ -768,6 +926,7 @@ void FileTransferTask::newConnection()
 		serverList.at(i)->close();
 	}
 	connect(socks5Socket, SIGNAL(readyRead()), this, SLOT(dataAvailable()));
+	connectToProxy = false;
 }
 
 void FileTransferTask::dataAvailable()
@@ -782,4 +941,28 @@ void FileTransferTask::readS5()
 	QByteArray data = socks5->read();
 	printf("Sending : %s (%d)\n", data.toHex().constData(), data.count());
 	socks5Socket->write(data);
+}
+
+void FileTransferTask::notifyStart()
+{
+	id = randomString(8);
+	Stanza stanza(Stanza::IQ, "set", id, usedProxy);
+	QDomNode node = stanza.node().firstChild();
+	stanza.setFrom(p->node());
+	QDomDocument doc("");
+
+	QDomElement query = doc.createElement("query");
+	query.setAttribute("sid", s);
+	query.setAttribute("xmlns", XMLNS_BYTESTREAMS);
+
+	QDomElement activate = doc.createElement("activate");
+
+	QDomText toText = doc.createTextNode(to.full());
+
+	activate.appendChild(toText);
+	query.appendChild(activate);
+	node.appendChild(query);
+	
+	connectToProxy = false;
+	p->write(stanza);
 }

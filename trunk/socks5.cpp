@@ -6,7 +6,7 @@
 
 Socks5::Socks5(const QString& sid, const Jid& from, const Jid& to)
 {
-	state = Init;
+	state = InitClient;
 	noAuthSupported = false;
 	s = sid;
 	f = from;
@@ -32,8 +32,6 @@ QByteArray Socks5::read() const
 void Socks5::process(const QByteArray& data)
 {
 	d.clear();
-	if (data.size() < 3)
-		return;
 	//Check version.
 	if (data.at(0) == 0x5)
 	{
@@ -48,7 +46,7 @@ void Socks5::process(const QByteArray& data)
 	int val = 0;
 	switch (state)
 	{
-	case Init :
+	case InitClient :
 		//Number of supported METHODS.
 		val = (int)data.at(1);
 		for (int i = 0; i < val; i++)
@@ -65,12 +63,12 @@ void Socks5::process(const QByteArray& data)
 		printf("Ok, that's good.\n");
 		d.append((char)0x5);
 		d.append((char)0x0);
-		state = WaitRequest;
+		state = WaitRequestClient;
 		break;
-	case WaitRequest :
+	case WaitRequestClient :
 		switch (data.at(1))
 		{
-		case 1 : //CONNECT
+			case 1 : //CONNECT
 			switch(data.at(3))
 			{
 			case 3 : //DOMAIN NAME
@@ -103,8 +101,38 @@ void Socks5::process(const QByteArray& data)
 		//case 3 : //UDP ASSOCIATE
 		}
 		break;
+	case WaitMethod:
+		if (data.at(1) == 0x00)
+		{
+			// Send first Request.
+			d.append((char)0x5);
+			d.append((char)0x1);
+			d.append((char)0x0);
+			d.append((char)0x3);
+			QByteArray sha = sha1(QString("%1%2%3").arg(s).arg(f.full()).arg(t.full()));
+			d.append(sha.count());
+			for (int i = 0; i < sha.count(); i++)
+				d.append(sha.at(i));
+			d.append((char)0x0);
+			d.append((char)0x0);
+			state = WaitConnection;
+		}
+		break;
+	case WaitConnection:
+		emit established();
+		return;
 	}
 
+	emit readyRead();
+}
+
+void Socks5::connect()
+{
+	//Hello Message
+	d.append((char)0x5);
+	d.append((char)0x1);
+	d.append((char)0x0);
+	state = WaitMethod;
 	emit readyRead();
 }
 
