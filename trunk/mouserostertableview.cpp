@@ -21,7 +21,7 @@ MouseRosterTableView::MouseRosterTableView(QWidget *parent)
 
 }
 
-void MouseRosterTableView::mouseDoubleClickEvent(QMouseEvent *e)
+void MouseRosterTableView::mouseDoubleClickEvent(QMouseEvent*)
 {
 	if (currentIndex().isValid())
 	{

@@ -82,22 +82,22 @@ Qt::ItemFlags Model::flags(const QModelIndex &index) const
 	return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
-QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant Model::headerData(int, Qt::Orientation, int) const
 {
 	return QVariant();
 }
 
-QModelIndex Model::index(int row, int column, const QModelIndex &parent) const
+QModelIndex Model::index(int row, int column, const QModelIndex&) const
 {
 	return createIndex(row, column, row);
 }
 
-int Model::rowCount(const QModelIndex &parent) const
+int Model::rowCount(const QModelIndex&) const
 {
 	return contacts.count();
 }
 
-int Model::columnCount(const QModelIndex &parent) const
+int Model::columnCount(const QModelIndex&) const
 {
 	return 2;
 }

@@ -240,6 +240,8 @@ void Xmpp::processEvent(Event *event)
 	//printf("Elem = %s\n", event->node().localName().toLatin1().constData());
 	switch (state)
 	{
+		case isHandShaking:
+			break;
 		case waitStream:
 			if (event->type() == Event::Stream)
 			{

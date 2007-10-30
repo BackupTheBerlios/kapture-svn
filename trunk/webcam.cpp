@@ -401,6 +401,8 @@ int Webcam::changeCtrl(int ctrl, int value) // an enum for formats and reorganis
 			break;
 		}
 #endif
+		default:
+			CTRL = 0;
 	}
 
 	memset (&queryctrl, 0, sizeof queryctrl);
@@ -457,7 +459,8 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 	}
 	
 	memset(&queryctrl, 0, sizeof queryctrl);
-	switch(control){
+	switch(control)
+	{
 		case Saturation : 
 		{
 			ctrl = "Saturation";
@@ -490,6 +493,8 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 			break;
 		}
 #endif
+		default :
+			ctrl = "ERROR";
 	}
 
 	char str[128];

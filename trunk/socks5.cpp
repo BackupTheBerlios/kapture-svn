@@ -6,7 +6,7 @@
 
 Socks5::Socks5(const QString& sid, const Jid& from, const Jid& to)
 {
-	state = InitClient;
+	state = InitServer;
 	noAuthSupported = false;
 	s = sid;
 	f = from;
@@ -46,7 +46,7 @@ void Socks5::process(const QByteArray& data)
 	int val = 0;
 	switch (state)
 	{
-	case InitClient :
+	case InitServer :
 		//Number of supported METHODS.
 		val = (int)data.at(1);
 		for (int i = 0; i < val; i++)
@@ -63,9 +63,9 @@ void Socks5::process(const QByteArray& data)
 		printf("Ok, that's good.\n");
 		d.append((char)0x5);
 		d.append((char)0x0);
-		state = WaitRequestClient;
+		state = WaitRequestServer;
 		break;
-	case WaitRequestClient :
+	case WaitRequestServer :
 		switch (data.at(1))
 		{
 			case 1 : //CONNECT
@@ -101,7 +101,7 @@ void Socks5::process(const QByteArray& data)
 		//case 3 : //UDP ASSOCIATE
 		}
 		break;
-	case WaitMethod:
+	case WaitMethodClient :
 		if (data.at(1) == 0x00)
 		{
 			// Send first Request.
@@ -115,10 +115,10 @@ void Socks5::process(const QByteArray& data)
 				d.append(sha.at(i));
 			d.append((char)0x0);
 			d.append((char)0x0);
-			state = WaitConnection;
+			state = WaitConnectionClient;
 		}
 		break;
-	case WaitConnection:
+	case WaitConnectionClient :
 		emit established();
 		return;
 	}
@@ -132,7 +132,7 @@ void Socks5::connect()
 	d.append((char)0x5);
 	d.append((char)0x1);
 	d.append((char)0x0);
-	state = WaitMethod;
+	state = WaitMethodClient;
 	emit readyRead();
 }
 

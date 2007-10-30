@@ -11,6 +11,8 @@
  *
  */
 #include <QLabel>
+#include <QAbstractScrollArea>
+#include <QScrollBar>
 
 #include "contact.h"
 #include "utils.h"
@@ -66,7 +68,12 @@ void Contact::newMessage(const QString &m /*Message*/)
 		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
 	}
 
-	chatWin->ui.discutionText->insertHtml(QString("<font color='red'>%1 says :</font><br>%2<br>").arg(vcard->nickname() == "" ? jid->full() : vcard->nickname()).arg(changeEmoticons(m)));
+	chatWin->ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
+	chatWin->ui.discutionText->insertHtml(
+		QString("<font color='red'>%1 says :</font><br>%2<br>").arg(
+			vcard->nickname() == "" ? jid->full() : vcard->nickname()).arg(
+				changeEmoticons(m)));
+	chatWin->ui.discutionText->verticalScrollBar()->setValue(chatWin->ui.discutionText->verticalScrollBar()->maximum());
 	
 	if (!chatWin->isActiveWindow())
 	{

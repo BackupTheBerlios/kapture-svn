@@ -56,7 +56,7 @@ bool XmlHandler::startElement(const QString &namespaceURI, const QString &,
 	return true;
 }
 
-bool XmlHandler::endElement(const QString&, const QString&, const QString& qName)
+bool XmlHandler::endElement(const QString&, const QString&, const QString&)
 {
 	depth--;
 	

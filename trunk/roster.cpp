@@ -23,7 +23,7 @@ Roster::~Roster()
 
 }
 
-void Roster::addContact(const QString& jid, const QString& nickname, const QString& subscription)
+void Roster::addContact(const QString& jid, const QString& nickname, const QString&/*subscription*/)
 {
 /*
  * Subscription not managed yet

@@ -15,7 +15,7 @@
 
 #include <QString>
 
-ProfileModel::ProfileModel(QObject *parent)
+ProfileModel::ProfileModel(QObject*)
 {
 
 }
@@ -112,22 +112,22 @@ QVariant ProfileModel::headerData(int section, Qt::Orientation orientation, int 
 	return QVariant();
 }
 
-QModelIndex ProfileModel::index(int row, int column, const QModelIndex &parent) const
+QModelIndex ProfileModel::index(int row, int column, const QModelIndex&) const
 {
 	return createIndex(row, column, row);
 }
 
-int ProfileModel::rowCount(const QModelIndex &parent) const
+int ProfileModel::rowCount(const QModelIndex&) const
 {
 	return profiles.count();
 }
 
-int ProfileModel::columnCount(const QModelIndex &parent) const
+int ProfileModel::columnCount(const QModelIndex&) const
 {
 	return 4;
 }
 
-bool ProfileModel::insertRow(int position, const QModelIndex &parent)
+bool ProfileModel::insertRow(int position, const QModelIndex&)
 {
 	beginInsertRows(QModelIndex(), position, position);
 
@@ -139,7 +139,7 @@ bool ProfileModel::insertRow(int position, const QModelIndex &parent)
 	return true;
 }
 
-bool ProfileModel::removeRow(int position, const QModelIndex &parent)
+bool ProfileModel::removeRow(int position, const QModelIndex&)
 {
 	beginRemoveRows(QModelIndex(), position, position);
 

@@ -13,9 +13,12 @@
 
 #include <stdio.h>
 
+#ifdef DEBUG
 void KError(char* error, int errorno)
 {
-#ifdef DEBUG
 	printf(" E %s (Error %d)\n", error, errorno);
+#else
+void KError(char*, int)
+{
 #endif
 }

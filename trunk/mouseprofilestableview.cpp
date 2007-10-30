@@ -13,11 +13,11 @@
 
 #include "mouseprofilestableview.h"
 
-MouseProfilesTableView::MouseProfilesTableView(QWidget *parent)
+MouseProfilesTableView::MouseProfilesTableView(QWidget*)
 {
 }
 
-void MouseProfilesTableView::mouseReleaseEvent(QMouseEvent *e)
+void MouseProfilesTableView::mouseReleaseEvent(QMouseEvent*)
 {
 	if (currentIndex().isValid())
 	{

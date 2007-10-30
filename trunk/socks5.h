@@ -21,7 +21,7 @@ signals :
 
 private :
 	QByteArray sha1(const QString& clear);
-	enum State {InitClient = 0, WaitRequestClient, WaitMethod, WaitConnection} state;
+	enum State {InitServer = 0, WaitRequestServer, WaitMethodClient, WaitConnectionClient} state;
 	QByteArray d;
 	void process(const QByteArray&);
 	bool noAuthSupported;

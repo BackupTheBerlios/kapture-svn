@@ -36,8 +36,6 @@ private:
 	{
 		Connecting,
 		Connected,
-		Disconnecting,
-		Disconnected
 	} state;
 signals:
 	void readyReadOutgoing();
