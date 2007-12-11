@@ -845,6 +845,11 @@ void FileTransferTask::startByteStream(const QString &SID)
 	
 	timeOut = new QTimer();
 	QNetworkInterface *interface = new QNetworkInterface();
+	/* TODO:
+	 * 	Should also add the external IP.
+	 * 	For example, download it from
+	 * 		http://www.swlink.net/~styma/REMOTE_ADDR.shtml
+	 */
 	for (int i = 0; i < interface->allAddresses().count(); i++)
 	{
 		printf("IP : %s\n", interface->allAddresses().at(i).toString().toLatin1().constData());
@@ -932,9 +937,8 @@ void FileTransferTask::dataAvailable()
 			fileOut->open(QIODevice::WriteOnly | QIODevice::Append);
 			fileOpened = true;
 		}
-		printf("[FileTransferTask] Writing : %s\n", data.constData());
+		printf("[FileTransferTask] Writing data in %s\n", st.toLatin1().constData());
 		fileOut->write(data);
-		
 	}
 }
 
@@ -989,7 +993,7 @@ void FileTransferTask::tryToConnect(PullStreamTask::StreamHost hostData)
 	{
 		socks5Socket->connectToHost(host, port);
 		connect(socks5Socket, SIGNAL(connected()), this, SLOT(s5Connected()));
-		connect(socks5Socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(s5Error()));
+		connect(socks5Socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(s5Error(QAbstractSocket::SocketError)));
 	}
 	else
 	{
@@ -1012,18 +1016,30 @@ void FileTransferTask::s5Connected()
 	socks5->connect();
 }
 
-void FileTransferTask::s5Error()
+void FileTransferTask::s5Error(QAbstractSocket::SocketError e)
 {
-	printf("Unable to transfer the file, ");
-	delete socks5Socket;
-	if (h.count() > 0)
+	if (e == QAbstractSocket::RemoteHostClosedError)
 	{
-		printf("trying next streamhost.\n");
-		tryToConnect(h.takeFirst());
+		// Should check if the whole file has been transfered.
+		printf("Connection Closed.\n");
+		socks5Socket->disconnect();
+		socks5Socket->disconnectFromHost();
+		fileOut->close();
+		emit finished();
 	}
 	else
 	{
-		printf("Cancelling [Not Implmented yet]\n");
+		printf("Unable to transfer the file, ");
+		delete socks5Socket;
+		if (h.count() > 0)
+		{
+			printf("trying next streamhost.\n");
+			tryToConnect(h.takeFirst());
+		}
+		else
+		{
+			printf("Cancelling [Not Implmented yet]\n");
+		}
 	}
 }
 

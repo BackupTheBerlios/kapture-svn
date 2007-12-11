@@ -11,34 +11,26 @@
  *
  */
 
-#include "utils.h"
+#include "emoticons.h"
 
-struct Emoticon
-{
-	QString binette; // :-)
-	QString link; // smile.png
-	Emoticon(QString b, QString l)
-	{
-		binette = b;
-		link = l;
-	}
-};
-QList<Emoticon> emoticons;
-
-QString changeEmoticons(QString m/*, QString jid*/)
+Emoticons::Emoticons()
 {
 	emoticons.append(Emoticon(":)", "smile.png"));
 	emoticons.append(Emoticon(":-)", "smile.png"));
-	// TODO: add more emoticons
-	// FIXME:Find another way to have all emoticons here without refilling emoticons each times.
+	// TODO: add more emoticons and load other from file or directory.
+}
+
+QString Emoticons::changeEmoticons(const QString& m/*, QString jid*/)
+{
+	QString temp = m;
 	for (int i = 0; i < emoticons.count(); i++)
 	{
-		m.replace(emoticons[i].binette, "<img src=\"" + emoticons[i].link + "\">");
+		temp.replace(emoticons[i].binette, "<img src=\"" + emoticons[i].link + "\">");
 	}
 	//if (m.startsWith("/me "))
 	//	m = "<font color='green'> *** " + m.split("/me") + "</font>";
 	// FIXME:*message* works a half
-	if (m.at(0) == '*' && m.endsWith('*') && !m.contains(" "))
-		m = "<b>" + m + "</b>";
-	return m;
+	if (temp.at(0) == '*' && temp.endsWith('*') && !temp.contains(" "))
+		temp = "<b>" + temp + "</b>";
+	return temp;
 }

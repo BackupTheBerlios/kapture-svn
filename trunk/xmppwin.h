@@ -11,6 +11,7 @@
 #include "config.h"
 #include "roster.h"
 #include "xmppconfigdialog.h"
+#include "emoticons.h"
 
 //class Message;
 
@@ -55,6 +56,8 @@ private:
 	QTimer *waitingTimer;
 	int secs;
 	void sortContactList();
+	void closeEvent(QCloseEvent*);
+	Emoticons *emoticons;
 };
 #endif
 

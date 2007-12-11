@@ -206,7 +206,7 @@ public slots:
 	void notifyStart();
 	void s5Connected();
 	void receptionNotify();
-	void s5Error();
+	void s5Error(QAbstractSocket::SocketError);
 signals:
 	void prcentChanged(Jid&, QString&, int);
 	void notConnected();

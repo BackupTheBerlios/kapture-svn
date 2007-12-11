@@ -5,6 +5,7 @@
 #include <QProgressBar>
 #include <QLabel>
 
+#include "emoticons.h"
 #include "chatwin.h"
 #include "jid.h"
 #include "vcard.h"
@@ -30,6 +31,7 @@ public:
 	VCard *vCard() const;
 	Jid *jid; // must go in private, a method to get it.
 	void setTranferFileState(QString, int);
+	void setEmoticons(Emoticons*);
 
 private:
 	Contact();
@@ -47,6 +49,7 @@ private:
 	
 	QList<FileTransferWidget*> transferList;
 	bool done;
+	Emoticons *e;
 
 public slots:
 	void messageToSend(QString message);

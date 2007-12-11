@@ -35,7 +35,7 @@ LINK_LIBRARIES(${SSL_LIBRARY} ${QT_LIBRARIES} ${QT_QTNETWORK_LIBRARIES}
 SET(Kapture_SRCS main.cpp imageConvert.cpp client.cpp kapturewin.cpp
 mainframewin.cpp merror.cpp mouselabel.cpp webcam.cpp xmppwin.cpp xmpp.cpp
 tlshandler.cpp xmlhandler.cpp event.cpp stanza.cpp rosterModel.cpp
-chatwin.cpp mouserostertableview.cpp contact.cpp utils.cpp jid.cpp
+chatwin.cpp mouserostertableview.cpp contact.cpp emoticons.cpp jid.cpp
 xmppconfigdialog.cpp config.cpp profile.cpp profilemodel.cpp
 mouseprofilestableview.cpp vcard.cpp task.cpp tasks.cpp roster.cpp
 presence.cpp message.cpp socks5.cpp filetransferwidget.cpp

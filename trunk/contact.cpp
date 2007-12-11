@@ -15,7 +15,6 @@
 #include <QScrollBar>
 
 #include "contact.h"
-#include "utils.h"
 
 Contact::Contact(const QString& j)
 {
@@ -72,7 +71,7 @@ void Contact::newMessage(const QString &m /*Message*/)
 	chatWin->ui.discutionText->insertHtml(
 		QString("<font color='red'>%1 says :</font><br>%2<br>").arg(
 			vcard->nickname() == "" ? jid->full() : vcard->nickname()).arg(
-				changeEmoticons(m)));
+				e->changeEmoticons(m)));
 	chatWin->ui.discutionText->verticalScrollBar()->setValue(chatWin->ui.discutionText->verticalScrollBar()->maximum());
 	
 	if (!chatWin->isActiveWindow())
@@ -100,6 +99,13 @@ void Contact::startChat()
 void Contact::messageToSend(QString message)
 {
 	printf("Emit sendMessage from Contact class. to = %s\n", jid->full().toLatin1().constData());
+
+	chatWin->ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
+	chatWin->ui.discutionText->insertHtml(QString("<font color='blue'>You said : </font><br>%1<br>").arg(e->changeEmoticons(chatWin->ui.messageLine->text())));
+	chatWin->ui.discutionText->verticalScrollBar()->setValue(chatWin->ui.discutionText->verticalScrollBar()->maximum());
+	chatWin->ui.messageLine->clear();
+	chatWin->ui.sendBtn->setEnabled(false);
+	
 	QString to = jid->full();
 	emit sendMessage(to, message);
 }
@@ -176,5 +182,10 @@ void Contact::setTranferFileState(QString fileName, int prc)
 			break;
 		}
 	}
+}
+
+void Contact::setEmoticons(Emoticons* emoticons)
+{
+	e = emoticons;
 }
 

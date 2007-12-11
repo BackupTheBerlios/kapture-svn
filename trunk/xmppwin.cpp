@@ -36,6 +36,7 @@ XmppWin::XmppWin()
 	connect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeProfile(int)));
 	connected = false;
 	secs = 0;
+	emoticons = new Emoticons();
 }
 
 XmppWin::~XmppWin()
@@ -136,6 +137,7 @@ void XmppWin::setRoster(Roster roster)
 	// Connecting contacts.
 	for (int i = 0; i < contactList.count(); i++)
 	{
+		contactList[i]->setEmoticons(emoticons);
 		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
 		connect(contactList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
 	}
@@ -320,4 +322,11 @@ void XmppWin::prcentChanged(Jid& jid, QString& fileName, int prc)
 			break;
 		}
 	}
+}
+
+void XmppWin::closeEvent(QCloseEvent*)
+{
+	printf("\n * Exiting...\n");
+	jabberDisconnect();
+	((QApplication*) this->parentWidget())->quit();
 }

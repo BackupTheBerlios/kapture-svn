@@ -12,7 +12,7 @@
  */
 
 #include "chatwin.h"
-#include "utils.h"
+#include "emoticons.h"
 #include <QAbstractScrollArea>
 #include <QScrollBar>
 
@@ -36,12 +36,6 @@ void ChatWin::message()
 	if (ui.messageLine->text() != "")
 	{
 		emit sendMessage(ui.messageLine->text());
-
-		ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
-		ui.discutionText->insertHtml(QString("<font color='blue'>You said : </font><br>%1<br>").arg(changeEmoticons(ui.messageLine->text())));
-		ui.discutionText->verticalScrollBar()->setValue(ui.discutionText->verticalScrollBar()->maximum());
-		ui.messageLine->clear();
-		ui.sendBtn->setEnabled(false);
 	}
 }
 
