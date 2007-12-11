@@ -261,7 +261,7 @@ void Client::slotInfoDone()
 
 void Client::transferFile()
 {
-	// Should manage more than 1 transfer at a time.
+	// TODO:Should manage more than 1 transfer at a time.
 	sfTask = new FileTransferTask(task, sTask->toJid(), xmpp);
 	sfTask->start(sTask->negProfile(), sTask->sid(), fileName, sTask->proxies(), sTask->ips(), sTask->ports());
 	connect(sfTask, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SIGNAL(prcentChanged(Jid&, QString&, int)));
