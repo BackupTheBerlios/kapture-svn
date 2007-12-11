@@ -38,7 +38,7 @@ void Client::authenticate()
 	if (j.isValid())
 		xmpp = new Xmpp(j, pS, p);
 
-	connect(xmpp, SIGNAL(error(Xmpp::ErrorType)), this, SIGNAL(error(Xmpp::ErrorType)));
+	connect(xmpp, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(connectionError(Xmpp::ErrorType)));
 	if (r.isEmpty())
 		r = "Kapture";
 	if (!pass.isEmpty())
@@ -49,9 +49,55 @@ void Client::authenticate()
 	connect(ppTask, SIGNAL(presenceFinished()), this, SLOT(presenceFinished()));
 	pmTask = new PullMessageTask(task);
 	connect(pmTask, SIGNAL(messageFinished()), this, SLOT(messageFinished()));
+	psTask = new PullStreamTask(task, xmpp);
+	connect(psTask, SIGNAL(fileTransferIncoming()), this, SLOT(fileTransferIncoming()));
+	connect(psTask, SIGNAL(receiveFileReady()), this, SLOT(receiveFileReady()));
 	
 	connect(xmpp, SIGNAL(connected()), this, SLOT(authFinished()));
 	connect(xmpp, SIGNAL(readyRead()), this, SLOT(read()));
+}
+
+void Client::connectionError(Xmpp::ErrorType e)
+{
+	emit error(e);
+}
+
+void Client::receiveFileReady()
+{
+	QString f = psTask->from().full();
+	rfTask = new FileTransferTask(task, f, xmpp);
+	rfTask->connectToHosts(psTask->streamHosts(), psTask->sid(), psTask->lastId(), psTask->saveFileName());
+}
+
+void Client::fileTransferIncoming()
+{
+/* 
+ * FIXME: That shouldn't be there.
+ */
+	ifd = new IncomingFileDialog();
+	ifd->show();
+
+	ifd->setFrom(psTask->from());
+	ifd->setFileName(psTask->fileName());
+	ifd->setFileSize(psTask->fileSize());
+	ifd->setDesc(psTask->fileDesc());
+	connect(ifd, SIGNAL(agree()), this, SLOT(ftAgree()));
+	connect(ifd, SIGNAL(decline()), this, SLOT(ftDecline()));
+}
+
+void Client::ftAgree()
+{
+	psTask->ftAgree(ifd->fileName(), ifd->from(), ifd->saveFileName());
+	ifd->close();
+	delete ifd;
+	//psTask->reset();
+}
+
+void Client::ftDecline()
+{
+	psTask->ftDecline(ifd->fileName(), ifd->from());
+	ifd->close();
+	delete ifd;
 }
 
 void Client::authFinished()
@@ -60,11 +106,6 @@ void Client::authFinished()
 	emit connected();
 }
 
-/*void Client::connected()
-{
-	printf("Connected !\n");
-	emit connected();
-}*/
 
 void Client::setResource(const QString& resource)
 {
@@ -211,18 +252,21 @@ void Client::slotInfoDone()
 			connect(sTask, SIGNAL(finished()), this, SLOT(transferFile()));
 		}
 		else
-			printf("Unable to negatiate transfer protocol.\n");
+		{
+			printf("File Transfer Cancelled\n");
+			delete sTask;
+		}
 	}
 }
 
 void Client::transferFile()
 {
 	// Should manage more than 1 transfer at a time.
-	ftTask = new FileTransferTask(task, sTask->toJid(), xmpp);
-	ftTask->start(sTask->negProfile(), sTask->sid(), fileName, sTask->proxies(), sTask->ips(), sTask->ports());
-	connect(ftTask, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SIGNAL(prcentChanged(Jid&, QString&, int)));
-	connect(ftTask, SIGNAL(finished()), this, SLOT(transferFinished()));
-	connect(ftTask, SIGNAL(notConnected()), this, SLOT(notConnected()));
+	sfTask = new FileTransferTask(task, sTask->toJid(), xmpp);
+	sfTask->start(sTask->negProfile(), sTask->sid(), fileName, sTask->proxies(), sTask->ips(), sTask->ports());
+	connect(sfTask, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SIGNAL(prcentChanged(Jid&, QString&, int)));
+	connect(sfTask, SIGNAL(finished()), this, SLOT(transferFinished()));
+	connect(sfTask, SIGNAL(notConnected()), this, SLOT(notConnected()));
 
 	task->removeChild(sTask);
 	delete sTask;
@@ -232,13 +276,13 @@ void Client::notConnected()
 {
 	printf("Unable to connect to the target.\n");
 	Jid to = sTask->toJid();
-	delete ftTask;
+	delete sfTask;
 	delete sTask;
 }
 
 void Client::transferFinished()
 {
 	//emit transferTerminated;
-	task->removeChild(ftTask);
-	delete ftTask;
+	task->removeChild(sfTask);
+	delete sfTask;
 }

@@ -633,7 +633,6 @@ void StreamTask::getProxyIp(QString proxy)
 
 void StreamTask::initStream(const QFile& f)
 {
-//	f = file;
 	id = randomString(6);
 	Stanza stanza(Stanza::IQ, "set", id, to.full());
 	QDomNode node = stanza.node().firstChild();
@@ -646,7 +645,8 @@ void StreamTask::initStream(const QFile& f)
 	
 	QDomElement file = doc.createElement("file");
 	file.setAttribute("xmlns", XMLNS_FILETRANSFER);
-	file.setAttribute("name", f.fileName()); //FIXME Should not send the PATH in th file name.
+	QFileInfo fi(f.fileName());
+	file.setAttribute("name", fi.fileName());
 	file.setAttribute("size", QString("%1").arg((int)f.size()));
 
 	QDomElement feature = doc.createElement("feature");
@@ -664,11 +664,11 @@ void StreamTask::initStream(const QFile& f)
 
 	QDomElement value1 = doc.createElement("value");
 
-	QDomText bytestream = doc.createTextNode("http://jabber.org/protocol/bytestreams"); //Not supported yet
+	QDomText bytestream = doc.createTextNode("http://jabber.org/protocol/bytestreams"); //Fully supported
 
 	node.appendChild(si);
 	si.appendChild(file);
-	file.appendChild(feature);
+	si.appendChild(feature);
 	feature.appendChild(x);
 	x.appendChild(field);
 	field.appendChild(option1);
@@ -709,6 +709,7 @@ FileTransferTask::FileTransferTask(Task *parent, const Jid& t, Xmpp *xmpp)
 	prc = 0;
 	prc2 = 0;
 	connectToProxy = true;
+	isRecept = false;
 }
 
 FileTransferTask::~FileTransferTask()
@@ -749,24 +750,12 @@ void FileTransferTask::processStanza(const Stanza& s)
 	if (!connectToProxy)
 	{
 		f->open(QIODevice::ReadOnly);
-		if (f->size() < STEP)
-		{
-			emit prcentChanged(to, fileName, 0);
-			socks5Socket->write(f->readAll());
-			writtenData = f->size();
-			disconnect(socks5Socket);
-			socks5Socket->disconnectFromHost();
-			emit prcentChanged(to, fileName, 100);
-			emit finished();
-		}
-		else
-		{
-			socks5Socket->write(f->read(STEP));
-			connect(socks5Socket, SIGNAL(bytesWritten(qint64)), this, SLOT(writeNext(qint64)));
-		}
+		emit prcentChanged(to, fileName, 0); // Tell chatWin that the transfer begins
+		writtenData = 0;
+		socks5Socket->write(f->readAll());
+		connect(socks5Socket, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWrittenSlot(qint64)));
 		prc = 0;
 		prc2 = 0;
-		emit prcentChanged(to, fileName, 0); // should have an ID
 	}
 	else
 	{
@@ -806,10 +795,9 @@ void FileTransferTask::connectedToProxy()
 	socks5->connect();
 }
 
-void FileTransferTask::writeNext(qint64 sizeWritten)
+void FileTransferTask::bytesWrittenSlot(qint64 sizeWritten)
 {
 	writtenData = writtenData + sizeWritten;
-	QByteArray data = f->read(STEP);
 
 	prc = (int)(((float)writtenData/(float)f->size())*100);
 	if (prc2 != prc)
@@ -819,9 +807,7 @@ void FileTransferTask::writeNext(qint64 sizeWritten)
 	}
 	prc2 = (int)(((float)writtenData/(float)f->size())*100);
 	
-	if (data.size() != 0)
-		socks5Socket->write(data);
-	else
+	if (writtenData == f->size())
 	{
 		socks5Socket->disconnect();
 		socks5Socket->disconnectFromHost();
@@ -932,14 +918,30 @@ void FileTransferTask::newConnection()
 void FileTransferTask::dataAvailable()
 {
 	QByteArray data = socks5Socket->readAll();
-	printf("Data (%d bytes)\n", data.size());
-	socks5->write(data);
+	if (!isRecept)
+	{
+		printf("[SOCKS5] Received : %s\n", data.toHex().constData());
+		printf("Data (%d bytes)\n", data.size());
+		socks5->write(data);
+	}
+	else
+	{
+		if (!fileOpened)
+		{
+			fileOut = new QFile(st);
+			fileOut->open(QIODevice::WriteOnly | QIODevice::Append);
+			fileOpened = true;
+		}
+		printf("[FileTransferTask] Writing : %s\n", data.constData());
+		fileOut->write(data);
+		
+	}
 }
 
 void FileTransferTask::readS5()
 {
 	QByteArray data = socks5->read();
-	printf("Sending : %s (%d)\n", data.toHex().constData(), data.count());
+	printf("[SOCKS5] Sent : %s (%d)\n", data.toHex().constData(), data.count());
 	socks5Socket->write(data);
 }
 
@@ -966,3 +968,377 @@ void FileTransferTask::notifyStart()
 	connectToProxy = false;
 	p->write(stanza);
 }
+
+void FileTransferTask::connectToHosts(QList<PullStreamTask::StreamHost> hostList, const QString& sid, const QString& i, const QString& saveTo)
+{
+	h = hostList;
+	st = saveTo;
+	id = i;
+	s = sid;
+	tryToConnect(h.takeFirst());
+}
+
+void FileTransferTask::tryToConnect(PullStreamTask::StreamHost hostData)
+{
+	socks5Socket = new QTcpSocket();
+	QString host = hostData.host;
+	printf("Connecting to %s.\n", host.toLatin1().constData());
+	int port = hostData.port;
+
+	if (port != 0) // This is not a proxy
+	{
+		socks5Socket->connectToHost(host, port);
+		connect(socks5Socket, SIGNAL(connected()), this, SLOT(s5Connected()));
+		connect(socks5Socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(s5Error()));
+	}
+	else
+	{
+		/* Connect to proxy */
+		printf("Receiving through a proxy is not implemented yet.\nPlease restart Kapture before continuing.\n");
+	}
+}
+
+void FileTransferTask::s5Connected()
+{
+	fileOpened = false;
+	printf("SID == %s ?\n", s.toLatin1().constData());
+	/* Start connection to hostData.host with SOCKS5 */
+	socks5 = new Socks5(s, to, p->node());
+	isRecept = false;
+	connect(socks5, SIGNAL(readyRead()), this, SLOT(readS5()));
+	connect(socks5, SIGNAL(established()), this, SLOT(receptionNotify()));
+	connect(socks5Socket, SIGNAL(readyRead()), this, SLOT(dataAvailable()));
+	disconnect(socks5Socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(s5Error()));
+	socks5->connect();
+}
+
+void FileTransferTask::s5Error()
+{
+	printf("Unable to transfer the file, ");
+	delete socks5Socket;
+	if (h.count() > 0)
+	{
+		printf("trying next streamhost.\n");
+		tryToConnect(h.takeFirst());
+	}
+	else
+	{
+		printf("Cancelling [Not Implmented yet]\n");
+	}
+}
+
+void FileTransferTask::receptionNotify()
+{
+	isRecept = true;
+	Stanza stanza(Stanza::IQ, "result", id, to.full());
+	QDomNode node = stanza.node().firstChild();
+	stanza.setFrom(p->node());
+	QDomDocument doc("");
+
+	QDomElement query = doc.createElement("query");
+	query.setAttribute("xmlns", XMLNS_BYTESTREAMS);
+
+	QDomElement streamhostused = doc.createElement("streamhost-used");
+	streamhostused.setAttribute("jid", to.full());
+
+	node.appendChild(query);
+	query.appendChild(streamhostused);
+
+	p->write(stanza);
+}
+
+//-------------------------------
+// PullStreamTask
+//-------------------------------
+
+PullStreamTask::PullStreamTask(Task *parent, Xmpp *xmpp)
+	:Task(parent)
+{
+	p = xmpp;
+	id = "";
+}
+
+bool PullStreamTask::canProcess(const Stanza& s) const
+{
+	if (s.kind() != Stanza::IQ)
+		return false;
+
+	if (s.type() == "get" &&
+	    s.node().firstChildElement().namespaceURI() == XMLNS_DISCO_INFO)
+		return true;
+	
+	if (s.type() == "set" &&
+	    s.node().firstChildElement().namespaceURI() == XMLNS_SI)
+		return true;
+
+	if (s.type() == "set" && /* Should check SID here */
+	    s.node().firstChildElement().namespaceURI() == XMLNS_BYTESTREAMS)
+	    	return true;
+
+	return false;
+}
+
+void PullStreamTask::processStanza(const Stanza& s)
+{
+	id = s.id();
+	if (s.node().firstChildElement().namespaceURI() == XMLNS_DISCO_INFO)
+	{
+		Stanza stanza(Stanza::IQ, "result", id, s.from().full());
+		QDomNode node = stanza.node().firstChild();
+		QDomDocument doc("");
+
+		QDomElement query = doc.createElement("query");
+		query.setAttribute("xmlns", XMLNS_DISCO_INFO);
+
+		QDomElement identity = doc.createElement("identity");
+		identity.setAttribute("category", "client");
+		identity.setAttribute("type", "pc");
+
+		// Supported protocols
+		QDomElement feature = doc.createElement("feature");
+		feature.setAttribute("var", XMLNS_SI);
+		
+		QDomElement feature1 = doc.createElement("feature");
+		feature1.setAttribute("var", XMLNS_FILETRANSFER);
+		
+		QDomElement feature2 = doc.createElement("feature");
+		feature2.setAttribute("var", XMLNS_BYTESTREAMS);
+
+		query.appendChild(identity);
+		query.appendChild(feature);
+		query.appendChild(feature1);
+		query.appendChild(feature2);
+		node.appendChild(query);
+
+		p->write(stanza);
+	}
+
+	if (s.node().firstChildElement().namespaceURI() == XMLNS_SI && s.type() == "set")
+	{
+		f = s.from();
+		QDomNode node = s.node().firstChild();
+		SID = node.toElement().attribute("id");
+		
+		node = node.firstChild();
+		while (!node.isNull())
+		{
+			if (node.localName() == "file")
+			{
+				name = node.toElement().attribute("name");
+				size = node.toElement().attribute("size").toInt();
+				/*
+				 * Hash is the MD5 sum of the file so, "NOHASH" cannot be it's value.
+				 */
+				hash = node.toElement().attribute("hash", "NOHASH");
+				/*
+				 * Date is the last modification time of the file specified using the DateTime profile so it can't be "NODATE"
+				 */
+				date = node.toElement().attribute("date", "NODATE");
+				
+				QDomNode n = node.firstChild();
+				while (!n.isNull())
+				{
+					if (n.localName() == "desc")
+					{
+						desc = n.firstChild().toText().data();
+					}
+					n = n.nextSibling();
+				}
+			}
+			if (node.localName() == "feature")
+			{
+				QDomNode n = node;
+				if (n.firstChild().localName() != "x")
+				{
+					//emit error();
+					printf("Error, No X Element, BAD STANZA !\n");
+					return;
+				}
+				n = n.firstChild();
+
+				if (n.firstChild().localName() != "field")
+				{
+					//emit error();
+					printf("Error, No FIELD Element, BAD STANZA !\n");
+					return;
+				}
+				n = n.firstChild();
+				
+				if (n.toElement().attribute("var") != "stream-method" || n.toElement().attribute("type") != "list-single")
+				{
+					//emit error();
+					printf("Error, No FIELD Element, BAD STANZA !\n");
+					return;
+				}
+				
+				if (n.firstChild().localName() != "option")
+				{
+					//emit error();
+					printf("Error, No OPTION Element, BAD STANZA !\n");
+					return;
+				}
+				n = n.firstChild();
+				
+
+				while (!n.isNull())
+				{
+					pr.append(n.firstChild().firstChild().toText().data());
+					n = n.nextSibling();
+				}
+			}
+			node = node.nextSibling();
+		}
+		emit fileTransferIncoming();
+	}
+	
+	if (s.node().firstChildElement().namespaceURI() == XMLNS_BYTESTREAMS && s.type() == "set")
+	{
+		QDomNode node = s.node().firstChild();
+		if (node.toElement().attribute("sid") != SID || node.toElement().attribute("mode") != "tcp")
+		{
+			//emit error();
+			return;
+		}
+		node = node.firstChild();
+		while (!node.isNull())
+		{
+			if (node.localName() == "streamhost")
+			{
+				StreamHost streamhost;
+				streamhost.jid = Jid(node.toElement().attribute("jid"));
+				streamhost.host = node.toElement().attribute("host");
+				streamhost.port = node.toElement().attribute("port", "0").toInt();
+				streamHostList << streamhost;
+			}
+			node = node.nextSibling();
+		}
+
+		emit receiveFileReady();
+	}
+}
+
+QList<PullStreamTask::StreamHost> PullStreamTask::streamHosts() const
+{
+	return streamHostList;
+}
+
+Jid PullStreamTask::from() const
+{
+	return f;
+}
+
+QString PullStreamTask::fileName() const
+{
+	return name;
+}
+
+int PullStreamTask::fileSize() const
+{
+	return size;
+}
+
+QString PullStreamTask::fileDesc() const
+{
+	return desc;
+}
+
+QString PullStreamTask::sid() const
+{
+	return SID;
+}
+
+QString PullStreamTask::lastId() const
+{
+	return id;
+}
+
+void PullStreamTask::ftDecline(const QString&, const Jid&)
+{
+	Stanza stanza(Stanza::IQ, "error", id, f.full());
+	QDomNode node = stanza.node().firstChild();
+	QDomDocument doc("");
+
+	QDomElement error = doc.createElement("error");
+	error.setAttribute("code", 403);
+
+	QDomText text = doc.createTextNode("Declined");
+
+	error.appendChild(text);
+	node.appendChild(error);
+
+	p->write(stanza);
+
+}
+
+QString PullStreamTask::saveFileName() const
+{
+	return sfn;
+}
+
+void PullStreamTask::ftAgree(const QString&, const Jid&, const QString& saveFileName)
+{
+	sfn = saveFileName;
+	bool ok = false;
+	for (int i = 0; i < pr.count(); i++)
+	{
+		printf("Protocol : %s\n", pr[i].toLatin1().constData());
+		if (pr[i] == XMLNS_BYTESTREAMS)
+			ok = true;
+	}
+
+	if (!ok)
+	{
+		Stanza stanza(Stanza::IQ, "error", id, f.full());
+		QDomNode node = stanza.node().firstChild();
+		QDomDocument doc("");
+	
+		QDomElement error = doc.createElement("error");
+		error.setAttribute("code", 400);
+		error.setAttribute("type", "cancel");
+
+		QDomElement badrequest = doc.createElement("bad-request");
+		badrequest.setAttribute("xmlns", "urn:ietf:params:xml:ns:xmpp-stanzas");
+
+		QDomElement novalidstreams = doc.createElement("no-valid-streams");
+		novalidstreams.setAttribute("xmlns", XMLNS_SI);
+
+		error.appendChild(novalidstreams);
+		error.appendChild(badrequest);
+		node.appendChild(error);
+	
+		p->write(stanza);
+		
+		return;
+	}
+	
+	Stanza stanza(Stanza::IQ, "result", id, f.full());
+	QDomNode node = stanza.node().firstChild();
+	QDomDocument doc("");
+
+	QDomElement si = doc.createElement("si");
+	si.setAttribute("xmlns", XMLNS_SI);
+
+	QDomElement feature = doc.createElement("feature");
+	feature.setAttribute("xmlns", XMLNS_FEATURENEG);
+
+	QDomElement x = doc.createElement("x");
+	x.setAttribute("xmlns", "jabber:x:data");
+	x.setAttribute("type", "submit");
+
+	QDomElement field = doc.createElement("field");
+	field.setAttribute("var", "stream-method");
+
+	QDomElement value = doc.createElement("value");
+
+	QDomText method = doc.createTextNode(XMLNS_BYTESTREAMS);
+	value.appendChild(method);
+
+	node.appendChild(si);
+	si.appendChild(feature);
+	feature.appendChild(x);
+	x.appendChild(field);
+	field.appendChild(value);
+	
+	p->write(stanza);
+}
+

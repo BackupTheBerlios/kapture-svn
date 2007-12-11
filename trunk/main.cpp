@@ -15,12 +15,13 @@
 #include <QFrame>
 
 #include "kapturewin.h"
+#include "xmppwin.h"
 
 int main(int argc, char **argv)
 {
 	QApplication app(argc, argv);
-	KaptureWin *kw = new KaptureWin();
-	kw->show();
+	XmppWin *xw = new XmppWin();
+	xw->show();
 	app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
 	return app.exec();
 }

@@ -11,7 +11,7 @@ Socks5::Socks5(const QString& sid, const Jid& from, const Jid& to)
 	s = sid;
 	f = from;
 	t = to;
-	printf("Create Socks5\n");
+	printf("[SOCKS5] Create Socks5\n");
 }
 
 Socks5::~Socks5()
@@ -35,7 +35,7 @@ void Socks5::process(const QByteArray& data)
 	//Check version.
 	if (data.at(0) == 0x5)
 	{
-		printf("Ok, it's SOCKS5.\n");
+		printf("[SOCKS5] Ok, it's SOCKS5.\n");
 	}
 	else
 	{
@@ -60,7 +60,7 @@ void Socks5::process(const QByteArray& data)
 		if (!noAuthSupported)
 			return;
 
-		printf("Ok, that's good.\n");
+		printf("[SOCKS5] Ok, that's good.\n");
 		d.append((char)0x5);
 		d.append((char)0x0);
 		state = WaitRequestServer;
@@ -79,18 +79,18 @@ void Socks5::process(const QByteArray& data)
 					sha.append((char)data.at(i));
 				}
 				sha.resize((int)data.at(4));
-				printf("\nReceived =   %s\nCalculated = %s\n", sha.toHex().constData(), result.toHex().constData());
+				printf("\n[SOCKS5] Received =   %s\n[SOCKS5] Calculated = %s\n", sha.toHex().constData(), result.toHex().constData());
 
 				if (result == sha)
 				{
-					printf("The same !\n");
+					printf("[SOCKS5] The same !\n");
 					d = data;
 					d[1] = (char)0x00;
 
 				}
 				else
 				{
-					printf("Not the same !!!\n");
+					printf("[SOCKS5] Not the same !!!\n");
 					//emit error();
 				
 				}

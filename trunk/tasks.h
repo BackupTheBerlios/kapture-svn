@@ -146,6 +146,45 @@ private:
 
 };
 
+class PullStreamTask : public Task
+{
+	Q_OBJECT
+public:
+	PullStreamTask(Task *parent, Xmpp *xmpp);
+	bool canProcess(const Stanza&) const;
+	void processStanza(const Stanza&);
+	Jid from() const;
+	QString fileName() const;
+	int fileSize() const;
+	QString fileDesc() const;
+	void ftDecline(const QString&, const Jid&);
+	void ftAgree(const QString&, const Jid&, const QString&);
+	QList<StreamHost> streamHosts() const;
+	QString sid() const;
+	QString lastId() const;
+	QString saveFileName() const;
+
+signals:
+	void fileTransferIncoming();
+	void receiveFileReady();
+private:
+	QString id;
+	Xmpp *p;
+
+	//Concerns File Transfer
+	Jid f; //from
+	QString SID;
+	QStringList pr; //protocols
+	QString d; // Desctription
+	QString name;
+	int size;
+	QString hash;
+	QString desc;
+	QString date;
+	QList<StreamHost> streamHostList;
+	QString sfn; // Save File Name.
+};
+
 class FileTransferTask : public Task
 {
 	Q_OBJECT
@@ -155,41 +194,51 @@ public:
 	void start(const QString&, const QString&, const QString&, const QStringList, const QStringList, const QStringList);
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
+	void connectToHosts(QList<PullStreamTask::StreamHost>, const QString& sid, const QString& id, const QString& saveTo);
 
 public slots:
 	void noConnection();
 	void newConnection();
 	void dataAvailable();
 	void readS5();
-	void writeNext(qint64);
+	void bytesWrittenSlot(qint64);
 	void connectedToProxy();
 	void notifyStart();
+	void s5Connected();
+	void receptionNotify();
+	void s5Error();
 signals:
 	void prcentChanged(Jid&, QString&, int);
 	void notConnected();
 
 private:
-	void startByteStream(const QString&);
-	QString id;
-	Jid to;
-	Xmpp *p;
-	//QTcpServer *test;
-	QTcpSocket *socks5Socket;
-	Socks5 *socks5;
-	QString s;
-	QFile *f;
-	qint64 writtenData;
-	int prc, prc2;
-	QString fileName;
+	QList<PullStreamTask::StreamHost> h;
 	QList<QTcpServer*> serverList;
-	QTimer *timeOut;
 	QStringList proxies;
 	QStringList ips;
 	QStringList ports;
+	QTcpSocket *socks5Socket;
 	QString usedProxy;
 	QString usedIP;
 	QString usedPort;
+	QString st; //Save to
+	QString fileName;
+	QString s; //SID
+	QString id;
+	QTimer *timeOut;
+	qint64 writtenData;
+	Socks5 *socks5;
+	QFile *f;
+	QFile *fileOut;
+	Xmpp *p;
+	Jid to;
 	bool connectToProxy;
+	bool isRecept;
+	bool fileOpened;
+	void startByteStream(const QString&);
+	void tryToConnect(PullStreamTask::StreamHost host);
+	int prc, prc2;
 };
+
 
 #endif

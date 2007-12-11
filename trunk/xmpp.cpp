@@ -53,7 +53,7 @@ Xmpp::Xmpp(const Jid &jid, const QString &pServer, const int pPort)
 	connect(tcpSocket, SIGNAL(connected()), this, SLOT(start()));
 	connect(sslSocket, SIGNAL(connected()), this, SLOT(start()));
 	j = jid;
-	printf("JID = %s\n", jid.full().toLatin1().constData());
+	printf("[XMPP] JID = %s\n", jid.full().toLatin1().constData());
 }
 
 /*
@@ -90,7 +90,7 @@ Xmpp::~Xmpp()
  */
 void Xmpp::auth(const QString &pass, const QString &res)
 {
-	printf("Port = %d, Server = %s, Personnal Server = %s\n", port, server.toLatin1().constData(), personnalServer.toLatin1().constData());
+	printf("[XMPP] Port = %d, Server = %s, Personnal Server = %s\n", port, server.toLatin1().constData(), personnalServer.toLatin1().constData());
 	if (port != 5223)
 		tcpSocket->connectToHost(usePersonnalServer ? personnalServer : server, port);
 	else
@@ -133,12 +133,12 @@ int Xmpp::sendData(QByteArray &mess)
 	//printf("SENT : %s\n", mess.constData());
 	if (tlsDone)
 	{
-		//printf("Xmpp : Giving clear data to tlsHandler\n");
+		//printf("[XMPP] Giving clear data to tlsHandler\n");
 		tls->write(mess);
 	}
 	else
 	{
-		//printf(" * Sending : %s\n", mess.constData());
+		//printf("[XMPP] Sending : %s\n", mess.constData());
 		port != 5223 ? tcpSocket->write(mess) : sslSocket->write(mess);
 	}
 	return 0;
@@ -189,7 +189,7 @@ void Xmpp::dataReceived()
 	data = port != 5223 ? tcpSocket->readAll() : sslSocket->readAll();
 	if (data == "" || data.isNull())
 		return;
-	printf("\n * Data avaible !\n");
+	printf("\n[XMPP] Data avaible !\n");
 
 	if (state == isHandShaking || tlsDone)
 	{
@@ -205,23 +205,13 @@ void Xmpp::dataReceived()
 
 void Xmpp::processXml(QByteArray &data)
 {
-	printf(" * Data : %s\n", data.constData());
-/*
- * FIXME:must remove all end-of-line characters.
- * If not, QDomNode has some troubles when 
- * receiving informations for file transfer.
- */
-	//data.replace('\n', "");
-	//data.replace('\r', "");
-	//data.replace("> <", "><");
-	
-	//printf(" * Data : %s\n", data.constData());
+	printf("[XMPP] Data : %s\n", data.constData());
 
 	xmlSource->setData(data);
 
 	if (!xmlReader->parseContinue())
 	{
-		printf("Parsing error\n");
+		printf("[XMPP] Parsing error\n");
 		return;
 	}
 
@@ -245,7 +235,7 @@ void Xmpp::processEvent(Event *event)
 		case waitStream:
 			if (event->type() == Event::Stream)
 			{
-				printf(" * Ok, received the stream tag.\n");
+				printf("[XMPP] Ok, received the stream tag.\n");
 				state = waitFeatures;
 			}
 			//else
@@ -254,27 +244,27 @@ void Xmpp::processEvent(Event *event)
 		case waitFeatures:
 			if (event->node().localName() == "features")
 			{
-				printf(" * Ok, received the features tag.\n");
+				printf("[XMPP] Ok, received the features tag.\n");
 				if (!tlsDone && useTls)
 				{
 					QDomNode node = event->node().firstChild();
-					printf("Next Status : ");
+					printf("[XMPP] Next Status : ");
 					//state = waitStartTls;
-					printf("%s\n", node.localName().toLatin1().constData());
+					printf("[XMPP]     %s\n", node.localName().toLatin1().constData());
 					if (node.localName() == QString("mechanisms"))
 					{
-						printf("Must directly switch to SASL authentication\n");
+						printf("[XMPP] Must directly switch to SASL authentication\n");
 						useTls = false;
 						node = node.firstChild();
 						// Must directly switch to SASL authentication
-						printf("%s\n", node.localName().toLatin1().constData());
+						printf("[XMPP]     %s\n", node.localName().toLatin1().constData());
 						while(node.localName() == QString("mechanism"))
 						{
-							printf(" * Ok, received a mechanism tag.\n");
+							printf("[XMPP] Ok, received a mechanism tag.\n");
 							if (node.firstChild().toText().data() == QString("PLAIN"))
 							{
 								plainMech = true;
-								printf(" * Ok, PLAIN mechanism supported\n");
+								printf("[XMPP] Ok, PLAIN mechanism supported\n");
 
 								// Sstartauth method.
 								QDomDocument doc("");
@@ -296,7 +286,7 @@ void Xmpp::processEvent(Event *event)
 					}
 					if (node.localName() == QString("starttls"))
 					{
-						printf(" * Ok, received the starttls tag.\n");
+						printf("[XMPP] Ok, received the starttls tag.\n");
 						// Send starttls tag
 						QDomDocument doc("");
 						QDomElement e = doc.createElement("starttls");
@@ -315,14 +305,14 @@ void Xmpp::processEvent(Event *event)
 					{
 						//TODO:Must first check that event->node().firstChild() == mechanisms
 						QDomNode node = event->node().firstChild().firstChild();
-						printf("Tls done or not used. --> sasl\n");
+						printf("[XMPP] Tls done or not used. --> sasl\n");
 						while(node.localName() == QString("mechanism"))
 						{
-							printf(" * Ok, received a mechanism tag.\n");
+							printf("[XMPP] Ok, received a mechanism tag.\n");
 							if (node.firstChild().toText().data() == QString("PLAIN"))
 							{
 								plainMech = true;
-								printf(" * Ok, PLAIN mechanism supported\n");
+								printf("[XMPP] Ok, PLAIN mechanism supported\n");
 
 								// Sstartauth method.
 								QDomDocument doc("");
@@ -350,12 +340,12 @@ void Xmpp::processEvent(Event *event)
 						{
 							if (node.localName() == QString("bind"))
 							{
-								printf(" * Ok, bind needed.\n");
+								printf("[XMPP] Ok, bind needed.\n");
 								needBind = true;
 							}
 							if (node.localName() == QString("session"))
 							{
-								printf(" * Ok, session needed.\n");
+								printf("[XMPP] Ok, session needed.\n");
 								needSession = true;
 							}
 							node = node.nextSibling();
@@ -389,7 +379,7 @@ void Xmpp::processEvent(Event *event)
 			if (event->node().localName() == QString("proceed"))
 			{
 				//printf(" * Ok, received the proceed tag.\n");
-				printf(" * Proceeding...\n * Enabling TLS connection.\n");
+				printf("[XMPP] Proceeding...\n[XMPP] Enabling TLS connection.\n");
 				
 				state = isHandShaking;
 				tls = new TlsHandler();
@@ -404,13 +394,13 @@ void Xmpp::processEvent(Event *event)
 		case waitSuccess:
 			if (event->node().localName() == QString("success"))
 			{
-				printf(" * Ok, SASL established.\n");
+				printf("[XMPP] Ok, SASL established.\n");
 				saslDone = true;
 				start();
 			}
 			if (event->node().localName() == QString("failure"))
 			{
-				printf(" ! Check Username and password.\n");
+				printf("[XMPP]  ! Check Username and password.\n");
 				QByteArray sData = "</stream:stream>";
 				sendData(sData);
 			}
@@ -420,7 +410,7 @@ void Xmpp::processEvent(Event *event)
 			{
 				if (event->node().toElement().attribute("type") != QString("result"))
 				{
-					printf("Authentification Error.\n");
+					printf("[XMPP] Authentification Error.\n");
 					QByteArray sData = "</stream:stream>";
 					sendData(sData);
 					return;
@@ -437,11 +427,11 @@ void Xmpp::processEvent(Event *event)
 							u = node.toText().data().split('@')[0]; // Username
 							s = node.toText().data().split('@')[1].split('/')[0]; // Server
 							r = node.toText().data().split('/')[1]; // Resource
-							printf("'%s'@'%s'/'%s'\n", u.toLatin1().constData(), s.toLatin1().constData(), r.toLatin1().constData());
+							printf("[XMPP] '%s'@'%s'/'%s'\n", u.toLatin1().constData(), s.toLatin1().constData(), r.toLatin1().constData());
 						}
 						if (u == username && s == server)
 						{
-							printf("Jid OK !\n");
+							printf("[XMPP] Jid OK !\n");
 							resource = r;
 							jidDone = true;
 							j.setResource(r);
@@ -450,7 +440,7 @@ void Xmpp::processEvent(Event *event)
 
 					if (needSession && jidDone)
 					{
-						printf(" * Launching Session...\n");
+						printf("[XMPP] Launching Session...\n");
 						QDomDocument doc("");
 						QDomElement e = doc.createElement("iq");
 						e.setAttribute("to", server);
@@ -477,7 +467,7 @@ void Xmpp::processEvent(Event *event)
 			{
 				if (event->node().toElement().attribute("type") == "result")
 				{
-					printf(" * Connection is now active !\n");
+					printf("[XMPP] Connection is now active !\n");
 					
 					/*
 					 * Presence must be sent after getting the roster
@@ -494,7 +484,7 @@ void Xmpp::processEvent(Event *event)
 				{
 					if (event->node().toElement().attribute("type") == "error")
 					{
-						printf(" ! An error occured ! \n");
+						printf("[XMPP] An error occured ! \n");
 					}
 				}
 
@@ -503,7 +493,7 @@ void Xmpp::processEvent(Event *event)
 		case active:
 			Stanza *s = new Stanza(event->node());
 			QDomDocument doc = event->node().toDocument();
-			printf("Xmpp::processEvent : node = %s\n", doc.toString().toLatin1().constData());
+			printf("[XMPP] Xmpp::processEvent : node = %s\n", doc.toString().toLatin1().constData());
 			stanzaList << s;
 			emit readyRead();
 	}
@@ -540,7 +530,7 @@ void Xmpp::connectionError(QAbstractSocket::SocketError socketError)
 	switch (socketError)
 	{
 		case QAbstractSocket::HostNotFoundError:
-			printf(" ! Error = Host not found !\n");
+			printf("[XMPP]  ! Error = Host not found !\n");
 			emit error(HostNotFound);
 /*
  * If there is this error, xmppwin should destroy this object and construct a new one
@@ -548,15 +538,15 @@ void Xmpp::connectionError(QAbstractSocket::SocketError socketError)
  */
 			break;
 		case QAbstractSocket::NetworkError:
-			printf(" ! Network error ! Will reconnect in 30 seconds.\n");
+			printf("[XMPP]  ! Network error ! Will reconnect in 30 seconds.\n");
 			emit error(NetworkIsDown);
 			/*must try to reconnect itself....*/
 			break;
 		default:
-			printf(" ! An Unknown error occured. Sorry.\n");
+			printf("[XMPP]  ! An Unknown error occured. Sorry.\n");
 			emit error(UnknownError);
 	}
-	printf("Error code : %d\n", (int)socketError);
+	printf("[XMPP] Error code : %d\n", (int)socketError);
 
 
 	/* must reinitialize data....*/
@@ -579,7 +569,7 @@ Stanza *Xmpp::getFirstStanza()
 void Xmpp::write(Stanza& s)
 {
 	QByteArray sData = s.node().toDocument().toByteArray();
-	printf("Write : %s\n", sData.constData());
+	printf("[XMPP] Write : %s\n", sData.constData());
 	sendData(sData);
 }
 

@@ -5,6 +5,7 @@
 #include <QDomDocument>
 #include <QList>
 #include "xmpp.h"
+#include "jid.h"
 
 class Task : public QObject
 {
@@ -16,6 +17,12 @@ public:
 	virtual void processStanza(const Stanza&);
 	void removeChild(Task* childTask);
 	QString randomString(int size);
+	struct StreamHost
+	{
+		Jid jid;
+		QString host;
+		int port;
+	};
 signals:
 	void finished();
 

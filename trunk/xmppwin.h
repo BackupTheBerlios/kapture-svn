@@ -39,6 +39,7 @@ public slots:
 	void contactFeaturesSave(Xmpp::ContactFeatures);
 	void setRoster(Roster);
 	void prcentChanged(Jid&, QString&, int);
+	void connectingLogo();
 
 private:
 	Ui::xmppWin ui;
@@ -51,6 +52,9 @@ private:
 	Config *conf;
 	bool connected;
 	Roster r;
+	QTimer *waitingTimer;
+	int secs;
+	void sortContactList();
 };
 #endif
 

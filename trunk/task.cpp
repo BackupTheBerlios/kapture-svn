@@ -18,6 +18,7 @@
 
 Task::Task(Task *parent)
 {
+	srand((unsigned)time(0));
 	if (parent)
 		parent->appendTask(this);
 }
@@ -73,7 +74,6 @@ void Task::removeChild(Task* childTask)
 
 QString Task::randomString(int size)
 {
-	srand((unsigned)time(0));
 	char *c;
 	c = new char[size+1];
 	for (int i = 0; i < size; i++)

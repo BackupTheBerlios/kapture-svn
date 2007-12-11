@@ -28,7 +28,7 @@
    </size>
   </property>
   <property name="windowTitle" >
-   <string>Kapture : xmpp window - alpha</string>
+   <string>Kapture [Offline]</string>
   </property>
   <widget class="QWidget" name="centralwidget" >
    <widget class="MouseRosterTableView" native="1" name="tableView" >

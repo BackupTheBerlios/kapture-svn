@@ -35,6 +35,7 @@ XmppWin::XmppWin()
 	
 	connect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeProfile(int)));
 	connected = false;
+	secs = 0;
 }
 
 XmppWin::~XmppWin()
@@ -62,11 +63,25 @@ void XmppWin::jabberConnect()
 	}
 	
 	client = new Client(*jid, ui.serverEdit->text(), ui.portEdit->text());
+	waitingTimer = new QTimer();
+	waitingTimer->start(1000);
+	connect(waitingTimer, SIGNAL(timeout()), this, SLOT(connectingLogo()));
 	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	connect(client, SIGNAL(connected()), this, SLOT(clientAuthenticated()));
 	client->setResource(jid->resource());
 	client->setPassword(ui.password->text());
 	client->authenticate();
+}
+
+void XmppWin::connectingLogo()
+{
+	secs++;
+	QString title = "Kapture -- Connecting";
+	for (int i = 0; i < (secs % 5); i++)
+	{
+		title.append(".");
+	}
+	setWindowTitle(title);
 }
 
 void XmppWin::jabberDisconnect()
@@ -84,6 +99,7 @@ void XmppWin::jabberDisconnect()
 	m->setData(contactList);
 	ui.tlsIconLabel->setEnabled(false);
 	connected = false;
+	setWindowTitle("Kapture [Offline]");
 }
 
 void XmppWin::clientAuthenticated()
@@ -123,6 +139,7 @@ void XmppWin::setRoster(Roster roster)
 		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
 		connect(contactList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
 	}
+	sortContactList();
 	m->setData(contactList);
 	ui.tableView->setModel(m);
 	connect(ui.tableView, SIGNAL(doubleClicked(QString&)), this, SLOT(startChat(QString&)));
@@ -131,13 +148,33 @@ void XmppWin::setRoster(Roster roster)
 	client->setInitialPresence(a, b); 
 	ui.tableView->setColumnWidth(0, 22);
 	ui.tableView->resizeColumnsToContents();
+	waitingTimer->stop();
+	delete waitingTimer;
+	setWindowTitle("Kapture -- " + jid->full());
 }
 
+void XmppWin::sortContactList()
+{
+	bool permut = true;
+	while (permut)
+	{
+		permut = false;
+		for (int i = 0; i < contactList.count() - 1; i++)
+		{
+			if (!contactList[i]->isAvailable() && contactList[i + 1]->isAvailable())
+			{
+				contactList.swap(i, i + 1);
+				permut = true;
+			}
+		}
+	}
+
+}
 
 void XmppWin::processPresence(const Presence& presence)
 {
 	int i;
-	//Jid *to = new Jid(pTo);
+	// FIXME:There is no feedback in the chatWin of a contact when it becomes available.
 
 	// Looking for the contact in the contactList.
 	for (i = 0; i < contactList.count(); i++)
@@ -148,12 +185,15 @@ void XmppWin::processPresence(const Presence& presence)
 			QString status = presence.status();
 			QString type = presence.type();
 			contactList[i]->setPresence(status, type);
+			sortContactList();
 			m->setData(contactList);
-			ui.tableView->update(m->index(i, 0));
+			for (int j = 0; j < contactList.count(); j++)
+			{
+				ui.tableView->update(m->index(j, 0));
+				ui.tableView->update(m->index(j, 1));
+			}
+			//ui.tableView->repaint();
 			ui.tableView->resizeColumnsToContents();
-			 /* 
-			 * The whole resource's system will be reviewd later.
-			 */
 			break;
 		}
 	}
@@ -196,6 +236,7 @@ void XmppWin::error(Xmpp::ErrorType e)
 {
 	// Still a lot of errors to manage...
 	// Errors from the authentification process.
+	waitingTimer->stop();
 	switch (e)
 	{
 	case Xmpp::HostNotFound:
@@ -208,6 +249,9 @@ void XmppWin::error(Xmpp::ErrorType e)
 	ui.jabberDisconnect->setEnabled(false);
 	delete client;
 	delete jid;
+	delete waitingTimer;
+	setWindowTitle("Kapture [Offline]");
+
 }
 
 void XmppWin::showConfigDial()
@@ -219,9 +263,6 @@ void XmppWin::showConfigDial()
 
 void XmppWin::changeProfile(int p)
 {
-	/*
-	 * FIXME:Maybe should disconnect first...
-	 */
 	ui.jid->setText(profilesa[p].jid());
 	ui.password->setText(profilesa[p].password());
 	ui.serverEdit->setText(profilesa[p].personnalServer());

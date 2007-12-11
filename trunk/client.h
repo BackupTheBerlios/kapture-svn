@@ -6,6 +6,7 @@
 #include "task.h"
 #include "tasks.h"
 #include "roster.h"
+#include "incomingfiledialog.h"
 
 class Client : public QObject
 {
@@ -42,6 +43,11 @@ public slots:
 	void transferFile();
 	void streamTaskError(int, const QString&);
 	void notConnected();
+	void fileTransferIncoming();
+	void ftAgree();
+	void ftDecline();
+	void receiveFileReady();
+	void connectionError(Xmpp::ErrorType);
 
 signals:
 	/*!
@@ -57,6 +63,8 @@ signals:
 
 private:
 	Client();
+	
+	IncomingFileDialog *ifd;
 
 	Jid j;
 	QString r;  	// Resource
@@ -66,16 +74,15 @@ private:
 	QFile *f;
 	Xmpp *xmpp;
 	Task *task;
-	RosterTask *rTask;
-	PresenceTask *pTask;
-	MessageTask *mTask;
-	PullPresenceTask *ppTask;
-	PullMessageTask *pmTask;
-	StreamTask *sTask;
-	FileTransferTask *ftTask;
+	RosterTask *rTask; 		//rosterTask
+	PresenceTask *pTask;		//presenceTask
+	MessageTask *mTask;		//messageTask
+	PullPresenceTask *ppTask;	//pullPresenceTask
+	PullMessageTask *pmTask;	//pullMessageTask
+	PullStreamTask *psTask;		//pullStreamTask
+	StreamTask *sTask;		//streamTask
+	FileTransferTask *sfTask;	//sendFileTask
+	FileTransferTask *rfTask;	//receiveFileTask
 	QString fileName;
-	//void processIq(const QDomDocument& d);
-	//void processPresence(const QDomDocument& d);
-	//void processMessage(const QDomDocument& d);
 };
 #endif
