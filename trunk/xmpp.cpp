@@ -155,7 +155,7 @@ QByteArray Xmpp::readData()
 	 * for ready data to read !
 	 * --> dataReceived will read data itself.
 	 *
-	 *  PS: has dataReceived is executed each time data is ready to be
+	 *  PS: as dataReceived is executed each time data is ready to be
 	 *  read, the readData function becomes obsolete.
 	 *
 	 */

@@ -53,20 +53,6 @@ void ProfileModel::setData(QModelIndex index, QString value)
 QVariant ProfileModel::data(const QModelIndex &index, int role) const
 {
 	QString a;
-	/*if (role == Qt::DecorationRole && index.column() == 0)
-	{
-		QImage *img;
-		if (nodes[index.row()].presenceType == "unavailable")
-			img = new QImage("offline.png");
-		else
-			img = new QImage("online.png");
-			
-		return *img;
-	}
-	if (role == Qt::EditRole)
-		return false;
-	*/
-
 	Profile tmp = profiles[index.row()];
 
 	if (role == Qt::DisplayRole)

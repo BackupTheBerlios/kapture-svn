@@ -49,7 +49,7 @@
      <rect>
       <x>0</x>
       <y>10</y>
-      <width>41</width>
+      <width>16</width>
       <height>22</height>
      </rect>
     </property>
@@ -60,9 +60,9 @@
    <widget class="QLineEdit" name="password" >
     <property name="geometry" >
      <rect>
-      <x>40</x>
+      <x>10</x>
       <y>10</y>
-      <width>51</width>
+      <width>16</width>
       <height>22</height>
      </rect>
     </property>
@@ -76,38 +76,12 @@
      <enum>QLineEdit::Password</enum>
     </property>
    </widget>
-   <widget class="QPushButton" name="jabberConnect" >
-    <property name="geometry" >
-     <rect>
-      <x>240</x>
-      <y>0</y>
-      <width>51</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Online</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="jabberDisconnect" >
-    <property name="geometry" >
-     <rect>
-      <x>240</x>
-      <y>20</y>
-      <width>51</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Offline</string>
-    </property>
-   </widget>
    <widget class="QLineEdit" name="serverEdit" >
     <property name="geometry" >
      <rect>
       <x>0</x>
       <y>40</y>
-      <width>41</width>
+      <width>16</width>
       <height>20</height>
      </rect>
     </property>
@@ -115,9 +89,9 @@
    <widget class="QLineEdit" name="portEdit" >
     <property name="geometry" >
      <rect>
-      <x>40</x>
+      <x>10</x>
       <y>40</y>
-      <width>51</width>
+      <width>16</width>
       <height>20</height>
      </rect>
     </property>
@@ -153,7 +127,7 @@
    <widget class="QComboBox" name="profilesComboBox" >
     <property name="geometry" >
      <rect>
-      <x>100</x>
+      <x>30</x>
       <y>10</y>
       <width>131</width>
       <height>22</height>
@@ -163,7 +137,7 @@
    <widget class="QPushButton" name="configBtn" >
     <property name="geometry" >
      <rect>
-      <x>120</x>
+      <x>50</x>
       <y>40</y>
       <width>81</width>
       <height>24</height>
@@ -172,6 +146,26 @@
     <property name="text" >
      <string>Configuration</string>
     </property>
+   </widget>
+   <widget class="QComboBox" name="statusBox" >
+    <property name="geometry" >
+     <rect>
+      <x>170</x>
+      <y>10</y>
+      <width>131</width>
+      <height>22</height>
+     </rect>
+    </property>
+    <item>
+     <property name="text" >
+      <string>Online</string>
+     </property>
+    </item>
+    <item>
+     <property name="text" >
+      <string>Offline</string>
+     </property>
+    </item>
    </widget>
   </widget>
  </widget>
@@ -185,8 +179,6 @@
  <tabstops>
   <tabstop>jid</tabstop>
   <tabstop>password</tabstop>
-  <tabstop>jabberConnect</tabstop>
-  <tabstop>jabberDisconnect</tabstop>
   <tabstop>tableView</tabstop>
  </tabstops>
  <resources/>

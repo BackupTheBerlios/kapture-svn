@@ -25,8 +25,6 @@ public:
 	void getRoster();
 
 public slots:
-	void jabberConnect();
-	void jabberDisconnect();
 	void clientAuthenticated();
 	void processPresence(const Presence&);
 	void processMessage(const Message&);
@@ -41,6 +39,7 @@ public slots:
 	void setRoster(Roster);
 	void prcentChanged(Jid&, QString&, int);
 	void connectingLogo();
+	void statusChanged();
 
 private:
 	Ui::xmppWin ui;
@@ -51,13 +50,15 @@ private:
 	QByteArray config;
 	QList<Profile> profilesa;
 	Config *conf;
-	bool connected;
 	Roster r;
 	QTimer *waitingTimer;
 	int secs;
 	void sortContactList();
 	void closeEvent(QCloseEvent*);
 	Emoticons *emoticons;
+	enum State {Online = 0, Offline} connectionStatus;
+	void jabberConnect();
+	void jabberDisconnect();
 };
 #endif
 

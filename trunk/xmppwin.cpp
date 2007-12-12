@@ -9,17 +9,15 @@
 XmppWin::XmppWin()
 {
 	ui.setupUi(this);
-	connect(ui.jabberConnect, SIGNAL(clicked()), this, SLOT(jabberConnect()));
+	ui.statusBox->setCurrentIndex(Offline);
+	connect(ui.statusBox, SIGNAL(currentIndexChanged(int)), this, SLOT(statusChanged()));
 	connect(ui.password, SIGNAL(returnPressed()), this, SLOT(jabberConnect()));
-	connect(ui.jabberDisconnect, SIGNAL(clicked()), this, SLOT(jabberDisconnect()));
 	connect(ui.configBtn, SIGNAL(clicked()), this, SLOT(showConfigDial()));
 	ui.jid->setText("Jid");
 	ui.tableView->verticalHeader()->hide();
 	ui.tableView->horizontalHeader()->hide();
 	ui.tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.tableView->setSelectionMode(QAbstractItemView::SingleSelection);
-	ui.jabberConnect->setEnabled(true);
-	ui.jabberDisconnect->setEnabled(false);
 
 	// Loads predifined Profiles.
 	conf = new Config();
@@ -34,9 +32,9 @@ XmppWin::XmppWin()
 	updateProfileList();
 	
 	connect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeProfile(int)));
-	connected = false;
 	secs = 0;
 	emoticons = new Emoticons();
+	connectionStatus = Offline;
 }
 
 XmppWin::~XmppWin()
@@ -48,11 +46,27 @@ XmppWin::~XmppWin()
  * Connects and authenticates the User to the server.
  */
 
+void XmppWin::statusChanged()
+{
+	switch (ui.statusBox->currentIndex())
+	{
+	case Online :
+		if (connectionStatus != Online)
+		{
+			jabberConnect();
+		}
+		break;
+	case Offline :
+		if (connectionStatus != Offline)
+		{
+			jabberDisconnect();
+		}
+		break;
+	}
+}
+
 void XmppWin::jabberConnect()
 {
-	ui.jabberConnect->setEnabled(false);
-	ui.jabberDisconnect->setEnabled(true);
-	
 	jid = new Jid(ui.jid->text());
 	
 	if (!jid->isValid())
@@ -87,8 +101,6 @@ void XmppWin::connectingLogo()
 
 void XmppWin::jabberDisconnect()
 {
-	ui.jabberConnect->setEnabled(true);
-	ui.jabberDisconnect->setEnabled(false);
 	delete client;
 	delete jid;
 	QString status = "";
@@ -98,24 +110,28 @@ void XmppWin::jabberDisconnect()
 		contactList[i]->setPresence(status, type);
 	}
 	m->setData(contactList);
+	for (int i = 0; i < contactList.count(); i++)
+	{
+		ui.tableView->update(m->index(i, 0));
+		ui.tableView->update(m->index(i, 1));
+	}
 	ui.tlsIconLabel->setEnabled(false);
-	connected = false;
 	setWindowTitle("Kapture [Offline]");
+	connectionStatus = Offline;
 }
 
 void XmppWin::clientAuthenticated()
 {
 	QPixmap *pixmap;
-	ui.jabberConnect->setEnabled(false); // FIXME: could become a "Disconnect" button.
 
 	if (client->isSecured())
 	{
-		pixmap = new QPixmap("encrypted.png");
+		pixmap = new QPixmap(QString(DATADIR) + QString("/icons/") + "encrypted.png");
 		ui.tlsIconLabel->setToolTip(tr("The connection with the server is encrypted."));
 	}
 	else
 	{
-		pixmap = new QPixmap("decrypted.png");
+		pixmap = new QPixmap(QString(DATADIR) + QString("/icons/") + "decrypted.png");
 		ui.tlsIconLabel->setToolTip(tr("The connection with the server is *not* encrypted."));
 	}
 	ui.tlsIconLabel->setPixmap(*pixmap);
@@ -125,7 +141,7 @@ void XmppWin::clientAuthenticated()
 	connect(client, SIGNAL(rosterReady(Roster)), this, SLOT(setRoster(Roster)));
 	connect(client, SIGNAL(presenceReady(const Presence&)), this, SLOT(processPresence(const Presence&)));
 	connect(client, SIGNAL(messageReady(const Message&)), this, SLOT(processMessage(const Message&)));
-	connected = true;
+	connectionStatus = Online;
 }
 
 void XmppWin::setRoster(Roster roster)
@@ -214,7 +230,7 @@ void XmppWin::processMessage(const Message& m)
 
 void XmppWin::sendMessage(QString &to, QString &message)
 {
-	if (connected)
+	if (connectionStatus != Offline)
 		client->sendMessage(to, message);
 	else
 		QMessageBox::critical(this, tr("Jabber"), tr("You are not logged in right now !!!"), QMessageBox::Ok);
@@ -247,8 +263,7 @@ void XmppWin::error(Xmpp::ErrorType e)
 	default :
 		QMessageBox::critical(this, tr("Jabber"), tr("An unknown error occured while connecting."), QMessageBox::Ok);
 	}
-	ui.jabberConnect->setEnabled(true);
-	ui.jabberDisconnect->setEnabled(false);
+	ui.statusBox->setCurrentIndex(Offline);
 	delete client;
 	delete jid;
 	delete waitingTimer;
@@ -327,6 +342,7 @@ void XmppWin::prcentChanged(Jid& jid, QString& fileName, int prc)
 void XmppWin::closeEvent(QCloseEvent*)
 {
 	printf("\n * Exiting...\n");
-	jabberDisconnect();
+	if (connectionStatus != Offline)
+		jabberDisconnect();
 	((QApplication*) this->parentWidget())->quit();
 }

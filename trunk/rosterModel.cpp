@@ -50,9 +50,9 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	{
 		QImage *img;
 		if (contacts[index.row()]->isAvailable())
-			img = new QImage("online.png");
+			img = new QImage(QString(DATADIR) + QString("/icons/") + "online.png");
 		else
-			img = new QImage("offline.png");
+			img = new QImage(QString(DATADIR) + QString("/icons/") + "offline.png");
 			
 		return *img;
 	}

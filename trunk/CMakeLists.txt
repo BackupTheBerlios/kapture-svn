@@ -16,6 +16,12 @@ FIND_PACKAGE(OpenSSL REQUIRED)
 
 INCLUDE(${QT_USE_FILE})
 
+#SET(DATADIR)
+
+MESSAGE(" * Install in ${CMAKE_INSTALL_PREFIX} (${DATA_INSTALL_DIR}).")
+SET(DATADIR "${CMAKE_INSTALL_PREFIX}/share/kapture")
+ADD_DEFINITIONS(-DDATADIR=\\"${DATADIR}\\")
+
 SET(Kapture_UIS kapturewin.ui mainframewin.ui xmppwin.ui chatwin.ui
 xmppconfigdialog.ui incomingfiledialog.ui)
 QT4_WRAP_UI(Kapture_UIS_H ${Kapture_UIS})
@@ -28,7 +34,9 @@ socks5.h incomingfiledialog.h)
 QT_WRAP_CPP(Kapture MOC_FILES ${Kapture_OBJECTS})
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${UVC_INCLUDE} ${QT_INCLUDE_DIR} ${QT_QTNETWORK_INCLUDE_DIR} ${QT_QTXML_INCLUDE_DIR})
+#Search also in ${CMAKE_INSTALL_PREFIX}
 FIND_LIBRARY(SSL_LIBRARY NAME ssl PATHS /usr/lib /usr/local/lib)
+
 LINK_LIBRARIES(${SSL_LIBRARY} ${QT_LIBRARIES} ${QT_QTNETWORK_LIBRARIES}
 	       ${QT_QTXML_LIBRARIES})
 
@@ -43,3 +51,7 @@ incomingfiledialog.cpp)
 
 ADD_EXECUTABLE(Kapture ${Kapture_SRCS} ${Kapture_UIS_H} ${MOC_FILES})
 target_link_libraries(Kapture ${QT_LIBRARIES})
+
+install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/Kapture DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(FILES smile.png DESTINATION ${DATADIR}/emoticons)
+install(FILES decrypted.png encrypted.png offline.png online.png DESTINATION ${DATADIR}/icons)

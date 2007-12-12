@@ -25,7 +25,7 @@ QString Emoticons::changeEmoticons(const QString& m/*, QString jid*/)
 	QString temp = m;
 	for (int i = 0; i < emoticons.count(); i++)
 	{
-		temp.replace(emoticons[i].binette, "<img src=\"" + emoticons[i].link + "\">");
+		temp.replace(emoticons[i].binette, "<img src=\"" + QString(DATADIR) + QString("/emoticons/") + emoticons[i].link + "\">");
 	}
 	//if (m.startsWith("/me "))
 	//	m = "<font color='green'> *** " + m.split("/me") + "</font>";
