@@ -21,6 +21,9 @@
 #define XMLNS_DISCO_INFO "http://jabber.org/protocol/disco#info"
 #define XMLNS_DISCO_ITEMS "http://jabber.org/protocol/disco#items"
 #define XMLNS_BYTESTREAMS "http://jabber.org/protocol/bytestreams"
+#define XMLNS_JINGLE "http://www.xmpp.org/extensions/xep-0166.html#ns"
+#define XMLNS_VIDEO "http://www.xmpp.org/extensions/xep-0180.html#ns"
+#define XMLNS_RTP "http://www.xmpp.org/extensions/xep-0176.html#ns-udp"
 #define TIMEOUT 30000
 
 RosterTask::RosterTask(Task* parent)
@@ -59,7 +62,6 @@ bool RosterTask::canProcess(const Stanza& s) const
 
 void RosterTask::processStanza(const Stanza& s)
 {
-	printf("void RosterTask::processStanza(const Stanza& s)\n");
 	QString j;
 	QString n;
 	QString subs;
@@ -74,10 +76,6 @@ void RosterTask::processStanza(const Stanza& s)
 			subs = items.at(i).toElement().attribute("subscription");
 
 			r.addContact(j, n, subs);
-
-			printf("New Roster contact : %s (subscription : %s)\n", 
-				items.at(i).toElement().attribute("jid").toLatin1().constData(),
-				items.at(i).toElement().attribute("subscription").toLatin1().constData());
 		}
 	}
 	emit finished();
@@ -149,7 +147,6 @@ void PresenceTask::setPresence(Xmpp* p, const QString& show, const QString& stat
 PullPresenceTask::PullPresenceTask(Task* parent)
 	:Task(parent)
 {
-	printf("PullPresenceTask::PullPresenceTask(Task* parent)\n");
 
 }
 
@@ -160,7 +157,6 @@ PullPresenceTask::~PullPresenceTask()
 
 bool PullPresenceTask::canProcess(const Stanza& s) const
 {
-	printf("Kind = %s\n", s.kind() == Stanza::Presence ? "Presence" : "NoPresence");
 	if (s.kind() == Stanza::Presence)
 		return true;
 	return false;
@@ -168,7 +164,6 @@ bool PullPresenceTask::canProcess(const Stanza& s) const
 
 void PullPresenceTask::processStanza(const Stanza& stanza)
 {
-	printf("PullPresenceTask:: : %s\n", stanza.from().full().toLatin1().constData());
 	from = stanza.from();
 	Jid to = stanza.to();
 	type = stanza.type() == "" ? "available" : stanza.type();
@@ -182,7 +177,6 @@ void PullPresenceTask::processStanza(const Stanza& stanza)
 		emit presenceFinished();
 		return;
 	}
-	printf("Set presence\n");
 	s = s.firstChildElement();
 	while(!s.isNull())
 	{
@@ -372,7 +366,7 @@ void StreamTask::processStanza(const Stanza& s)
 			QDomNode node = s.node().firstChild();
 			if (node.localName() != "query" || node.namespaceURI() != XMLNS_DISCO_INFO)
 			{
-				printf("Bad stanza. Stoppping here.\n");
+				printf("[STREAMTASK] Bad stanza. Stoppping here.\n");
 				return;
 			}
 			node = node.firstChild();
@@ -395,7 +389,7 @@ void StreamTask::processStanza(const Stanza& s)
 			QDomNode node = s.node().firstChild();
 			if (node.localName() != "si")
 			{
-				printf("Not SI tag, stop.\n");
+				printf("[STREAMTASK] Not SI tag, stop.\n");
 				//emit error();
 				return;
 			}
@@ -404,33 +398,33 @@ void StreamTask::processStanza(const Stanza& s)
 			node = node.firstChild();
 			if (node.localName() != "feature")
 			{
-				printf("Not FEATURE tag, stop.\n");
+				printf("[STREAMTASK] Not FEATURE tag, stop.\n");
 				//emit error();
 				return;
 			}
 			node = node.firstChild();
 			if (node.localName() != "x")
 			{
-				printf("Not X tag, stop.\n");
+				printf("[STREAMTASK] Not X tag, stop.\n");
 				//emit error();
 				return;
 			}
 			node = node.firstChild();
 			if (node.localName() != "field")
 			{
-				printf("Not FIELD tag, stop.\n");
+				printf("[STREAMTASK] Not FIELD tag, stop.\n");
 				//emit error();
 				return;
 			}
 			node = node.firstChild();
 			if (node.localName() != "value")
 			{
-				printf("Not VALUE tag, stop.\n");
+				printf("[STREAMTASK] Not VALUE tag, stop.\n");
 				//emit error();
 				return;
 			}
 			profileToUse = node.firstChild().toText().data();
-			printf("Ok, Using %s profile to transfer file.\n", profileToUse.toLatin1().constData());
+			printf("[STREAMTASK] Ok, Using %s profile to transfer file.\n", profileToUse.toLatin1().constData());
 			getProxies();
 		}
 		if (s.type() == "error")
@@ -457,9 +451,9 @@ void StreamTask::processStanza(const Stanza& s)
 			}
 			//emit infoDone();
 		}
-		printf("Proxies are : \n");
+		printf("[STREAMTASK] Proxies are : \n");
 		for (int i = 0; i < itemList.count(); i++)
-			printf(" * %s\n", itemList[i].toLatin1().constData());
+			printf("[STREAMTASK]  * %s\n", itemList[i].toLatin1().constData());
 		if (itemList.count() <= 0)
 		{
 			emit finished();
@@ -473,10 +467,10 @@ void StreamTask::processStanza(const Stanza& s)
 		{
 			QDomNode node = s.node().firstChild();
 			node = node.firstChild();
-			printf("node = %s\n", node.localName().toLatin1().constData());
+			printf("[STREAMTASK] node = %s\n", node.localName().toLatin1().constData());
 			while (!node.isNull())
 			{
-				printf("* Indentity = %s, Category = %s, type = %s\n", 
+				printf("[STREAMTASK] * Indentity = %s, Category = %s, type = %s\n", 
 				        node.localName().toLatin1().constData(),
 					node.toElement().attribute("category").toLatin1().constData(), 
 					node.toElement().attribute("type").toLatin1().constData());
@@ -490,10 +484,10 @@ void StreamTask::processStanza(const Stanza& s)
 				}
 				node = node.nextSibling();
 			}
-			printf("itemList.count() = %d\n", itemList.count());
+			printf("[STREAMTASK] itemList.count() = %d\n", itemList.count());
 			if (itemList.empty())
 			{
-				printf(" ************* Number of Proxies = %d\n", proxyList.count());
+				printf("[STREAMTASK]  ************* Number of Proxies = %d\n", proxyList.count());
 				if (proxyList.count() <= 0)
 				{
 					emit finished();
@@ -750,7 +744,9 @@ void FileTransferTask::processStanza(const Stanza& s)
 	if (!connectToProxy)
 	{
 		f->open(QIODevice::ReadOnly);
-		emit prcentChanged(to, fileName, 0); // Tell chatWin that the transfer begins
+		QFileInfo fi(f->fileName());
+		QString str = fi.fileName();
+		emit prcentChanged(to, str, 0); // Tell chatWin that the transfer begins
 		writtenData = 0;
 		socks5Socket->write(f->readAll());
 		connect(socks5Socket, SIGNAL(bytesWritten(qint64)), this, SLOT(bytesWrittenSlot(qint64)));
@@ -797,13 +793,14 @@ void FileTransferTask::connectedToProxy()
 
 void FileTransferTask::bytesWrittenSlot(qint64 sizeWritten)
 {
-	writtenData = writtenData + sizeWritten;
+	writtenData += sizeWritten;
 
 	prc = (int)(((float)writtenData/(float)f->size())*100);
 	if (prc2 != prc)
 	{
-		QString fileN = f->fileName();
-		emit prcentChanged(to, fileN, prc);
+		QFileInfo fi(f->fileName());
+		QString str = fi.fileName();
+		emit prcentChanged(to, str, prc);
 	}
 	prc2 = (int)(((float)writtenData/(float)f->size())*100);
 	
@@ -849,6 +846,8 @@ void FileTransferTask::startByteStream(const QString &SID)
 	 * 	Should also add the external IP.
 	 * 	For example, download it from
 	 * 		http://www.swlink.net/~styma/REMOTE_ADDR.shtml
+	 * 	or use a webservice.
+	 * 	This is not prioritary.
 	 */
 	for (int i = 0; i < interface->allAddresses().count(); i++)
 	{
@@ -904,7 +903,7 @@ void FileTransferTask::newConnection()
 			server = serverList.at(i);
 			socks5Socket = serverList.at(i)->nextPendingConnection();
 			// As this connection is a child of the server,
-			// the QTcpServer cannot be deleted before we
+			// the QTcpServer cannot be destroied before we
 			// are finished with the QTcpSocket.
 			break;
 		}
@@ -937,8 +936,11 @@ void FileTransferTask::dataAvailable()
 			fileOut->open(QIODevice::WriteOnly | QIODevice::Append);
 			fileOpened = true;
 		}
-		printf("[FileTransferTask] Writing data in %s\n", st.toLatin1().constData());
+		//printf("[FileTransferTask] Writing data in %s\n", st.toLatin1().constData());
 		fileOut->write(data);
+		writtenData += data.size();
+		printf("[FileTransferTask] prc = %d, to = %s\n", (int)((float)writtenData/(float)filesize*100), to.full().toLatin1().constData());
+		emit prcentChanged(to, filename, (int)((float)writtenData/(float)filesize*100));
 	}
 }
 
@@ -973,39 +975,58 @@ void FileTransferTask::notifyStart()
 	p->write(stanza);
 }
 
+void FileTransferTask::setFileInfo(const QString& fileName, int fileSize)
+{
+	filename = fileName;
+	filesize = fileSize;
+}
+
 void FileTransferTask::connectToHosts(QList<PullStreamTask::StreamHost> hostList, const QString& sid, const QString& i, const QString& saveTo)
 {
 	h = hostList;
 	st = saveTo;
 	id = i;
 	s = sid;
-	tryToConnect(h.takeFirst());
+	//PullStreamTask::StreamHost tytutuyty = h.takeFirst();
+	if (h.count() > 0)
+		tryToConnect(h.takeFirst());
+	else
+		cancel();
+}
+
+void FileTransferTask::cancel()
+{
+
 }
 
 void FileTransferTask::tryToConnect(PullStreamTask::StreamHost hostData)
 {
 	socks5Socket = new QTcpSocket();
 	QString host = hostData.host;
+	usedJid = hostData.jid.full();
 	printf("Connecting to %s.\n", host.toLatin1().constData());
 	int port = hostData.port;
-
-	if (port != 0) // This is not a proxy
+	/*
+	 * On the target side, we don't care if streamhost is a proxy or the initiator.
+	 */
+	if (port != 0)
 	{
-		socks5Socket->connectToHost(host, port);
 		connect(socks5Socket, SIGNAL(connected()), this, SLOT(s5Connected()));
 		connect(socks5Socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(s5Error(QAbstractSocket::SocketError)));
+		socks5Socket->connectToHost(host, port);
+		printf("[FILETRANSFERTASK] host = %s, port = %d, jid = %s\n", host.toLatin1().constData(), port, usedJid.toLatin1().constData());
 	}
 	else
 	{
-		/* Connect to proxy */
-		printf("Receiving through a proxy is not implemented yet.\nPlease restart Kapture before continuing.\n");
+		printf("[FILETRANSFERTASK] Use Zeroconf policy, not supported at all. Please restart Kapture.\n");
+		// FIXME: Should emit an error here.
+		// TODO: zeroconf connection.
 	}
 }
 
 void FileTransferTask::s5Connected()
 {
 	fileOpened = false;
-	printf("SID == %s ?\n", s.toLatin1().constData());
 	/* Start connection to hostData.host with SOCKS5 */
 	socks5 = new Socks5(s, to, p->node());
 	isRecept = false;
@@ -1020,7 +1041,7 @@ void FileTransferTask::s5Error(QAbstractSocket::SocketError e)
 {
 	if (e == QAbstractSocket::RemoteHostClosedError)
 	{
-		// Should check if the whole file has been transfered.
+		//FIXME:Should check if the whole file has been transfered.
 		printf("Connection Closed.\n");
 		socks5Socket->disconnect();
 		socks5Socket->disconnectFromHost();
@@ -1039,6 +1060,7 @@ void FileTransferTask::s5Error(QAbstractSocket::SocketError e)
 		else
 		{
 			printf("Cancelling [Not Implmented yet]\n");
+			//TODO: send iq to tell Initiator that the connection couldn't be established.
 		}
 	}
 }
@@ -1055,7 +1077,7 @@ void FileTransferTask::receptionNotify()
 	query.setAttribute("xmlns", XMLNS_BYTESTREAMS);
 
 	QDomElement streamhostused = doc.createElement("streamhost-used");
-	streamhostused.setAttribute("jid", to.full());
+	streamhostused.setAttribute("jid", usedJid);
 
 	node.appendChild(query);
 	query.appendChild(streamhostused);
@@ -1087,7 +1109,7 @@ bool PullStreamTask::canProcess(const Stanza& s) const
 	    s.node().firstChildElement().namespaceURI() == XMLNS_SI)
 		return true;
 
-	if (s.type() == "set" && /* Should check SID here */
+	if (s.type() == "set" && /* FIXME:Should check SID here */
 	    s.node().firstChildElement().namespaceURI() == XMLNS_BYTESTREAMS)
 	    	return true;
 
@@ -1355,6 +1377,101 @@ void PullStreamTask::ftAgree(const QString&, const Jid&, const QString& saveFile
 	x.appendChild(field);
 	field.appendChild(value);
 	
+	p->write(stanza);
+}
+
+//-------------------------------
+// JingleTask
+//-------------------------------
+
+JingleTask::JingleTask(Task* parent, Xmpp *xmpp)
+	:Task(parent)
+{
+	p = xmpp;
+}
+
+JingleTask::~JingleTask()
+{
+
+}
+
+bool JingleTask::canProcess(const Stanza&) const
+{
+	return false;
+}
+
+void JingleTask::processStanza(const Stanza&)
+{
+	
+}
+
+void JingleTask::initiate(const Jid& to)
+{
+	QStringList contentList;
+	contentList << XMLNS_VIDEO;
+	id = randomString(10);
+	t = to;
+	cList = contentList;
+	s = randomString(10);
+
+	Stanza stanza(Stanza::IQ, "set", id, t.full());
+	QDomNode node = stanza.node().firstChild();
+	QDomDocument doc("");
+
+	QDomElement jingle = doc.createElement("jingle");
+	jingle.setAttribute("xmlns", XMLNS_JINGLE);
+	jingle.setAttribute("action", "session-initiate");
+	jingle.setAttribute("initiator", p->node().full());
+	jingle.setAttribute("sid", s);
+
+	QDomElement content = doc.createElement("content");
+	content.setAttribute("creator", "initiator");
+	/*
+	 * The name attribute is arbitrary.
+	 */
+	content.setAttribute("name", "prop");
+	/*
+	 * The profile here is the profile used for Audio or Video
+	 * (Audio/Video Profile, AVP) through 
+	 * Realtime Transfer Protocol (RTP/AVP)
+	 */
+	content.setAttribute("profile", "RTP/AVP");
+	for (int i = 0; i < contentList.count(); i++)
+	{
+		QDomElement description = doc.createElement("description");
+		description.setAttribute("xmlns", contentList[i]);
+		/*Only Video is supported now.*/
+		if (contentList[i] == XMLNS_VIDEO)
+		{
+			/*
+			 * Only JPEG payload supported now.
+			 * More to be added.
+			 */
+			QDomElement payload = doc.createElement("payload-type");
+			/* FIXME: I don't know if there is a particular id to set for JPEG*/
+			payload.setAttribute("id", "0"); 
+			payload.setAttribute("name", "JPEG");
+			/* 
+			 * No idea of the right Vale for clockrate.
+			 */
+			payload.setAttribute("clockrate", "90000");
+			
+			/* 
+			 * Maybe width and height will not be used.
+			 * Remove those two lines if it is the case.
+			 */
+			payload.setAttribute("height", "240");
+			payload.setAttribute("width",  "320");
+			description.appendChild(payload);
+		}
+		content.appendChild(description);
+	}
+	QDomElement transport = doc.createElement("transport");
+	transport.setAttribute("xmlns", XMLNS_RTP);
+	content.appendChild(transport);
+	jingle.appendChild(content);
+	node.appendChild(jingle);
+
 	p->write(stanza);
 }
 

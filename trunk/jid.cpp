@@ -26,7 +26,6 @@ Jid::Jid(const char*)
 
 Jid::Jid(const QString& j)
 {
-	printf("jid = %s\n", j.toLatin1().constData());
 	if (j.isEmpty())
 	{
 		valid = false;
@@ -49,7 +48,6 @@ Jid::Jid(const QString& j)
 	{
 		if (j.split('@').count() == 1)
 		{
-			valid = false;
 			n = "";
 			r = "";
 			d = j;
@@ -90,7 +88,11 @@ QString Jid::full() const
 	}
 	else
 	{
-		return QString("%1@%2").arg(n, d);
+		if (n != "")
+			return QString("%1@%2").arg(n, d);
+		else
+			return d;
+
 	}
 }
 

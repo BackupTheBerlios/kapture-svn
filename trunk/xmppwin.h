@@ -40,6 +40,7 @@ public slots:
 	void prcentChanged(Jid&, QString&, int);
 	void connectingLogo();
 	void statusChanged();
+	void sendVideo(QString&);
 
 private:
 	Ui::xmppWin ui;

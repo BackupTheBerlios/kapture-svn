@@ -20,7 +20,8 @@ ChatWin::ChatWin()
 {
 	ui.setupUi(this);
 	connect(ui.sendBtn, SIGNAL(clicked()), this, SLOT(message()));
-	connect(ui.sendFileBtn, SIGNAL(clicked()), this, SLOT(file()));
+	connect(ui.sendFileBtn, SIGNAL(clicked()), this, SIGNAL(sendFile()));
+	connect(ui.videoBtn, SIGNAL(clicked()), this, SIGNAL(sendVideo()));
 	ui.sendBtn->setEnabled(false);
 	connect(ui.messageLine, SIGNAL(textChanged(QString)), this, SLOT(composing(QString)));
 	connect(ui.messageLine, SIGNAL(returnPressed()), this, SLOT(message()));
@@ -37,11 +38,6 @@ void ChatWin::message()
 	{
 		emit sendMessage(ui.messageLine->text());
 	}
-}
-
-void ChatWin::file()
-{
-	emit sendFile();
 }
 
 void ChatWin::composing(QString text)

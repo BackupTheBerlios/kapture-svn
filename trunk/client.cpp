@@ -66,6 +66,8 @@ void Client::receiveFileReady()
 {
 	QString f = psTask->from().full();
 	rfTask = new FileTransferTask(task, f, xmpp);
+	connect(rfTask, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SIGNAL(prcentChanged(Jid&, QString&, int)));
+	rfTask->setFileInfo(psTask->fileName(), psTask->fileSize());
 	rfTask->connectToHosts(psTask->streamHosts(), psTask->sid(), psTask->lastId(), psTask->saveFileName());
 }
 
@@ -285,4 +287,10 @@ void Client::transferFinished()
 	//emit transferTerminated;
 	task->removeChild(sfTask);
 	delete sfTask;
+}
+
+void Client::sendVideo(const QString& to)
+{
+	svTask = new JingleTask(task, xmpp);
+	svTask->initiate(Jid(to));
 }

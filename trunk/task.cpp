@@ -59,7 +59,7 @@ void Task::processStanza(const Stanza& s)
 
 void Task::removeChild(Task* childTask)
 {
-	printf("Count = %d\n", taskList.count());
+	//printf("[TASK] Count = %d\n", taskList.count());
 	for (int i = 0; i < taskList.count(); i++)
 	{
 		if (taskList[i] == childTask)

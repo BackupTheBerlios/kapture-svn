@@ -65,6 +65,7 @@ void Contact::newMessage(const QString &m /*Message*/)
 		chatWin->setWindowTitle(jid->full());
 		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
 		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
+		connect(chatWin, SIGNAL(sendVideo()), this, SLOT(slotSendVideo()));
 	}
 
 	chatWin->ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
@@ -83,6 +84,12 @@ void Contact::newMessage(const QString &m /*Message*/)
 	isChatting = true;
 }
 
+void Contact::slotSendVideo()
+{
+	QString to = jid->full();
+	emit sendVideo(to);
+}
+
 void Contact::startChat()
 {
 	if (!isChatting)
@@ -91,6 +98,7 @@ void Contact::startChat()
 		chatWin->setWindowTitle(jid->full());
 		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
 		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
+		connect(chatWin, SIGNAL(sendVideo()), this, SLOT(slotSendVideo()));
 		isChatting = true;
 	}
 	chatWin->show();

@@ -66,7 +66,7 @@ Xmpp::~Xmpp()
 	{
 		QDomDocument d("");
 		QDomElement e = d.createElement("presence");
-		e.setAttribute("type", "unavaible");
+		e.setAttribute("type", "unavailable");
 		QDomElement s = d.createElement("satuts");
 		QDomText t = d.createTextNode("Logged out");
 

@@ -195,6 +195,7 @@ public:
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
 	void connectToHosts(QList<PullStreamTask::StreamHost>, const QString& sid, const QString& id, const QString& saveTo);
+	void setFileInfo(const QString& fileName, int fileSize);
 
 public slots:
 	void noConnection();
@@ -222,9 +223,11 @@ private:
 	QString usedIP;
 	QString usedPort;
 	QString st; //Save to
-	QString fileName;
+	QString fileName; // Ouch !
+	QString filename; // Ouch !
 	QString s; //SID
 	QString id;
+	QString usedJid;
 	QTimer *timeOut;
 	qint64 writtenData;
 	Socks5 *socks5;
@@ -236,9 +239,31 @@ private:
 	bool isRecept;
 	bool fileOpened;
 	void startByteStream(const QString&);
+	void cancel();
 	void tryToConnect(PullStreamTask::StreamHost host);
-	int prc, prc2;
+	int prc, prc2, filesize;
 };
 
+/*-----------------------------------------------
+ * JingleTask
+ * ---------------------------------------------
+ */
+
+class JingleTask : public Task
+{
+	Q_OBJECT
+public:
+	JingleTask(Task* parent, Xmpp* xmpp);
+	~JingleTask();
+	bool canProcess(const Stanza&) const;
+	void processStanza(const Stanza&);
+	void initiate(const Jid& to);
+private:
+	Xmpp *p;
+	QString id;
+	QString s; // SID
+	Jid t; // to
+	QStringList cList; // contentList
+};
 
 #endif

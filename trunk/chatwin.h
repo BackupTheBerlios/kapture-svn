@@ -12,12 +12,12 @@ public:
 
 public slots:
 	void message();
-	void file();
 	void composing(QString);
 
 signals:
 	void sendMessage(QString message);
 	void sendFile();
+	void sendVideo();
 
 
 };

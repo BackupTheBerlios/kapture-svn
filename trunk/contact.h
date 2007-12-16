@@ -54,9 +54,11 @@ private:
 public slots:
 	void messageToSend(QString message);
 	void sendFile();
+	void slotSendVideo();
 signals:
 	void sendMessage(QString&, QString&);
 	void sendFileSignal(QString&);
+	void sendVideo(QString&);
 };
 
 #endif //CONTACT_H

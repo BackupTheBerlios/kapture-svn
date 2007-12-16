@@ -78,6 +78,7 @@ void XmppWin::jabberConnect()
 	}
 	
 	client = new Client(*jid, ui.serverEdit->text(), ui.portEdit->text());
+	connect(client, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SLOT(prcentChanged(Jid&, QString&, int)));
 	waitingTimer = new QTimer();
 	waitingTimer->start(1000);
 	connect(waitingTimer, SIGNAL(timeout()), this, SLOT(connectingLogo()));
@@ -156,6 +157,7 @@ void XmppWin::setRoster(Roster roster)
 		contactList[i]->setEmoticons(emoticons);
 		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
 		connect(contactList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
+		connect(contactList[i], SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
 	}
 	sortContactList();
 	m->setData(contactList);
@@ -171,22 +173,23 @@ void XmppWin::setRoster(Roster roster)
 	setWindowTitle("Kapture -- " + jid->full());
 }
 
+void XmppWin::sendVideo(QString& to)
+{
+	client->sendVideo(to);
+}
+
+bool sortFct(Contact *c1, Contact *c2)
+{
+	if (c1->isAvailable() == c2->isAvailable())
+	{
+		return c1 <= c2;
+	}
+	return c1->isAvailable() || !c2->isAvailable();
+}
+
 void XmppWin::sortContactList()
 {
-	bool permut = true;
-	while (permut)
-	{
-		permut = false;
-		for (int i = 0; i < contactList.count() - 1; i++)
-		{
-			if (!contactList[i]->isAvailable() && contactList[i + 1]->isAvailable())
-			{
-				contactList.swap(i, i + 1);
-				permut = true;
-			}
-		}
-	}
-
+	qSort(contactList.begin(), contactList.end(), sortFct);
 }
 
 void XmppWin::processPresence(const Presence& presence)
@@ -210,7 +213,6 @@ void XmppWin::processPresence(const Presence& presence)
 				ui.tableView->update(m->index(j, 0));
 				ui.tableView->update(m->index(j, 1));
 			}
-			//ui.tableView->repaint();
 			ui.tableView->resizeColumnsToContents();
 			break;
 		}
@@ -315,7 +317,6 @@ void XmppWin::updateProfileList()
 
 void XmppWin::sendFile(QString &to)
 {
-	connect(client, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SLOT(prcentChanged(Jid&, QString&, int)));
 	client->sendFile(to);
 }
 

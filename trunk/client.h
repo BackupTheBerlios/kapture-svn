@@ -30,6 +30,7 @@ public:
 			Unknown = 1,
 			Declined
 			};
+	void sendVideo(const QString&);
 
 public slots:
 	void read();
@@ -83,6 +84,7 @@ private:
 	StreamTask *sTask;		//streamTask
 	FileTransferTask *sfTask;	//sendFileTask
 	FileTransferTask *rfTask;	//receiveFileTask
+	JingleTask *svTask; 		//sendVideoTask
 	QString fileName;
 };
 #endif
