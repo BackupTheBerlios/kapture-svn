@@ -149,7 +149,7 @@ void Contact::setPresence(const Presence& pr)
 			chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->full()).arg(pr.type() == "available" ? "online" : "offline"));
 		else
 		{
-			if (pr.status() != presence->status())
+			if (pr.show() != presence->show())
 				chatWin->ui.discutionText->insertHtml(
 					QString("<font color='green'> * ")
 					+ jid->full()
