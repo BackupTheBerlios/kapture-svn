@@ -22,7 +22,7 @@ public:
 	void sendMessage(QString& to, QString& message);
 	bool noStanza() const;
 	void getRoster();
-	void setInitialPresence(QString& show, QString& status);
+	void setInitialPresence(QString& show, QString& status, QString&);
 	void sendFile(QString&);
 	Stanza *getFirstStanza();
 	Task *rootTask() const;
@@ -31,6 +31,7 @@ public:
 			Declined
 			};
 	void sendVideo(const QString&);
+	void setPresence(const QString& show, const QString& status);
 
 public slots:
 	void read();

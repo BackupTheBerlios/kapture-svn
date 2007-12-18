@@ -1,5 +1,6 @@
 #ifndef XMPPWIN_H
 #define XMPPWIN_H
+#include <QPoint>
 
 #include "ui_xmppwin.h"
 #include "client.h"
@@ -29,7 +30,7 @@ public slots:
 	void processPresence(const Presence&);
 	void processMessage(const Message&);
 	void sendMessage(QString&, QString&);
-	void startChat(QString &to);
+	void startChat(const QString &to);
 	void error(Xmpp::ErrorType);
 	void showConfigDial();
 	void changeProfile(int p);
@@ -41,6 +42,9 @@ public slots:
 	void connectingLogo();
 	void statusChanged();
 	void sendVideo(QString&);
+	void showMenu(const QString&, const QPoint&);
+	void showvCard();
+	void startChatFromMenu();
 
 private:
 	Ui::xmppWin ui;
@@ -57,9 +61,17 @@ private:
 	void sortContactList();
 	void closeEvent(QCloseEvent*);
 	Emoticons *emoticons;
-	enum State {Online = 0, Offline} connectionStatus;
+	enum State {Online = 0, Chat, Dnd, Away, Xa, Invisible, Offline} connectionStatus;
 	void jabberConnect();
 	void jabberDisconnect();
+	QString menuTo;
+	QString pJid;
+	QString password;
+	QString serverEdit;
+	QString portEdit;
+	Contact* contactWithJid(const Jid&);
+	QString firstShow;
+	void setPresence();
 };
 #endif
 

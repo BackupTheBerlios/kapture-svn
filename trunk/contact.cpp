@@ -22,6 +22,7 @@ Contact::Contact(const QString& j)
 	isChatting = false;
 	vcard = new VCard();
 	done = false;
+	presence = new Presence(QString(""), QString(""), QString(""));
 }
 
 Contact::Contact(const QString &j, const QString &n)
@@ -31,6 +32,7 @@ Contact::Contact(const QString &j, const QString &n)
 	vcard = new VCard();
 	vcard->setNickname(n);
 	done = false;
+	presence = new Presence(QString(""), QString(""), QString(""));
 }
 
 Contact::Contact(const char *j)
@@ -39,11 +41,13 @@ Contact::Contact(const char *j)
 	isChatting = false;
 	vcard = new VCard();
 	done = false;
+	presence = new Presence(QString(""), QString(""), QString(""));
 }
 
 Contact::Contact()
 {
 	done = false;
+	presence = new Presence(QString(""), QString(""), QString(""));
 }
 
 Contact::~Contact()
@@ -118,23 +122,52 @@ void Contact::messageToSend(QString message)
 	emit sendMessage(to, message);
 }
 
-void Contact::setPresence(QString& status, QString& type)
+QString Contact::showToPretty(const QString& show)
 {
+	if (show.toLower() == "dnd")
+		return QString("busy");
+	if (show.toLower() == "chat")
+		return QString("available to chat");
+	if (show.toLower() == "away")
+		return QString("away");
+	if (show.toLower() == "xa")
+		return QString("far far away");
+	return QString();
+}
+
+void Contact::setPresence(const Presence& pr)
+{
+	/*
+	 * Type = [available, unavailable]
+	 * Show = [away, chat, dnd, xa]
+	 * Status = Text
+	 */
 	if (isChatting)
 	{
-		if (presence.type != type)
-			chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->full()).arg(type == "available" ? "online" : "offline"));
+		chatWin->ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
+		if (presence->type() != pr.type())
+			chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->full()).arg(pr.type() == "available" ? "online" : "offline"));
 		else
 		{
-			if (presence.status != status)
-			{
-				chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->full()).arg(status));
-			}
+			if (pr.status() != presence->status())
+				chatWin->ui.discutionText->insertHtml(
+					QString("<font color='green'> * ")
+					+ jid->full()
+					+ QString(" is now ")
+					+ showToPretty(pr.show())
+					+ QString(" [")
+					+ pr.status()
+					+ QString("]</font><br>"));
 		}
+		chatWin->ui.discutionText->verticalScrollBar()->setValue(chatWin->ui.discutionText->verticalScrollBar()->maximum());
 	}
 	
-	presence.status = status;
-	presence.type = type;
+	presence->setType(pr.type());
+	presence->setShow(pr.show());
+	presence->setStatus(pr.status());
+	printf("Presence : type = %s, show = %s, status %s\n", presence->type().toLatin1().constData(),
+							       presence->show().toLatin1().constData(),
+							       presence->status().toLatin1().constData());
 	printf("Contact has a new nickname : %s\n", vcard->nickname().toLatin1().constData());
 }
 
@@ -145,7 +178,7 @@ void Contact::setResource(QString& r)
 
 bool Contact::isAvailable()
 {
-	if (presence.type == "available")
+	if (presence->type() == "available")
 		return true;
 	else
 		return false;

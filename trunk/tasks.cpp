@@ -111,7 +111,7 @@ PresenceTask::~PresenceTask()
 void PresenceTask::setPresence(Xmpp* p, const QString& show, const QString& status, const QString& type)
 {
 	Stanza stanza(Stanza::Presence, type, QString(), QString());
-	QDomNode node = stanza.node();
+	QDomNode node = stanza.node().firstChild();
 	QDomDocument doc = node.ownerDocument();
 
 	QDomElement e = doc.createElement("presence");
@@ -205,7 +205,9 @@ void PullPresenceTask::processStanza(const Stanza& stanza)
 
 Presence PullPresenceTask::getPresence() const
 {
-	return Presence(from, type, status, show);
+	Presence *pr = new Presence(type, status, show);
+	pr->setFrom(from);
+	return *pr;
 }
 
 //-----------------------------

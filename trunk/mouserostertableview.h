@@ -9,10 +9,12 @@ class MouseRosterTableView : public QTableView
 public:
 	MouseRosterTableView(QWidget *parent);
 signals:
-	void doubleClicked(QString& to);
+	void doubleClicked(const QString& to);
+	void leftClick(const QString&, const QPoint&);
 
 protected:
 	void mouseDoubleClickEvent(QMouseEvent *e);
+	void mouseReleaseEvent(QMouseEvent *e);
 };
 
 

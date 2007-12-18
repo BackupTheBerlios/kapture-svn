@@ -5,20 +5,20 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>310</width>
-    <height>430</height>
+    <width>320</width>
+    <height>450</height>
    </rect>
+  </property>
+  <property name="sizePolicy" >
+   <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="minimumSize" >
    <size>
-    <width>310</width>
-    <height>430</height>
-   </size>
-  </property>
-  <property name="maximumSize" >
-   <size>
-    <width>310</width>
-    <height>430</height>
+    <width>0</width>
+    <height>0</height>
    </size>
   </property>
   <property name="baseSize" >
@@ -27,146 +27,147 @@
     <height>430</height>
    </size>
   </property>
+  <property name="contextMenuPolicy" >
+   <enum>Qt::NoContextMenu</enum>
+  </property>
   <property name="windowTitle" >
    <string>Kapture [Offline]</string>
   </property>
+  <property name="toolButtonStyle" >
+   <enum>Qt::ToolButtonIconOnly</enum>
+  </property>
   <widget class="QWidget" name="centralwidget" >
-   <widget class="MouseRosterTableView" native="1" name="tableView" >
-    <property name="geometry" >
-     <rect>
-      <x>0</x>
-      <y>80</y>
-      <width>311</width>
-      <height>351</height>
-     </rect>
-    </property>
-    <property name="showGrid" stdset="0" >
-     <bool>false</bool>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="jid" >
-    <property name="geometry" >
-     <rect>
-      <x>0</x>
-      <y>10</y>
-      <width>16</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Full Jid</string>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="password" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>10</y>
-      <width>16</width>
-      <height>22</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Password</string>
-    </property>
-    <property name="frame" >
-     <bool>true</bool>
-    </property>
-    <property name="echoMode" >
-     <enum>QLineEdit::Password</enum>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="serverEdit" >
-    <property name="geometry" >
-     <rect>
-      <x>0</x>
-      <y>40</y>
-      <width>16</width>
-      <height>20</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QLineEdit" name="portEdit" >
-    <property name="geometry" >
-     <rect>
-      <x>10</x>
-      <y>40</y>
-      <width>16</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>5222</string>
-    </property>
-   </widget>
-   <widget class="QLabel" name="tlsIconLabel" >
-    <property name="geometry" >
-     <rect>
-      <x>250</x>
-      <y>40</y>
-      <width>32</width>
-      <height>32</height>
-     </rect>
-    </property>
-    <property name="minimumSize" >
-     <size>
-      <width>32</width>
-      <height>32</height>
-     </size>
-    </property>
-    <property name="maximumSize" >
-     <size>
-      <width>32</width>
-      <height>32</height>
-     </size>
-    </property>
-    <property name="text" >
-     <string/>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="profilesComboBox" >
-    <property name="geometry" >
-     <rect>
-      <x>30</x>
-      <y>10</y>
-      <width>131</width>
-      <height>22</height>
-     </rect>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="configBtn" >
-    <property name="geometry" >
-     <rect>
-      <x>50</x>
-      <y>40</y>
-      <width>81</width>
-      <height>24</height>
-     </rect>
-    </property>
-    <property name="text" >
-     <string>Configuration</string>
-    </property>
-   </widget>
-   <widget class="QComboBox" name="statusBox" >
-    <property name="geometry" >
-     <rect>
-      <x>170</x>
-      <y>10</y>
-      <width>131</width>
-      <height>22</height>
-     </rect>
-    </property>
+   <layout class="QVBoxLayout" >
     <item>
-     <property name="text" >
-      <string>Online</string>
-     </property>
+     <layout class="QHBoxLayout" >
+      <item>
+       <layout class="QVBoxLayout" >
+        <item>
+         <layout class="QHBoxLayout" >
+          <item>
+           <widget class="QComboBox" name="profilesComboBox" />
+          </item>
+          <item>
+           <widget class="QComboBox" name="statusBox" >
+            <item>
+             <property name="text" >
+              <string>Online</string>
+             </property>
+            </item>
+            <item>
+             <property name="text" >
+              <string>Free for chat</string>
+             </property>
+            </item>
+            <item>
+             <property name="text" >
+              <string>Do not disturb</string>
+             </property>
+            </item>
+            <item>
+             <property name="text" >
+              <string>Away</string>
+             </property>
+            </item>
+            <item>
+             <property name="text" >
+              <string>Far far away</string>
+             </property>
+            </item>
+            <item>
+             <property name="text" >
+              <string>Invisible</string>
+             </property>
+            </item>
+            <item>
+             <property name="text" >
+              <string>Offline</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" >
+          <property name="spacing" >
+           <number>1</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="configBtn" >
+            <property name="text" >
+             <string>Configuration</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeType" >
+             <enum>QSizePolicy::MinimumExpanding</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLabel" name="tlsIconLabel" >
+            <property name="minimumSize" >
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="maximumSize" >
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="text" >
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </item>
+     </layout>
     </item>
     <item>
-     <property name="text" >
-      <string>Offline</string>
-     </property>
+     <widget class="QTabWidget" name="tabWidget" >
+      <property name="currentIndex" >
+       <number>0</number>
+      </property>
+      <widget class="QWidget" name="tab" >
+       <attribute name="title" >
+        <string>Normal View</string>
+       </attribute>
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="MouseRosterTableView" native="1" name="tableView" >
+          <property name="showGrid" stdset="0" >
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_2" >
+       <attribute name="title" >
+        <string>Graphic View</string>
+       </attribute>
+      </widget>
+     </widget>
     </item>
-   </widget>
+   </layout>
   </widget>
  </widget>
  <customwidgets>
@@ -176,11 +177,6 @@
    <header>mouserostertableview.h</header>
   </customwidget>
  </customwidgets>
- <tabstops>
-  <tabstop>jid</tabstop>
-  <tabstop>password</tabstop>
-  <tabstop>tableView</tabstop>
- </tabstops>
  <resources/>
  <connections/>
 </ui>

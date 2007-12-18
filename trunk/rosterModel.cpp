@@ -44,13 +44,40 @@ void Model::setData(QModelIndex index, QString value)
 	}
 }
 
+QString showToPretty(const QString& show)
+{
+	if (show.toLower() == "dnd")
+		return QString("busy");
+	if (show.toLower() == "chat")
+		return QString("available to chat");
+	if (show.toLower() == "away")
+		return QString("away");
+	if (show.toLower() == "xa")
+		return QString("far far away");
+	return QString();
+}
+
 QVariant Model::data(const QModelIndex &index, int role) const
 {
 	if (role == Qt::DecorationRole && index.column() == 0)
 	{
 		QImage *img;
 		if (contacts[index.row()]->isAvailable())
-			img = new QImage(QString(DATADIR) + QString("/icons/") + "online.png");
+		{
+			//FIXME: 'img' may be used uninitialized in this function.
+			printf("[RosterModel] Contact is %s\n", contacts[index.row()]->show().toLatin1().constData());
+			if (contacts[index.row()]->show() == "")
+				img = new QImage(QString(DATADIR) + QString("/icons/") + "online.png");
+			if (contacts[index.row()]->show() == "away")
+				img = new QImage(QString(DATADIR) + QString("/icons/") + "away.png");
+			if (contacts[index.row()]->show() == "chat")
+				img = new QImage(QString(DATADIR) + QString("/icons/") + "chat.png");
+			if (contacts[index.row()]->show() == "xa")
+				img = new QImage(QString(DATADIR) + QString("/icons/") + "xa.png");
+			if (contacts[index.row()]->show() == "dnd")
+				img = new QImage(QString(DATADIR) + QString("/icons/") + "dnd.png");
+
+		}
 		else
 			img = new QImage(QString(DATADIR) + QString("/icons/") + "offline.png");
 			
@@ -60,11 +87,14 @@ QVariant Model::data(const QModelIndex &index, int role) const
 		return false;
 	if (role == Qt::DisplayRole)
 	{
+		QString str;
 		switch(index.column())
 		{
-			case 1: return contacts[index.row()]->vCard()->nickname() == "" ? contacts[index.row()]->jid->full() : contacts[index.row()]->vCard()->nickname();
-			//case 1 : return QString("Nickname or Jid");
-			//case 2: return contacts[index.row()].getPresenceType();
+			case 1: 
+				str = contacts[index.row()]->vCard()->nickname() == "" ? contacts[index.row()]->jid->full() : contacts[index.row()]->vCard()->nickname();
+				if (contacts[index.row()]->isAvailable() && contacts[index.row()]->show() != "")
+					str = str + QString(" (") + showToPretty(contacts[index.row()]->show()) + QString(")");
+				return str;
 			default : return QVariant();
 		}
 	}

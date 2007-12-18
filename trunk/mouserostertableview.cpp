@@ -21,13 +21,21 @@ MouseRosterTableView::MouseRosterTableView(QWidget *parent)
 
 }
 
-void MouseRosterTableView::mouseDoubleClickEvent(QMouseEvent*)
+void MouseRosterTableView::mouseDoubleClickEvent(QMouseEvent *e)
 {
-	if (currentIndex().isValid())
+	if (currentIndex().isValid() && (e->button() == Qt::LeftButton))
 	{
 		QString to = this->model()->data(currentIndex(), Qt::WhatsThisRole).toString();
-		printf("User : %s\n", to.toLatin1().constData());
+		//printf("User : %s\n", to.toLatin1().constData());
 		emit doubleClicked(to);
 	}
 }
 
+void MouseRosterTableView::mouseReleaseEvent(QMouseEvent *e)
+{
+	if (e->button() == Qt::RightButton)
+	{
+		QString to = this->model()->data(currentIndex(), Qt::WhatsThisRole).toString();
+		emit leftClick(to, e->globalPos());
+	}
+}

@@ -54,4 +54,13 @@ target_link_libraries(Kapture ${QT_LIBRARIES})
 
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/Kapture DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(FILES smile.png DESTINATION ${DATADIR}/emoticons)
-install(FILES decrypted.png encrypted.png offline.png online.png DESTINATION ${DATADIR}/icons)
+install(FILES 
+  decrypted.png
+  encrypted.png
+  offline.png
+  online.png
+  chat.png
+  xa.png
+  dnd.png
+  away.png
+  DESTINATION ${DATADIR}/icons)

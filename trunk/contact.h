@@ -5,6 +5,7 @@
 #include <QProgressBar>
 #include <QLabel>
 
+#include "presence.h"
 #include "emoticons.h"
 #include "chatwin.h"
 #include "jid.h"
@@ -21,8 +22,8 @@ public:
 	~Contact();
 	
 	void newMessage(const QString &m /*Message*/); //not a slot ???
-	
-	void setPresence(QString &status, QString &type); //TODO : fix the mistakes in the names (Presence type is available or unavailable)
+
+	void setPresence(const Presence&);
 	void setResource(QString &resource);
 	void setFeatures(QStringList &features);
 	
@@ -32,24 +33,20 @@ public:
 	Jid *jid; // must go in private, a method to get it.
 	void setTranferFileState(QString, int);
 	void setEmoticons(Emoticons*);
+	QString show() const {return presence->show();};
 
 private:
 	Contact();
 	ChatWin *chatWin; 
 	bool isChatting;
-	struct Presence
-	{
-		QString status; // Emergency away,...
-		QString show; // dnd, away,...
-		QString type; //Offline or online
-
-	} presence;
 	QStringList features;
 	VCard *vcard;
 	
 	QList<FileTransferWidget*> transferList;
 	bool done;
 	Emoticons *e;
+	QString showToPretty(const QString&);
+	Presence *presence;
 
 public slots:
 	void messageToSend(QString message);

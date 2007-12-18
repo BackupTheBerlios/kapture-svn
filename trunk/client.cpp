@@ -172,12 +172,20 @@ void Client::rosterFinished()
 	delete rTask;
 }
 
-void Client::setInitialPresence(QString& show, QString& status)
+void Client::setInitialPresence(QString& show, QString& status, QString& type)
 {
 	pTask = new PresenceTask(task);
 
-	QString type = "";
+	//QString type = "";
 	connect(pTask, SIGNAL(finished()), this, SLOT(setPresenceFinished()));
+	pTask->setPresence(xmpp, show, status, type);
+}
+
+void Client::setPresence(const QString& show, const QString& status)
+{
+	pTask = new PresenceTask(task);
+	connect(pTask, SIGNAL(finished()), this, SLOT(setPresenceFinished()));
+	QString type = "";
 	pTask->setPresence(xmpp, show, status, type);
 }
 

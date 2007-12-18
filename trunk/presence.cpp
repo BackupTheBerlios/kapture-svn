@@ -16,16 +16,37 @@
 #include "jid.h"
 #include "presence.h"
 
-Presence::Presence(const Jid& from, const QString& type, const QString& status, const QString& show)
+//Presence::Presence(const Jid& from, const QString& type, const QString& status, const QString& show)
+Presence::Presence(const QString& type, const QString& status, const QString& show)
 {
-	j = from;
+	//j = from;
 	t = type;
 	stat = status;
 	s = show;
-	printf("j = %s, t = %s, stat = %s, s = %s\n",j.full().toLatin1().constData(), t.toLatin1().constData(), stat.toLatin1().constData(), s.toLatin1().constData());
+	//printf("j = %s, t = %s, stat = %s, s = %s\n",j.full().toLatin1().constData(), t.toLatin1().constData(), stat.toLatin1().constData(), s.toLatin1().constData());
 }
 
 Presence::~Presence()
 {
 
+}
+
+void Presence::setType(const QString& type)
+{
+	t = type;
+}
+
+void Presence::setShow(const QString& show)
+{
+	s = show;
+}
+
+void Presence::setStatus(const QString& status)
+{
+	stat = status;
+}
+
+void Presence::setFrom(const Jid& from)
+{
+	j = from;
 }

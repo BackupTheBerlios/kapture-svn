@@ -11,9 +11,7 @@ XmppWin::XmppWin()
 	ui.setupUi(this);
 	ui.statusBox->setCurrentIndex(Offline);
 	connect(ui.statusBox, SIGNAL(currentIndexChanged(int)), this, SLOT(statusChanged()));
-	connect(ui.password, SIGNAL(returnPressed()), this, SLOT(jabberConnect()));
 	connect(ui.configBtn, SIGNAL(clicked()), this, SLOT(showConfigDial()));
-	ui.jid->setText("Jid");
 	ui.tableView->verticalHeader()->hide();
 	ui.tableView->horizontalHeader()->hide();
 	ui.tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -35,6 +33,7 @@ XmppWin::XmppWin()
 	secs = 0;
 	emoticons = new Emoticons();
 	connectionStatus = Offline;
+	firstShow = "";
 }
 
 XmppWin::~XmppWin()
@@ -42,18 +41,82 @@ XmppWin::~XmppWin()
 
 }
 
-/*!
- * Connects and authenticates the User to the server.
- */
-
 void XmppWin::statusChanged()
 {
 	switch (ui.statusBox->currentIndex())
 	{
 	case Online :
-		if (connectionStatus != Online)
+		if (connectionStatus == Offline)
 		{
 			jabberConnect();
+		}
+		else
+		{
+			if (connectionStatus != Xa)
+			{
+				connectionStatus = Online;
+				setPresence();
+			}
+		}
+		break;
+	case Away :
+		if (connectionStatus == Offline)
+		{
+			jabberConnect();
+			firstShow = "away";
+		}
+		else
+		{
+			if (connectionStatus != Away)
+			{
+				connectionStatus = Away;
+				setPresence();
+			}
+		}
+		break;
+	case Dnd :
+		if (connectionStatus == Offline)
+		{
+			jabberConnect();
+			firstShow = "dnd";
+		}
+		else
+		{
+			if (connectionStatus != Dnd)
+			{
+				connectionStatus = Dnd;
+				setPresence();
+			}
+		}
+		break;
+	case Chat :
+		if (connectionStatus == Offline)
+		{
+			jabberConnect();
+			firstShow = "chat";
+		}
+		else
+		{
+			if (connectionStatus != Chat)
+			{
+				connectionStatus = Chat;
+				setPresence();
+			}
+		}
+		break;
+	case Xa :
+		if (connectionStatus == Offline)
+		{
+			jabberConnect();
+			firstShow = "xa";
+		}
+		else
+		{
+			if (connectionStatus != Xa)
+			{
+				connectionStatus = Xa;
+				setPresence();
+			}
 		}
 		break;
 	case Offline :
@@ -65,9 +128,40 @@ void XmppWin::statusChanged()
 	}
 }
 
+void XmppWin::setPresence()
+{
+	QString show;
+	QString status = "";
+	switch(connectionStatus)
+	{
+	case Away:
+		show = "away";
+		break;
+	case Chat:
+		show = "chat";
+		break;
+	case Dnd:
+		show = "dnd";
+		break;
+	case Xa:
+		show = "xa";
+		break;
+	case Online:
+		show = "";
+		break;
+	default:
+		show = "";
+	}
+	client->setPresence(show, status);
+}
+
+/*!
+ * Connects and authenticates the User to the server.
+ */
+
 void XmppWin::jabberConnect()
 {
-	jid = new Jid(ui.jid->text());
+	jid = new Jid(pJid);
 	
 	if (!jid->isValid())
 	{
@@ -77,7 +171,7 @@ void XmppWin::jabberConnect()
 		return;
 	}
 	
-	client = new Client(*jid, ui.serverEdit->text(), ui.portEdit->text());
+	client = new Client(*jid, serverEdit, portEdit);
 	connect(client, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SLOT(prcentChanged(Jid&, QString&, int)));
 	waitingTimer = new QTimer();
 	waitingTimer->start(1000);
@@ -85,7 +179,7 @@ void XmppWin::jabberConnect()
 	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	connect(client, SIGNAL(connected()), this, SLOT(clientAuthenticated()));
 	client->setResource(jid->resource());
-	client->setPassword(ui.password->text());
+	client->setPassword(password);
 	client->authenticate();
 }
 
@@ -104,11 +198,10 @@ void XmppWin::jabberDisconnect()
 {
 	delete client;
 	delete jid;
-	QString status = "";
-	QString type = "";
+	Presence pr(QString(""), QString(""), QString(""));
 	for (int i = 0; i < contactList.count(); i++)
 	{
-		contactList[i]->setPresence(status, type);
+		contactList[i]->setPresence(pr);
 	}
 	m->setData(contactList);
 	for (int i = 0; i < contactList.count(); i++)
@@ -162,15 +255,69 @@ void XmppWin::setRoster(Roster roster)
 	sortContactList();
 	m->setData(contactList);
 	ui.tableView->setModel(m);
-	connect(ui.tableView, SIGNAL(doubleClicked(QString&)), this, SLOT(startChat(QString&)));
-	QString a = "";
-	QString b = "";
-	client->setInitialPresence(a, b); 
+	connect(ui.tableView, SIGNAL(doubleClicked(const QString&)), this, SLOT(startChat(const QString&)));
+	connect(ui.tableView, SIGNAL(leftClick(const QString&, const QPoint&)), this, SLOT(showMenu(const QString&, const QPoint&)));
+	if (ui.statusBox->currentIndex() != Invisible)
+	{
+		QString a = firstShow;
+		QString b = "";
+		QString c = "";
+		client->setInitialPresence(a, b, c);
+	}
+	else
+	{
+		QString a = "";
+		QString b = "";
+		QString c = "unavailable";
+		client->setInitialPresence(a, b, c);
+		//FIXME:Maybe we should ask for each contact's presence.
+	}
 	ui.tableView->setColumnWidth(0, 22);
 	ui.tableView->resizeColumnsToContents();
 	waitingTimer->stop();
 	delete waitingTimer;
 	setWindowTitle("Kapture -- " + jid->full());
+}
+
+Contact* XmppWin::contactWithJid(const Jid& cJid)
+{
+	for (int i = 0; i < contactList.count(); i++)
+	{
+		if (contactList[i]->jid->equals(cJid))
+			return contactList[i];
+	}
+	return new Contact("");
+}
+
+void XmppWin::showMenu(const QString& to, const QPoint& point)
+{
+	menuTo = to;
+	printf("[XMPPWIN] Show Menu.\n");
+	QMenu *menu = new QMenu(0);
+	menu->setTitle(to);
+	QAction *vCardAction = menu->addAction("View vCard");
+	connect(vCardAction, SIGNAL(triggered()), this, SLOT(showvCard()));
+	menu->addSeparator();
+	QAction *sChatAction = menu->addAction(QString("Start chat with ") + to);
+	if (contactWithJid(Jid(to))->isAvailable())
+		connect(sChatAction, SIGNAL(triggered()), this, SLOT(startChatFromMenu()));
+	else
+	{
+		sChatAction->setEnabled(false);
+	}
+	menu->popup(point);
+	menu->show();
+	//FIXME:The menu should be destroid when it is clicked.
+}
+
+void XmppWin::startChatFromMenu()
+{
+	startChat(menuTo);
+}
+
+void XmppWin::showvCard()
+{
+	printf("[XMPPWIN] Show vCard of %s\n", menuTo.toLatin1().constData());
 }
 
 void XmppWin::sendVideo(QString& to)
@@ -203,9 +350,9 @@ void XmppWin::processPresence(const Presence& presence)
 		if (contactList[i]->jid->equals(presence.from()))
 		{
 			contactList[i]->jid->setResource(presence.from().resource());
-			QString status = presence.status();
-			QString type = presence.type();
-			contactList[i]->setPresence(status, type);
+			//QString status = presence.status();
+			//QString type = presence.type();
+			contactList[i]->setPresence(presence);
 			sortContactList();
 			m->setData(contactList);
 			for (int j = 0; j < contactList.count(); j++)
@@ -238,7 +385,7 @@ void XmppWin::sendMessage(QString &to, QString &message)
 		QMessageBox::critical(this, tr("Jabber"), tr("You are not logged in right now !!!"), QMessageBox::Ok);
 }
 
-void XmppWin::startChat(QString &sTo)
+void XmppWin::startChat(const QString &sTo)
 {
 	// Start Chat with "to" if it isn't done yet.
 	Jid *to = new Jid(sTo);
@@ -282,10 +429,10 @@ void XmppWin::showConfigDial()
 
 void XmppWin::changeProfile(int p)
 {
-	ui.jid->setText(profilesa[p].jid());
-	ui.password->setText(profilesa[p].password());
-	ui.serverEdit->setText(profilesa[p].personnalServer());
-	ui.portEdit->setText(profilesa[p].port());
+	pJid = profilesa[p].jid();
+	password = profilesa[p].password();
+	serverEdit = profilesa[p].personnalServer();
+	portEdit = profilesa[p].port();
 }
 
 void XmppWin::updateProfileList()
@@ -308,10 +455,7 @@ void XmppWin::updateProfileList()
 	
 	if (profilesa.count() > 0)
 	{
-		ui.jid->setText(profilesa[0].jid());
-		ui.password->setText(profilesa[0].password());
-		ui.serverEdit->setText(profilesa[0].personnalServer());
-		ui.portEdit->setText(profilesa[0].port());
+		changeProfile(0);
 	}
 }
 
