@@ -15,6 +15,7 @@
 #include "emoticons.h"
 #include <QAbstractScrollArea>
 #include <QScrollBar>
+#include <QCloseEvent>
 
 ChatWin::ChatWin()
 {
@@ -51,7 +52,18 @@ void ChatWin::composing(QString text)
 	 */
 }
 
-void ChatWin::focusInEvent(QFocusEvent* event)
+void ChatWin::changeEvent(QEvent* event)
 {
-	printf("[ChatWin] focusInEvent");
+	// FIXME : Does not work properly
+	if (event->type() == QEvent::WindowStateChange || windowState() == Qt::WindowActive)
+	{
+		printf("[ChatWin] changeEvent\n");
+		emit shown();
+	}
+}
+
+void ChatWin::closeEvent(QCloseEvent* event)
+{
+	event->ignore();
+	hide();
 }

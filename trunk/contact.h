@@ -47,11 +47,14 @@ private:
 	Emoticons *e;
 	QString showToPretty(const QString&);
 	Presence *presence;
+	int newMessages;
 
 public slots:
 	void messageToSend(QString message);
 	void sendFile();
 	void slotSendVideo();
+	void updateChatWinTitle();
+
 signals:
 	void sendMessage(QString&, QString&);
 	void sendFileSignal(QString&);

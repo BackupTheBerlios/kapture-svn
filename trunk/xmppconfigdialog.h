@@ -22,6 +22,9 @@ public slots:
 	void del();
 	void configWebcam();
 	void saveConfig();
+	void read();
+	void registerError();
+
 signals:
 	void accepted();
 private:

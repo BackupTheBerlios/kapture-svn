@@ -30,13 +30,16 @@ signals:
 
 public slots:
 	void slotRegister();
+	
 private:
 	bool regOk;
 	QTcpSocket *tcpSocket;
 	Profile p;
 	Xmpp *x;
 	QString id;
-	enum States {Start = 0, Response} state;
+	enum States {Start = 0, WaitResult} state;
+	bool needPassword, needUsername, needEmail;
+	void sendRegistration();
 };
 
 #endif //XMPPREG_H

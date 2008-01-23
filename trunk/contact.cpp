@@ -23,6 +23,7 @@ Contact::Contact(const QString& j)
 	vcard = new VCard();
 	done = false;
 	presence = new Presence(QString(""), QString(""), QString(""));
+	newMessages = 0;
 }
 
 Contact::Contact(const QString &j, const QString &n)
@@ -33,6 +34,7 @@ Contact::Contact(const QString &j, const QString &n)
 	vcard->setNickname(n);
 	done = false;
 	presence = new Presence(QString(""), QString(""), QString(""));
+	newMessages = 0;
 }
 
 Contact::Contact(const char *j)
@@ -42,12 +44,14 @@ Contact::Contact(const char *j)
 	vcard = new VCard();
 	done = false;
 	presence = new Presence(QString(""), QString(""), QString(""));
+	newMessages = 0;
 }
 
 Contact::Contact()
 {
 	done = false;
 	presence = new Presence(QString(""), QString(""), QString(""));
+	newMessages = 0;
 }
 
 Contact::~Contact()
@@ -70,6 +74,7 @@ void Contact::newMessage(const QString &m /*Message*/)
 		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
 		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
 		connect(chatWin, SIGNAL(sendVideo()), this, SLOT(slotSendVideo()));
+		connect(chatWin, SIGNAL(shown()), this, SLOT(updateChatWinTitle()));
 	}
 
 	chatWin->ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
@@ -79,13 +84,11 @@ void Contact::newMessage(const QString &m /*Message*/)
 				e->changeEmoticons(m)));
 	chatWin->ui.discutionText->verticalScrollBar()->setValue(chatWin->ui.discutionText->verticalScrollBar()->maximum());
 	
-	//if (!chatWin->isActiveWindow())
-	//{
-		//chatWin->activateWindow();
-		/*
-		 * FIXME: activateWindow() is not userFriendly, the window suddenly steals the focus and the user might not see it.
-		 */
-	//}
+	if (!chatWin->isActiveWindow() && newMessages == 0)
+	{
+		chatWin->setWindowTitle(QString("^ ") + chatWin->windowTitle());
+		newMessages++;
+	}
 	chatWin->show();
 	
 	isChatting = true;
@@ -106,9 +109,16 @@ void Contact::startChat()
 		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
 		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
 		connect(chatWin, SIGNAL(sendVideo()), this, SLOT(slotSendVideo()));
+		connect(chatWin, SIGNAL(shown()), this, SLOT(updateChatWinTitle()));
 		isChatting = true;
 	}
 	chatWin->show();
+}
+
+void Contact::updateChatWinTitle()
+{
+	newMessages = 0;
+	chatWin->setWindowTitle(jid->full());
 }
 
 void Contact::messageToSend(QString message)

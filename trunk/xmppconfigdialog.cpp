@@ -94,7 +94,9 @@ void XmppConfigDialog::add()
 		xmpp = new Xmpp();
 		task = new Task();
 		xmppReg = new XmppReg(task, xmpp);
+		connect(xmpp, SIGNAL(readyRead()), SLOT(read()));
 		connect(xmppReg, SIGNAL(finished()), SLOT(regFinished()));
+		connect(xmppReg, SIGNAL(error()), SLOT(registerError()));
 		xmppReg->registerAccount(p);
 	}
 	else
@@ -104,13 +106,28 @@ void XmppConfigDialog::add()
 	}
 }
 
+void XmppConfigDialog::read()
+{
+	while (xmpp->stanzaAvailable())
+	{
+		printf("Read next Stanza\n");
+		Stanza *s = xmpp->getFirstStanza();
+		printf("Client:: : %s\n", s->from().full().toLatin1().constData());
+		task->processStanza(*s);
+	}
+}
+
 void XmppConfigDialog::regFinished()
 {
-	if (xmppReg->registeredOk())
-		addProfile(xmppReg->profile());
-	else
-		//TODO:Should have a list of possible errors (Account already exists, registering by website, ...)
-		QMessageBox::critical(this, tr("Add Profile"), QString("Error registering to the server."), QMessageBox::Ok);
+	addProfile(xmppReg->profile());
+	QMessageBox::information(this, "Registration", "Successfully registered to the server.");
+}
+
+void XmppConfigDialog::registerError()
+{
+	/*
+	QMessage::critical("Kapture", [...], xmppReg->errorMessage());
+	*/
 }
 
 void XmppConfigDialog::addProfile(const Profile& p)

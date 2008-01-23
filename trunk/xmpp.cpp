@@ -277,6 +277,7 @@ void Xmpp::processEvent(Event *event)
 					state = waitFeatures;
 				else
 				{
+					state = active;
 					emit registerReady();
 				}
 			}
@@ -532,7 +533,6 @@ void Xmpp::processEvent(Event *event)
 
 			}
 			break;
-		case Registering:
 		case active:
 			Stanza *s = new Stanza(event->node());
 			QDomDocument doc = event->node().toDocument();
