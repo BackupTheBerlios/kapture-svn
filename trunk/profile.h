@@ -2,6 +2,7 @@
 #define PROFILE_H
 
 #include <QString>
+#include "jid.h"
 
 class Profile
 {
@@ -11,6 +12,7 @@ public:
 	~Profile();
 	void setData(QString &jid, QString &password, QString &server, QString &port);
 	QString jid() const;
+	Jid jid1() const; //FIXME
 	QString password() const;
 	QString personnalServer() const;
 	QString port() const;

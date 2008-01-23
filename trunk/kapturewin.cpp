@@ -35,6 +35,8 @@
  * 	- Add support for more controls (Pan-tilts,...)
  */
 
+/*FIXME:This Class MUST have another name, it isn't the main Kapture window anymore.*/
+
 int result = 0;
 char formatString[128] = "00000x00000 (MINIMAL)"; // FIXME: use a QString()
 QImage *imageZoomed = new QImage(60,60,QImage::Format_RGB32); 
@@ -144,6 +146,7 @@ KaptureWin::KaptureWin()
 
 	// Xmpp part
 	connect(ui.jabberBtn, 	SIGNAL(clicked()), this, SLOT(showJabberWin()));
+	ui.jabberBtn->setEnabled(false);
 
 }
 
@@ -674,7 +677,7 @@ void KaptureWin::closeEvent(QCloseEvent*)
 	if (camera->isStreaming())
 		startStopVideo();
 	camera->close();
-	((QApplication*) this->parentWidget())->quit();
+	//((QApplication*) this->parentWidget())->quit();
 }
 
 void KaptureWin::showJabberWin()

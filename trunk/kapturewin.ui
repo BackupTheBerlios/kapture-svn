@@ -12,7 +12,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Kapture 0.3</string>
+   <string>Webcam Configuration</string>
   </property>
   <widget class="QWidget" name="centralwidget" >
    <widget class="QLabel" name="zoomPosLabel" >
@@ -2020,8 +2020,8 @@
      <rect>
       <x>40</x>
       <y>0</y>
-      <width>111</width>
-      <height>22</height>
+      <width>68</width>
+      <height>20</height>
      </rect>
     </property>
     <property name="sizeAdjustPolicy" >

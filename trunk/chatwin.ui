@@ -88,6 +88,11 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>messageLine</tabstop>
+  <tabstop>sendFileBtn</tabstop>
+  <tabstop>videoBtn</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

@@ -13,6 +13,7 @@
 
 #include <QtXml>
 #include <QDomDocument>
+#include <QSslError>
 
 #include "xmpp.h"
 
@@ -25,8 +26,11 @@ Xmpp::Xmpp(const Jid &jid, const QString &pServer, const int pPort)
 	timeOut = 5000; // Default timeout set to 5 seconds
 	tcpSocket = new QTcpSocket();
 	sslSocket = new QSslSocket();
+	sslSocket->setProtocol(QSsl::SslV3);
 	connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
 	connect(sslSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
+	//connect(sslSocket, SIGNAL(sslErrors(const QList<QSslError> &errors)), this, SLOT(sslError(const QList<QSslError>& errors)));
+	connect(sslSocket, SIGNAL(encrypted()), this, SLOT(socketEncrypted()));
 
 	username = jid.node();
 	server = jid.domain();
@@ -56,6 +60,36 @@ Xmpp::Xmpp(const Jid &jid, const QString &pServer, const int pPort)
 	printf("[XMPP] JID = %s\n", jid.full().toLatin1().constData());
 }
 
+Xmpp::Xmpp()
+{
+	authenticated = false;
+	isTlsing = false;
+	tlsDone = false;
+	saslDone = false;
+	needBind = false;
+	needSession = false;
+	jidDone = false;
+	useTls = true;
+}
+
+void Xmpp::socketEncrypted()
+{
+	printf("[XMPP] Encryption ok.\n");
+}
+
+void Xmpp::sslError(QList<QSslError>& errors)
+{
+	printf("[XMPP] SSL errors : ");
+	for (int i = 0; i < errors.count(); i++)
+	{
+		printf("[XMPP]    * Some Errors !!!\n");
+		printf("[XMPP]    * %s\n", errors.at(i).errorString().toLatin1().constData());
+	}
+	if (errors.count() == 0)
+	{
+		printf("None.\n");
+	}
+}
 /*
  * Closes the connection to the server.
  */
@@ -82,7 +116,8 @@ Xmpp::~Xmpp()
 	sslSocket->close();
 //	delete tcpSocket;
 //	delete sslSocket;
-	delete tls;
+	if (useTls && tlsDone)
+		delete tls;
 }
 
 /*
@@ -120,7 +155,8 @@ void Xmpp::start()
 	xmlReader->parse(xmlSource, true);
 	
 	QString firstXml = QString("<stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' to='%1' version=\"1.0\">").arg(server);
-	state = waitStream;
+	if (state != PrepareRegistering)
+		state = waitStream;
 	QByteArray data = firstXml.toLatin1();
 	sendData(data);
 }
@@ -138,7 +174,7 @@ int Xmpp::sendData(QByteArray &mess)
 	}
 	else
 	{
-		//printf("[XMPP] Sending : %s\n", mess.constData());
+		printf("[XMPP] Sending : %s\n", mess.constData());
 		port != 5223 ? tcpSocket->write(mess) : sslSocket->write(mess);
 	}
 	return 0;
@@ -183,13 +219,13 @@ bool Xmpp::connectedToServer()
 
 void Xmpp::dataReceived()
 {
+	printf("\n[XMPP] Data avaible !\n");
 	QByteArray data;
 	QString mess;
 	
 	data = port != 5223 ? tcpSocket->readAll() : sslSocket->readAll();
 	if (data == "" || data.isNull())
 		return;
-	printf("\n[XMPP] Data avaible !\n");
 
 	if (state == isHandShaking || tlsDone)
 	{
@@ -232,11 +268,17 @@ void Xmpp::processEvent(Event *event)
 	{
 		case isHandShaking:
 			break;
+		case PrepareRegistering:
 		case waitStream:
 			if (event->type() == Event::Stream)
 			{
 				printf("[XMPP] Ok, received the stream tag.\n");
-				state = waitFeatures;
+				if (state != PrepareRegistering)
+					state = waitFeatures;
+				else
+				{
+					emit registerReady();
+				}
 			}
 			//else
 			//	printf(" ! Didn't receive the stream ! \n");
@@ -490,6 +532,7 @@ void Xmpp::processEvent(Event *event)
 
 			}
 			break;
+		case Registering:
 		case active:
 			Stanza *s = new Stanza(event->node());
 			QDomDocument doc = event->node().toDocument();
@@ -527,29 +570,29 @@ void Xmpp::tlsIsConnected()
 
 void Xmpp::connectionError(QAbstractSocket::SocketError socketError)
 {
+	/*
+	 * If there is this error, xmppwin should destroy this object and construct a new one
+	 * with the correct data.
+	 */
+	printf("[XMPP] Error code : %d\n", (int)socketError);
 	switch (socketError)
 	{
 		case QAbstractSocket::HostNotFoundError:
-			printf("[XMPP]  ! Error = Host not found !\n");
+			printf("[XMPP] ! Error = Host not found !\n");
 			emit error(HostNotFound);
-/*
- * If there is this error, xmppwin should destroy this object and construct a new one
- * with the correct data.
- */
 			break;
 		case QAbstractSocket::NetworkError:
-			printf("[XMPP]  ! Network error ! Will reconnect in 30 seconds.\n");
+			printf("[XMPP] ! Network error ! Will reconnect in 30 seconds.\n");
 			emit error(NetworkIsDown);
 			/*must try to reconnect itself....*/
 			break;
 		default:
-			printf("[XMPP]  ! An Unknown error occured. Sorry.\n");
+			printf("[XMPP] ! An Unknown error occured. Sorry.\n");
 			emit error(UnknownError);
 	}
-	printf("[XMPP] Error code : %d\n", (int)socketError);
-
-
-	/* must reinitialize data....*/
+	
+	//QList<QSslError> azerty = sslSocket->sslErrors();
+	//sslError(azerty);
 }
 
 /*
@@ -581,4 +624,21 @@ bool Xmpp::stanzaAvailable() const
 Jid Xmpp::node() const
 {
 	return j;
+}
+
+void Xmpp::prepareToRegister(const QString& s)
+{
+	server = s;
+	state = PrepareRegistering;
+	tcpSocket = new QTcpSocket();
+	connect(tcpSocket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectionError(QAbstractSocket::SocketError)));
+	/*
+	 * Must be an entity first, send <?xml version="1.0"?>
+	 * receive, <?xml version='1.0'?><stream:stream xmlns:stream='http://etherx.jabber.org/streams' xmlns='jabber:client' from='localhost' id='id'>
+	 * send iq get, id can be different of the previous one.
+	 */
+	connect(tcpSocket, SIGNAL(connected()), this, SLOT(start()));
+	connect(tcpSocket, SIGNAL(readyRead()), this, SLOT(dataReceived()));
+	tcpSocket->connectToHost(server, 5222);
+	printf("[XMPP] Connection to %s\n", server.toLatin1().constData());
 }

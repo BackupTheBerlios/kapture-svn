@@ -41,6 +41,11 @@ QString Profile::jid() const
 	return j;
 }
 
+Jid Profile::jid1() const
+{
+	return Jid(j);
+}
+
 QString Profile::password() const
 {
 	return p;

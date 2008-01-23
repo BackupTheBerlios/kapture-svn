@@ -6,6 +6,8 @@
 #include "config.h"
 #include "profilemodel.h"
 #include "mouseprofilestableview.h"
+#include "xmppreg.h"
+#include "xmpp.h"
 
 class XmppConfigDialog : public QDialog
 {
@@ -16,7 +18,10 @@ public:
 public slots:
 	void selectChange(QString&);
 	void add();
+	void regFinished();
 	void del();
+	void configWebcam();
+	void saveConfig();
 signals:
 	void accepted();
 private:
@@ -25,6 +30,10 @@ private:
 	Config *conf;
 	ProfileModel *model;
 	QString selectedProfile;
+	XmppReg *xmppReg;
+	void addProfile(const Profile&);
+	Task *task;
+	Xmpp *xmpp;
 };
 
 #endif

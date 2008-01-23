@@ -1,6 +1,7 @@
 #ifndef XMPPWIN_H
 #define XMPPWIN_H
 #include <QPoint>
+#include <QSystemTrayIcon>
 
 #include "ui_xmppwin.h"
 #include "client.h"
@@ -34,7 +35,7 @@ public slots:
 	void error(Xmpp::ErrorType);
 	void showConfigDial();
 	void changeProfile(int p);
-	void updateProfileList();
+	void updateConfig();
 	void sendFile(QString&);
 	void contactFeaturesSave(Xmpp::ContactFeatures);
 	void setRoster(Roster);
@@ -45,6 +46,8 @@ public slots:
 	void showMenu(const QString&, const QPoint&);
 	void showvCard();
 	void startChatFromMenu();
+	void quitApp();
+	void systrayActivated(QSystemTrayIcon::ActivationReason);
 
 private:
 	Ui::xmppWin ui;
@@ -69,9 +72,14 @@ private:
 	QString password;
 	QString serverEdit;
 	QString portEdit;
+	QString res;
 	Contact* contactWithJid(const Jid&);
 	QString firstShow;
 	void setPresence();
+	QGraphicsScene *gScene;
+	QSystemTrayIcon *sti;
+	QMenu *sysTrayMenu;
+	bool useSystemTray;
 };
 #endif
 

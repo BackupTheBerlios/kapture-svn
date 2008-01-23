@@ -16,7 +16,9 @@
 Config::Config()
 {
 	int i = 0;
-	bool found = false;
+	xmppwinFound = false;
+	connectionFound = false;
+	otherFound = false;
 	noConfig = false;
 	QByteArray config;
 	//Loads last configuration from ~/.Kapture/conf.xml
@@ -50,49 +52,109 @@ Config::Config()
 	{
 		if (classes.at(i).toElement().tagName() == "xmppwin")
 		{
-			found = true;
-			n = i;
-			break;
+			xmppwinFound = true;
+			xmppwinN = i;
 		}
-	}
-	if (!found)
-	{
-		noConfig = true;
-		return;
-	}
-	
-	QDomNodeList profilesNodeList = classes.at(i).childNodes();
-	for (int j = 0; j < profilesNodeList.count(); j++)
-	{
-		cJid = "";
-		cPassword = "";
-		cPersonnalServer = "";
-		cPort = "5222";
-		cProfile = profilesNodeList.at(j).toElement().attribute("name");
-		QDomNodeList infos = profilesNodeList.at(j).childNodes();
-		for (i = 0; i < infos.count(); i++)
+
+		if (classes.at(i).toElement().tagName() == "connection")
 		{
-			if (infos.at(i).toElement().tagName() == "jid" && infos.at(i).hasChildNodes())
-				cJid = infos.at(i).firstChild().toText().data();
-
-			if (infos.at(i).toElement().tagName() == "password" && infos.at(i).hasChildNodes())
-				cPassword = QByteArray::fromBase64(infos.at(i).firstChild().toText().data().toLatin1());
-
-			if (infos.at(i).toElement().tagName() == "server" && infos.at(i).hasChildNodes())
-				cPersonnalServer = infos.at(i).firstChild().toText().data();
-
-			if (infos.at(i).toElement().tagName() == "port" && infos.at(i).hasChildNodes())
-				cPort = infos.at(i).firstChild().toText().data();
+			connectionFound = true;
+			connectionN = i;
 		}
-		Profile *profile = new Profile(cProfile);
-		profile->setData(cJid, cPassword, cPersonnalServer, cPort);
-		profiles << *profile;
+
+		if (classes.at(i).toElement().tagName() == "other")
+		{
+			otherFound = true;
+			otherN = i;
+		}
 	}
+
+	// Loading xmppwin class data.
+	if (xmppwinFound)
+	{
+		QDomNodeList profilesNodeList = classes.at(xmppwinN).childNodes();
+		for (int j = 0; j < profilesNodeList.count(); j++)
+		{
+			cJid = "";
+			cPassword = "";
+			cPersonnalServer = "";
+			cPort = "5222";
+			cProfile = profilesNodeList.at(j).toElement().attribute("name");
+			QDomNodeList infos = profilesNodeList.at(j).childNodes();
+			for (i = 0; i < infos.count(); i++)
+			{
+				if (infos.at(i).toElement().tagName() == "jid" && infos.at(i).hasChildNodes())
+					cJid = infos.at(i).firstChild().toText().data();
+	
+				if (infos.at(i).toElement().tagName() == "password" && infos.at(i).hasChildNodes())
+					cPassword = QByteArray::fromBase64(infos.at(i).firstChild().toText().data().toLatin1());
+	
+				if (infos.at(i).toElement().tagName() == "server" && infos.at(i).hasChildNodes())
+					cPersonnalServer = infos.at(i).firstChild().toText().data();
+	
+				if (infos.at(i).toElement().tagName() == "port" && infos.at(i).hasChildNodes())
+					cPort = infos.at(i).firstChild().toText().data();
+			}
+			Profile *profile = new Profile(cProfile);
+			profile->setData(cJid, cPassword, cPersonnalServer, cPort);
+			profiles << *profile;
+		}
+	}
+
+	// Loading connection class data
+	if (connectionFound)
+	{
+		QDomNodeList connectionNodeList = classes.at(connectionN).childNodes();
+		for (int i = 0; i < connectionNodeList.count(); i++)
+		{
+			// File Transfer Port
+			if (connectionNodeList.at(i).localName() == "ftport")
+				cFTPort = connectionNodeList.at(i).toElement().attribute("val", "8010");
+			// Proxy
+			if (connectionNodeList.at(i).localName() == "proxy")
+				cProxy = connectionNodeList.at(i).toElement().attribute("val", "");
+			// Resource
+			if (connectionNodeList.at(i).localName() == "resource")
+				cResource = connectionNodeList.at(i).toElement().attribute("val", "Kapture");
+		}
+	}
+	else
+	{
+		// Default Values
+		cFTPort = "8010";
+		cProxy = "";
+		cResource = "Kapture";
+	}
+
+	// Loading Other class data
+	if (otherFound)
+	{
+		QDomNodeList otherNodeList = classes.at(otherN).childNodes();
+		for (int i = 0; i < otherNodeList.count(); i++)
+		{
+			if (otherNodeList.at(i).localName() == "systray")
+				cUseSysTray = otherNodeList.at(i).toElement().attribute("val", "true") == "true" ? true : false;
+		}
+	}
+	else
+	{
+		// Default Values.
+		cUseSysTray = true;
+	}
+	/* TODO:
+	 * 	Should create an initial config if there's none at all.
+	 * 	Maybe using QConfig should be better.
+	 */
 }
 
 Config::~Config()
 {
 
+}
+
+bool Config::useSystemTray() const
+{
+	return cUseSysTray;
 }
 
 QStringList Config::profileNames() const
@@ -198,6 +260,14 @@ void Config::addProfile(const Profile& p)
 	}
 	else
 	{
+		if (!xmppwinFound)
+		{
+			QDomElement classe = d.createElement("xmppwin");
+			//classes << classe; FIXME:there should be a way to do that (QList<QDomNode>)
+			xmppwinN = classes.count() - 1;
+			d.documentElement().appendChild(classe);
+			xmppwinFound = true;
+		}
 		QDomElement prof = d.createElement("profile");
 		prof.setAttribute("name", p.name());
 		
@@ -221,7 +291,7 @@ void Config::addProfile(const Profile& p)
 		prof.appendChild(ePassword);
 		prof.appendChild(eServer);
 		prof.appendChild(ePort);
-		classes.at(n).appendChild(prof);
+		classes.at(xmppwinN).appendChild(prof);
 		
 		QFile *file = new QFile(QDir::homePath() + "/.Kapture/conf.xml");
 		file->open(QIODevice::WriteOnly);
@@ -239,12 +309,12 @@ void Config::addProfile(const Profile& p)
 void Config::delProfile(const QString &profileName)
 {
 	// If user deletes a profile, it means that the configuration is valid.
-	QDomNodeList p = classes.at(n).childNodes();
+	QDomNodeList p = classes.at(xmppwinN).childNodes();
 	for (int i = 0; i < p.count(); i++)
 	{
 		if (p.at(i).toElement().attribute("name") == profileName)
 		{
-			classes.at(n).removeChild(p.at(i));
+			classes.at(xmppwinN).removeChild(p.at(i));
 			break;
 		}
 	}
@@ -258,4 +328,19 @@ void Config::delProfile(const QString &profileName)
 	}
 	file->write(d.toByteArray(1));
 	delete file;
+}
+	
+int Config::ftPort() const
+{
+	return cFTPort.toInt();
+}
+
+QString Config::proxy() const
+{
+	return cProxy;
+}
+
+QString Config::resource() const
+{
+	return cResource;
 }

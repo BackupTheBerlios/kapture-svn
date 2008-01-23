@@ -30,7 +30,7 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR})
 SET(Kapture_OBJECTS client.h xmppwin.h kapturewin.h webcam.h mainframewin.h xmpp.h
 tlshandler.h stanza.h rosterModel.h chatwin.h mouserostertableview.h contact.h
 xmppconfigdialog.h profilemodel.h mouseprofilestableview.h task.h tasks.h
-socks5.h incomingfiledialog.h)
+socks5.h incomingfiledialog.h joystick.h xmppreg.h)
 QT_WRAP_CPP(Kapture MOC_FILES ${Kapture_OBJECTS})
 
 INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${UVC_INCLUDE} ${QT_INCLUDE_DIR} ${QT_QTNETWORK_INCLUDE_DIR} ${QT_QTXML_INCLUDE_DIR})
@@ -47,7 +47,7 @@ chatwin.cpp mouserostertableview.cpp contact.cpp emoticons.cpp jid.cpp
 xmppconfigdialog.cpp config.cpp profile.cpp profilemodel.cpp
 mouseprofilestableview.cpp vcard.cpp task.cpp tasks.cpp roster.cpp
 presence.cpp message.cpp socks5.cpp filetransferwidget.cpp
-incomingfiledialog.cpp)
+incomingfiledialog.cpp joystick.cpp xmppreg.cpp)
 
 ADD_EXECUTABLE(Kapture ${Kapture_SRCS} ${Kapture_UIS_H} ${MOC_FILES})
 target_link_libraries(Kapture ${QT_LIBRARIES})

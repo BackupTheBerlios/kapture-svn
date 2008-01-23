@@ -13,6 +13,7 @@ class Client : public QObject
 	Q_OBJECT
 public:
 	Client(Jid &jid, QString server, QString port);
+	Client();
 	~Client();
 	void authenticate();
 	void setResource(const QString&);
@@ -32,6 +33,12 @@ public:
 			};
 	void sendVideo(const QString&);
 	void setPresence(const QString& show, const QString& status);
+	
+	/*This part if for registration.
+	void registerAccount(const QString& , const QString&);
+	void registerAccount(const Profile&);
+	bool registeredOk() const {return regOk;};
+	Profile profile() const;*/
 
 public slots:
 	void read();
@@ -62,10 +69,9 @@ signals:
 	void error(Xmpp::ErrorType);
 	void prcentChanged(Jid&, QString&, int); 
 	void streamError(streamErrorType);
+	void registrationFinished();
 
 private:
-	Client();
-	
 	IncomingFileDialog *ifd;
 
 	Jid j;

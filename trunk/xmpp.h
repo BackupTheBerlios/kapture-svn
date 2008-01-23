@@ -59,7 +59,8 @@ public:
 	bool stanzaAvailable() const;
 	Jid node() const;
 
-
+	void prepareToRegister(const QString&);
+	
 public slots:
 	void dataReceived();
 	void sendDataFromTls();
@@ -67,6 +68,8 @@ public slots:
 	void tlsIsConnected();
 	void start();
 	void connectionError(QAbstractSocket::SocketError socketError);
+	void sslError(QList<QSslError>&errors);
+	void socketEncrypted();
 signals:
 	void messageReceived();
 	void presenceChanged();
@@ -76,6 +79,7 @@ signals:
 	 * This signal is emitted when a new Stanza is ready to be read.
 	 */
 	void readyRead();
+	void registerReady();
 	
 	
 	/*void presence(QString, QString, QString, QString, QString);
@@ -113,6 +117,8 @@ private:
 		QString jid;
 		QString ask;
 	};
+
+	//FIXME:Constants names should begin with a capital letter.
 	enum State 
 	{
 		waitStream = 0,
@@ -122,7 +128,9 @@ private:
 		waitBind,
 		waitSession,
 		isHandShaking,
-		active
+		active,
+		PrepareRegistering,
+		Registering
 	};
 	QList<Roster> rosterList;
 	bool isConnectedToServer;

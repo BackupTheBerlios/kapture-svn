@@ -18,7 +18,8 @@ signals:
 	void sendMessage(QString message);
 	void sendFile();
 	void sendVideo();
-
+private:
+	void focusInEvent(QFocusEvent* event);
 
 };
 #endif //CHATWIN_H

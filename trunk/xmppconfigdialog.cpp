@@ -1,5 +1,7 @@
-#include "xmppconfigdialog.h"
 #include <QAbstractItemModel>
+
+#include "xmppconfigdialog.h"
+#include "kapturewin.h"
 
 XmppConfigDialog::XmppConfigDialog()
 {
@@ -15,12 +17,30 @@ XmppConfigDialog::XmppConfigDialog()
 	connect(ui.profilesTable, SIGNAL(Clicked(QString&)), this, SLOT(selectChange(QString&)));
 	connect(ui.addBtn, SIGNAL(clicked()), this, SLOT(add()));
 	connect(ui.delBtn, SIGNAL(clicked()), this, SLOT(del()));
-	connect(ui.buttonBox, SIGNAL(accepted()), this, SIGNAL(accepted()));
+	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(saveConfig()));
+	connect(ui.webcamBtn, SIGNAL(clicked()), this, SLOT(configWebcam()));
+
+	ui.ftPortEdit->setValue(conf->ftPort());
+	ui.proxyEdit->setText(conf->proxy());
+	ui.resourceEdit->setText(conf->resource());
+	ui.useSystemTrayCheckBox->setChecked(conf->useSystemTray());
 }
 
 XmppConfigDialog::~XmppConfigDialog()
 {
 
+}
+
+void XmppConfigDialog::saveConfig()
+{
+	/*save config (ftPort, proxy, resource)*/
+	emit accepted();
+}
+
+void XmppConfigDialog::configWebcam()
+{
+	KaptureWin *kw = new KaptureWin();
+	kw->show();
 }
 
 void XmppConfigDialog::selectChange(QString& profileName)
@@ -43,14 +63,7 @@ void XmppConfigDialog::selectChange(QString& profileName)
  */
 void XmppConfigDialog::add()
 {
-	QString pName = ui.profileNameEdit->text();
-	QString pJid = ui.jidEdit->text();
-	QString pPass = ui.passwordEdit->text();
-	QString pServer = ui.personnalServerEdit->text();
-	QString pPort = ui.portEdit->text();
-
-	Profile p(pName);
-	p.setData(pJid, pPass, pServer, pPort);
+	//Checking if we can add this account.
 	if (ui.profileNameEdit->text() == "" || ui.jidEdit->text() == "" || ui.passwordEdit->text() == "")
 	{
 		QMessageBox::critical(this, tr("Profiles"), QString("You *must* supply a profile name, a JID and a password."), QMessageBox::Ok);
@@ -66,13 +79,49 @@ void XmppConfigDialog::add()
 		}
 	}
 
-	conf->addProfile(p);
-	delete conf;
-	conf = new Config();
+	QString pName = ui.profileNameEdit->text();
+	QString pJid = ui.jidEdit->text();
+	QString pPass = ui.passwordEdit->text();
+	QString pServer = ui.personnalServerEdit->text();
+	QString pPort = ui.portEdit->text();
 
-	profiles = conf->profileList();
-	model->setProfileList(profiles);
-	model->insertRow(profiles.count(), QModelIndex());
+	Profile p(pName);
+	p.setData(pJid, pPass, pServer, pPort);
+
+	if (ui.registerBox->isChecked())
+	{
+		// Register new account.
+		xmpp = new Xmpp();
+		task = new Task();
+		xmppReg = new XmppReg(task, xmpp);
+		connect(xmppReg, SIGNAL(finished()), SLOT(regFinished()));
+		xmppReg->registerAccount(p);
+	}
+	else
+	{
+		// FIXME:This should be in another Method (also run after registering)
+		addProfile(p);
+	}
+}
+
+void XmppConfigDialog::regFinished()
+{
+	if (xmppReg->registeredOk())
+		addProfile(xmppReg->profile());
+	else
+		//TODO:Should have a list of possible errors (Account already exists, registering by website, ...)
+		QMessageBox::critical(this, tr("Add Profile"), QString("Error registering to the server."), QMessageBox::Ok);
+}
+
+void XmppConfigDialog::addProfile(const Profile& p)
+{
+		conf->addProfile(p);
+		delete conf;
+		conf = new Config();
+
+		profiles = conf->profileList();
+		model->setProfileList(profiles);
+		model->insertRow(profiles.count(), QModelIndex());
 }
 
 void XmppConfigDialog::del()

@@ -17,6 +17,7 @@ public:
 	void setShow(const QString&);
 	void setStatus(const QString&);
 	void setFrom(const Jid&);
+	bool operator>=(const Presence&);
 private:
 	Jid j; // Jid
 	QString t; // Type

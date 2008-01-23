@@ -16,6 +16,7 @@
 #include "client.h"
 #include "presence.h"
 #include "message.h"
+#include "profile.h"
 
 #define XMLNS_SI "http://jabber.org/protocol/si"
 #define XMLNS_FILETRANSFER "http://jabber.org/protocol/si/profile/file-transfer"
@@ -25,6 +26,11 @@ Client::Client(Jid &jid, QString server, QString port)
 	j = jid;
 	pS = server;
 	p = port.isEmpty() ? 5222 : port.toInt();
+}
+
+Client::Client()
+{
+	
 }
 
 Client::~Client()
@@ -302,3 +308,19 @@ void Client::sendVideo(const QString& to)
 	svTask = new JingleTask(task, xmpp);
 	svTask->initiate(Jid(to));
 }
+
+/*This part if for registration.
+void registerAccount(const QString& username, const QString& password)
+{
+
+}
+
+void registerAccount(const Profile& profile)
+{
+
+}
+
+Profile profile() const
+{
+
+}*/

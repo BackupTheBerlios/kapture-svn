@@ -5,6 +5,7 @@
 #include "xmppwin.h"
 #include "message.h"
 #include "presence.h"
+#include "joystick.h"
 
 XmppWin::XmppWin()
 {
@@ -27,18 +28,67 @@ XmppWin::XmppWin()
 			QMessageBox::Ok);
 		showConfigDial();
 	}
-	updateProfileList();
+	updateConfig();
 	
 	connect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(changeProfile(int)));
 	secs = 0;
 	emoticons = new Emoticons();
 	connectionStatus = Offline;
 	firstShow = "";
+
+	useSystemTray = conf->useSystemTray();
+	res = conf->resource();
+	if (useSystemTray)
+	{
+		/* Concerns QSystemTrayIcon */
+		sti = new QSystemTrayIcon();
+		sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/offline.png")));
+		sti->setToolTip(QString("Kapture"));
+
+		sysTrayMenu = new QMenu(0);
+		sysTrayMenu->setTitle(QString("Kapture -- ") + pJid);
+		for (int i = 0; i < conf->profileList().count(); i++)
+		{
+			QAction *contactActionMenu = sysTrayMenu->addAction(conf->profileList().at(i).name());
+			connect(contactActionMenu, SIGNAL(triggered()), this, SLOT(jabberConnect()));
+		}
+		sysTrayMenu->addSeparator();
+		QAction *sQuitAction = sysTrayMenu->addAction(QString("Quit"));
+		connect(sQuitAction, SIGNAL(triggered()), this, SLOT(quitApp()));
+		sysTrayMenu->setTitle("Kapture");
+		sti->setContextMenu(sysTrayMenu);
+		connect(sti, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), SLOT(systrayActivated(QSystemTrayIcon::ActivationReason)));
+		sti->show();
+	}
+	
+	waitingTimer = new QTimer();
+
+	// Concerns Joystick.
+	//Joystick *js0 = new Joystick("/dev/js0");
 }
 
 XmppWin::~XmppWin()
 {
 
+}
+
+void XmppWin::systrayActivated(QSystemTrayIcon::ActivationReason reason)
+{
+	if (reason == QSystemTrayIcon::Trigger)
+	{
+		if (!isVisible())
+			show();
+		else
+			hide();
+	}
+}
+
+void XmppWin::quitApp()
+{
+	printf("\n * Exiting...\n");
+	if (connectionStatus != Offline)
+		jabberDisconnect();
+	((QApplication*) this->parentWidget())->quit();
 }
 
 void XmppWin::statusChanged()
@@ -53,7 +103,7 @@ void XmppWin::statusChanged()
 		else
 		{
 			if (connectionStatus != Xa)
-			{
+		{
 				connectionStatus = Online;
 				setPresence();
 			}
@@ -136,21 +186,27 @@ void XmppWin::setPresence()
 	{
 	case Away:
 		show = "away";
+		sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/away.png")));
 		break;
 	case Chat:
 		show = "chat";
+		sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/chat.png")));
 		break;
 	case Dnd:
 		show = "dnd";
+		sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/dnd.png")));
 		break;
 	case Xa:
 		show = "xa";
+		sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/xa.png")));
 		break;
 	case Online:
 		show = "";
+		sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/online.png")));
 		break;
 	default:
 		show = "";
+		sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/online.png")));
 	}
 	client->setPresence(show, status);
 }
@@ -161,7 +217,7 @@ void XmppWin::setPresence()
 
 void XmppWin::jabberConnect()
 {
-	jid = new Jid(pJid);
+	jid = new Jid(pJid + QString("/") + res);
 	
 	if (!jid->isValid())
 	{
@@ -173,9 +229,8 @@ void XmppWin::jabberConnect()
 	
 	client = new Client(*jid, serverEdit, portEdit);
 	connect(client, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SLOT(prcentChanged(Jid&, QString&, int)));
-	waitingTimer = new QTimer();
-	waitingTimer->start(1000);
 	connect(waitingTimer, SIGNAL(timeout()), this, SLOT(connectingLogo()));
+	waitingTimer->start(1000);
 	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	connect(client, SIGNAL(connected()), this, SLOT(clientAuthenticated()));
 	client->setResource(jid->resource());
@@ -212,6 +267,7 @@ void XmppWin::jabberDisconnect()
 	ui.tlsIconLabel->setEnabled(false);
 	setWindowTitle("Kapture [Offline]");
 	connectionStatus = Offline;
+	sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/offline.png")));
 }
 
 void XmppWin::clientAuthenticated()
@@ -236,7 +292,12 @@ void XmppWin::clientAuthenticated()
 	connect(client, SIGNAL(presenceReady(const Presence&)), this, SLOT(processPresence(const Presence&)));
 	connect(client, SIGNAL(messageReady(const Message&)), this, SLOT(processMessage(const Message&)));
 	connectionStatus = Online;
+	sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/online.png")));
+	sti->showMessage("Kapture - Connected", QString("You are now connected with %1.").arg(pJid));
 }
+
+#include <math.h>
+#define PI (3.141592653589793)
 
 void XmppWin::setRoster(Roster roster)
 {
@@ -245,13 +306,24 @@ void XmppWin::setRoster(Roster roster)
 	contactList.clear();
 	contactList = r.contactList();
 	// Connecting contacts.
+	gScene = new QGraphicsScene(ui.graphicsView);
 	for (int i = 0; i < contactList.count(); i++)
 	{
 		contactList[i]->setEmoticons(emoticons);
 		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
 		connect(contactList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
 		connect(contactList[i], SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
+		
+		
+		QGraphicsTextItem *text = gScene->addText(contactList[i]->jid->full());
+		text->setPos(30*sin(i*PI/4), i*15);
+		
+		QPolygonF polygonF;
+		polygonF << QPointF(-5, -5) << QPointF(5, -5) << QPointF(0, +5);
+		gScene->addPolygon(polygonF)->setPos(150, (i*15)+7.5);
 	}
+	ui.graphicsView->setScene(gScene);
+
 	sortContactList();
 	m->setData(contactList);
 	ui.tableView->setModel(m);
@@ -275,7 +347,7 @@ void XmppWin::setRoster(Roster roster)
 	ui.tableView->setColumnWidth(0, 22);
 	ui.tableView->resizeColumnsToContents();
 	waitingTimer->stop();
-	delete waitingTimer;
+	//delete waitingTimer;
 	setWindowTitle("Kapture -- " + jid->full());
 }
 
@@ -327,10 +399,21 @@ void XmppWin::sendVideo(QString& to)
 
 bool sortFct(Contact *c1, Contact *c2)
 {
-	if (c1->isAvailable() == c2->isAvailable())
+	/*if (c1->show() == c2->show())
 	{
-		return c1 <= c2;
+		return c1->jid->bare() > c2->jid->bare();
 	}
+
+	if (c1->isAvailable() && c2->isAvailable())
+	{
+		return !(c1->show() != "" && c2->show() == "");
+	}
+
+	if (!c1->isAvailable() || !c2->isAvailable())
+	{
+		return c1->jid->bare() > c2->jid->bare();
+	}*/
+
 	return c1->isAvailable() || !c2->isAvailable();
 }
 
@@ -364,6 +447,8 @@ void XmppWin::processPresence(const Presence& presence)
 			break;
 		}
 	}
+	sti->showMessage("Kapture", 
+		QString("%1 is now %2").arg(presence.from().full()).arg(presence.type() == "unavailable" ? "Offline" : "Online"));
 }
 
 void XmppWin::processMessage(const Message& m)
@@ -403,7 +488,8 @@ void XmppWin::error(Xmpp::ErrorType e)
 {
 	// Still a lot of errors to manage...
 	// Errors from the authentification process.
-	waitingTimer->stop();
+	if (waitingTimer->isActive())
+		waitingTimer->stop();
 	switch (e)
 	{
 	case Xmpp::HostNotFound:
@@ -413,18 +499,13 @@ void XmppWin::error(Xmpp::ErrorType e)
 		QMessageBox::critical(this, tr("Jabber"), tr("An unknown error occured while connecting."), QMessageBox::Ok);
 	}
 	ui.statusBox->setCurrentIndex(Offline);
-	delete client;
-	delete jid;
-	delete waitingTimer;
-	setWindowTitle("Kapture [Offline]");
-
 }
 
 void XmppWin::showConfigDial()
 {
 	XmppConfigDialog *dial = new XmppConfigDialog();
 	dial->show();
-	connect(dial, SIGNAL(accepted()), this, SLOT(updateProfileList()));
+	connect(dial, SIGNAL(accepted()), this, SLOT(updateConfig()));
 }
 
 void XmppWin::changeProfile(int p)
@@ -435,8 +516,9 @@ void XmppWin::changeProfile(int p)
 	portEdit = profilesa[p].port();
 }
 
-void XmppWin::updateProfileList()
+void XmppWin::updateConfig()
 {
+	// Update Profiles
 	// Loads predifined Profiles.
 	delete conf;
 	disconnect(ui.profilesComboBox, SIGNAL(currentIndexChanged(int)), 0, 0);
@@ -484,10 +566,18 @@ void XmppWin::prcentChanged(Jid& jid, QString& fileName, int prc)
 	}
 }
 
-void XmppWin::closeEvent(QCloseEvent*)
+void XmppWin::closeEvent(QCloseEvent* event)
 {
-	printf("\n * Exiting...\n");
-	if (connectionStatus != Offline)
-		jabberDisconnect();
-	((QApplication*) this->parentWidget())->quit();
+	if (!useSystemTray)
+	{
+		printf("\n * Exiting...\n");
+		if (connectionStatus != Offline)
+			jabberDisconnect();
+		((QApplication*) this->parentWidget())->quit();
+	}
+	else
+	{
+		event->ignore();
+		hide();
+	}
 }

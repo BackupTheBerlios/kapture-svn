@@ -50,3 +50,19 @@ void Presence::setFrom(const Jid& from)
 {
 	j = from;
 }
+
+bool Presence::operator>=(const Presence& other)
+{
+	if ((t == "available") && (other.type() == "unavailable"))
+		return true;
+	if ((t == "available") && (other.type() == "available"))
+	{
+		if ((s == "") && (other.show() != ""))
+		{
+			return true;
+		}
+		/*There should be a preffered order but not now*/
+	}
+	
+	return false;
+}

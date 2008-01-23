@@ -110,11 +110,11 @@ PresenceTask::~PresenceTask()
 
 void PresenceTask::setPresence(Xmpp* p, const QString& show, const QString& status, const QString& type)
 {
-	Stanza stanza(Stanza::Presence, type, QString(), QString());
+	Stanza stanza(Stanza::Presence, type, randomString(8), QString());
 	QDomNode node = stanza.node().firstChild();
 	QDomDocument doc = node.ownerDocument();
 
-	QDomElement e = doc.createElement("presence");
+	//QDomElement e = doc.createElement("presence");
 	
 	if (show != "")
 	{
@@ -661,6 +661,7 @@ void StreamTask::initStream(const QFile& f)
 	QDomElement value1 = doc.createElement("value");
 
 	QDomText bytestream = doc.createTextNode("http://jabber.org/protocol/bytestreams"); //Fully supported
+	//FIXME:Use Defines
 
 	node.appendChild(si);
 	si.appendChild(file);
@@ -821,6 +822,7 @@ void FileTransferTask::start(const QString& profile, const QString& SID, const Q
 	proxies = prox;
 	ips = ip;
 	ports = p;
+	//FIXME:Use Defines
 	if (profile == "http://jabber.org/protocol/bytestreams")
 		startByteStream(SID);
 	
@@ -838,6 +840,7 @@ void FileTransferTask::startByteStream(const QString &SID)
 	stanza.setFrom(p->node());
 	QDomDocument doc("");
 	QDomElement query = doc.createElement("query");
+	//FIXME:Use Defines
 	query.setAttribute("xmlns", "http://jabber.org/protocol/bytestreams");
 	query.setAttribute("sid", SID);
 	query.setAttribute("mode", "tcp");
@@ -848,6 +851,8 @@ void FileTransferTask::startByteStream(const QString &SID)
 	 * 	Should also add the external IP.
 	 * 	For example, download it from
 	 * 		http://www.swlink.net/~styma/REMOTE_ADDR.shtml
+	 * 		or
+	 * 		http://www.whatismyip.com/automation/n09230945.asp
 	 * 	or use a webservice.
 	 * 	This is not prioritary.
 	 */

@@ -73,16 +73,19 @@ void Contact::newMessage(const QString &m /*Message*/)
 	}
 
 	chatWin->ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
-	chatWin->ui.discutionText->insertHtml(
+	chatWin->ui.discutionText->insertHtml(/*e->changeEmoticons(m).arg(vcard->nickname() == "" ? jid->full() : vcard->nickname()));*/
 		QString("<font color='red'>%1 says :</font><br>%2<br>").arg(
 			vcard->nickname() == "" ? jid->full() : vcard->nickname()).arg(
 				e->changeEmoticons(m)));
 	chatWin->ui.discutionText->verticalScrollBar()->setValue(chatWin->ui.discutionText->verticalScrollBar()->maximum());
 	
-	if (!chatWin->isActiveWindow())
-	{
-		chatWin->activateWindow();
-	}
+	//if (!chatWin->isActiveWindow())
+	//{
+		//chatWin->activateWindow();
+		/*
+		 * FIXME: activateWindow() is not userFriendly, the window suddenly steals the focus and the user might not see it.
+		 */
+	//}
 	chatWin->show();
 	
 	isChatting = true;
@@ -113,6 +116,7 @@ void Contact::messageToSend(QString message)
 	printf("Emit sendMessage from Contact class. to = %s\n", jid->full().toLatin1().constData());
 
 	chatWin->ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
+	//chatWin->ui.discutionText->insertHtml(e->changeEmoticons(chatWin->ui.messageLine->text()).arg("You"));
 	chatWin->ui.discutionText->insertHtml(QString("<font color='blue'>You said : </font><br>%1<br>").arg(e->changeEmoticons(chatWin->ui.messageLine->text())));
 	chatWin->ui.discutionText->verticalScrollBar()->setValue(chatWin->ui.discutionText->verticalScrollBar()->maximum());
 	chatWin->ui.messageLine->clear();

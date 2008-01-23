@@ -51,3 +51,7 @@ void ChatWin::composing(QString text)
 	 */
 }
 
+void ChatWin::focusInEvent(QFocusEvent* event)
+{
+	printf("[ChatWin] focusInEvent");
+}

@@ -16,16 +16,16 @@ class Contact : public QObject
 {
 	Q_OBJECT
 public:
-	Contact(const QString &j);
-	Contact(const QString &j, const QString &n);
-	Contact(const char *j);
+	Contact(const QString&);
+	Contact(const QString&, const QString&);
+	Contact(const char*);
 	~Contact();
 	
-	void newMessage(const QString &m /*Message*/); //not a slot ???
+	void newMessage(const QString& /*Message*/); //not a slot ???
 
 	void setPresence(const Presence&);
-	void setResource(QString &resource);
-	void setFeatures(QStringList &features);
+	void setResource(QString&);
+	void setFeatures(QStringList&);
 	
 	void startChat();
 	bool isAvailable(); // available or unavailable.

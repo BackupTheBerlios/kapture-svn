@@ -11,6 +11,8 @@
  *
  */
 
+#include <QStringList>
+
 #include "emoticons.h"
 
 Emoticons::Emoticons()
@@ -28,7 +30,9 @@ QString Emoticons::changeEmoticons(const QString& m/*, QString jid*/)
 		temp.replace(emoticons[i].binette, "<img src=\"" + QString(DATADIR) + QString("/emoticons/") + emoticons[i].link + "\">");
 	}
 	//if (m.startsWith("/me "))
-	//	m = "<font color='green'> *** " + m.split("/me") + "</font>";
+	//	temp = QString("<font color='green'><i> *** ") + temp.split("/me").at(0) + QString("</i></font>");
+	//else
+	//	temp = QString("<font color='red'>%1 says :</font><br>") + temp + QString("<br>");
 	// FIXME:*message* works a half
 	if (temp.at(0) == '*' && temp.endsWith('*') && !temp.contains(" "))
 		temp = "<b>" + temp + "</b>";

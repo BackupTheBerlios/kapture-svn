@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>320</width>
-    <height>450</height>
+    <width>366</width>
+    <height>451</height>
    </rect>
   </property>
   <property name="sizePolicy" >
@@ -164,6 +164,35 @@
        <attribute name="title" >
         <string>Graphic View</string>
        </attribute>
+       <layout class="QVBoxLayout" >
+        <item>
+         <widget class="QLabel" name="label" >
+          <property name="text" >
+           <string>Graphic View is not to be used for now.</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_2" >
+          <property name="text" >
+           <string>If you do so, please use it carefully and with a testing account only.</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGraphicsView" name="graphicsView" >
+          <property name="windowModality" >
+           <enum>Qt::NonModal</enum>
+          </property>
+          <property name="frameShape" >
+           <enum>QFrame::NoFrame</enum>
+          </property>
+          <property name="frameShadow" >
+           <enum>QFrame::Plain</enum>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>

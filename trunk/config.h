@@ -21,13 +21,25 @@ public:
 	bool noConfig;
 	void addProfile(const Profile &profile);
 	void delProfile(const QString &profileName);
+	bool useSystemTray() const;
+	
+	int ftPort() const;
+	QString proxy() const;
+	QString resource() const;
 
 private:
-	QString cJid, cPassword, cPersonnalServer, cPort, cProfile;
+	QString cJid, cPassword, cPersonnalServer, cPort, cProfile,
+		cFTPort, cProxy, cResource;
+	bool cUseSysTray;
 	QList<Profile> profiles;
 	QDomDocument d;
 	QDomNodeList classes;
-	int n; // another name... (xmppwin class' position in XML tree -- this class system will be removed)
+	int xmppwinN;
+	int connectionN;
+	int otherN;
+	bool xmppwinFound;
+	bool connectionFound;
+	bool otherFound;
 };
 
 
