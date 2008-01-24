@@ -314,7 +314,6 @@ void XmppWin::setRoster(Roster roster)
 		connect(contactList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
 		connect(contactList[i], SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
 		
-		
 		QGraphicsTextItem *text = gScene->addText(contactList[i]->jid->full());
 		text->setPos(30*sin(i*PI/4), i*15);
 		
@@ -432,11 +431,23 @@ void XmppWin::processPresence(const Presence& presence)
 	{
 		if (contactList[i]->jid->equals(presence.from()))
 		{
+			// Check if the presence has changed.
+			if (contactList[i]->presence()->type() != presence.type())
+			{
+				sti->showMessage("Kapture", 
+					QString("%1 is now %2").arg(presence.from().full()).arg(presence.type() == "unavailable" ? "Offline" : "Online"));
+			}
+
+			// Set eventual new resource for this contact.
 			contactList[i]->jid->setResource(presence.from().resource());
-			//QString status = presence.status();
-			//QString type = presence.type();
+
+			// Set contact's presence.
 			contactList[i]->setPresence(presence);
+
+			// Reset contactList order.
 			sortContactList();
+
+			// Updating Table View.
 			m->setData(contactList);
 			for (int j = 0; j < contactList.count(); j++)
 			{
@@ -447,8 +458,6 @@ void XmppWin::processPresence(const Presence& presence)
 			break;
 		}
 	}
-	sti->showMessage("Kapture", 
-		QString("%1 is now %2").arg(presence.from().full()).arg(presence.type() == "unavailable" ? "Offline" : "Online"));
 }
 
 void XmppWin::processMessage(const Message& m)
@@ -510,10 +519,10 @@ void XmppWin::showConfigDial()
 
 void XmppWin::changeProfile(int p)
 {
-	pJid = profilesa[p].jid();
-	password = profilesa[p].password();
-	serverEdit = profilesa[p].personnalServer();
-	portEdit = profilesa[p].port();
+	pJid = profileList[p].jid();
+	password = profileList[p].password();
+	serverEdit = profileList[p].personnalServer();
+	portEdit = profileList[p].port();
 }
 
 void XmppWin::updateConfig()
@@ -528,14 +537,14 @@ void XmppWin::updateConfig()
 	if (conf->noConfig)
 		return;
 	
-	profilesa = conf->profileList(); //FIXME: find another name fore profilesa
+	profileList = conf->profileList();
 	
-	for (int i = 0; i < profilesa.count(); i++)
+	for (int i = 0; i < profileList.count(); i++)
 	{
-		ui.profilesComboBox->addItem(profilesa[i].name());
+		ui.profilesComboBox->addItem(profileList[i].name());
 	}
 	
-	if (profilesa.count() > 0)
+	if (profileList.count() > 0)
 	{
 		changeProfile(0);
 	}

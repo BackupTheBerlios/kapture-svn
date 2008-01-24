@@ -22,7 +22,7 @@ Contact::Contact(const QString& j)
 	isChatting = false;
 	vcard = new VCard();
 	done = false;
-	presence = new Presence(QString(""), QString(""), QString(""));
+	p = new Presence(QString(""), QString(""), QString(""));
 	newMessages = 0;
 }
 
@@ -33,7 +33,7 @@ Contact::Contact(const QString &j, const QString &n)
 	vcard = new VCard();
 	vcard->setNickname(n);
 	done = false;
-	presence = new Presence(QString(""), QString(""), QString(""));
+	p = new Presence(QString(""), QString(""), QString(""));
 	newMessages = 0;
 }
 
@@ -43,14 +43,14 @@ Contact::Contact(const char *j)
 	isChatting = false;
 	vcard = new VCard();
 	done = false;
-	presence = new Presence(QString(""), QString(""), QString(""));
+	p = new Presence(QString(""), QString(""), QString(""));
 	newMessages = 0;
 }
 
 Contact::Contact()
 {
 	done = false;
-	presence = new Presence(QString(""), QString(""), QString(""));
+	p = new Presence(QString(""), QString(""), QString(""));
 	newMessages = 0;
 }
 
@@ -159,29 +159,29 @@ void Contact::setPresence(const Presence& pr)
 	if (isChatting)
 	{
 		chatWin->ui.discutionText->moveCursor(QTextCursor::End, QTextCursor::MoveAnchor);
-		if (presence->type() != pr.type())
+		if (p->type() != pr.type())
 			chatWin->ui.discutionText->insertHtml(QString("<font color='green'> * %1 is now %2</font><br>").arg(jid->full()).arg(pr.type() == "available" ? "online" : "offline"));
 		else
 		{
-			if (pr.show() != presence->show())
+			if (pr.show() != p->show())
 				chatWin->ui.discutionText->insertHtml(
-					QString("<font color='green'> * ")
+					QString("<body bgcolor=\"#00FF55\"><font color='green'> * ")
 					+ jid->full()
 					+ QString(" is now ")
 					+ showToPretty(pr.show())
 					+ QString(" [")
 					+ pr.status()
-					+ QString("]</font><br>"));
+					+ QString("]</font></body><br>"));
 		}
 		chatWin->ui.discutionText->verticalScrollBar()->setValue(chatWin->ui.discutionText->verticalScrollBar()->maximum());
 	}
 	
-	presence->setType(pr.type());
-	presence->setShow(pr.show());
-	presence->setStatus(pr.status());
-	printf("Presence : type = %s, show = %s, status %s\n", presence->type().toLatin1().constData(),
-							       presence->show().toLatin1().constData(),
-							       presence->status().toLatin1().constData());
+	p->setType(pr.type());
+	p->setShow(pr.show());
+	p->setStatus(pr.status());
+	printf("Presence : type = %s, show = %s, status %s\n", p->type().toLatin1().constData(),
+							       p->show().toLatin1().constData(),
+							       p->status().toLatin1().constData());
 	printf("Contact has a new nickname : %s\n", vcard->nickname().toLatin1().constData());
 }
 
@@ -192,7 +192,7 @@ void Contact::setResource(QString& r)
 
 bool Contact::isAvailable()
 {
-	if (presence->type() == "available")
+	if (p->type() == "available")
 		return true;
 	else
 		return false;

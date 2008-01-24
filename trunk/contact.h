@@ -33,7 +33,8 @@ public:
 	Jid *jid; // must go in private, a method to get it.
 	void setTranferFileState(QString, int);
 	void setEmoticons(Emoticons*);
-	QString show() const {return presence->show();};
+	QString show() const {return p->show();}; // Deprectated, use presence()
+	Presence *presence() const {return p;};
 
 private:
 	Contact();
@@ -46,7 +47,7 @@ private:
 	bool done;
 	Emoticons *e;
 	QString showToPretty(const QString&);
-	Presence *presence;
+	Presence *p;
 	int newMessages;
 
 public slots:

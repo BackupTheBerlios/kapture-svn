@@ -56,7 +56,7 @@ private:
 	QList<Model::Nodes> nodes;
 	Model *m;
 	QByteArray config;
-	QList<Profile> profilesa;
+	QList<Profile> profileList;
 	Config *conf;
 	Roster r;
 	QTimer *waitingTimer;
