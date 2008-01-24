@@ -88,8 +88,6 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	if (role == Qt::DisplayRole)
 	{
 		QString str;
-		QVariant ret;
-		QPushButton *btn;
 		switch(index.column())
 		{
 			case 1: 
@@ -97,12 +95,6 @@ QVariant Model::data(const QModelIndex &index, int role) const
 				if (contacts[index.row()]->isAvailable() && contacts[index.row()]->show() != "")
 					str = str + QString(" (") + showToPretty(contacts[index.row()]->show()) + QString(")");
 				return str;
-				break;
-			case 2:
-				/*btn = new QPushButton("Test Button");
-				ret = *btn;
-				return ret;*/
-				return "| Test Area. |";
 				break;
 			default : return QVariant();
 		}
@@ -138,7 +130,7 @@ int Model::rowCount(const QModelIndex&) const
 
 int Model::columnCount(const QModelIndex&) const
 {
-	return 3;
+	return 2;
 }
 
 QList<Contact*> Model::getContactList()
