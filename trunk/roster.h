@@ -14,6 +14,7 @@ public:
 	~Roster();
 	void addContact(const QString& jid, const QString& nickname, const QString& subscription);
 	QList<Contact*> contactList() const;
+	void clear();
 private:
 	QList<Contact*> c;
 };

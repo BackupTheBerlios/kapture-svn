@@ -28,7 +28,7 @@ Profile::~Profile()
 
 }
 
-void Profile::setData(QString& jid, QString& pass, QString& server, QString& port)
+void Profile::setData(Jid& jid, QString& pass, QString& server, QString& port)
 {
 	j = jid;
 	p = pass;
@@ -36,14 +36,9 @@ void Profile::setData(QString& jid, QString& pass, QString& server, QString& por
 	po = port;
 }
 	
-QString Profile::jid() const
+Jid Profile::jid() const
 {
 	return j;
-}
-
-Jid Profile::jid1() const
-{
-	return Jid(j);
 }
 
 QString Profile::password() const
@@ -71,7 +66,7 @@ void Profile::setName(QString& name)
 	n = name;
 }
 
-void Profile::setJid(QString& jid)
+void Profile::setJid(Jid& jid)
 {
 	j = jid;
 }

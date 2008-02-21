@@ -25,8 +25,9 @@ Task::Task(Task *parent)
 
 Task::~Task()
 {
-	for (int i = 0; i < taskList.count(); i++)
-		delete taskList[i];
+	//FIXME:some tasks are still in taskList but are destroyed here...
+	//for (int i = 0; i < taskList.count(); i++)
+	//	delete taskList[i];
 	taskList.clear();
 }
 
@@ -45,11 +46,19 @@ void Task::processStanza(const Stanza& s)
 	//	printf("void Task::processStanza(const Stanza& s) : Kind = %s\n", s.kind() == Stanza::Presence ? "Presence" : "NoPresence");
 		if (taskList[i]->canProcess(s))
 		{
-//			printf("Ok, processing...\n");
+			//printf("[TASK] Ok, processing...\n");
 			taskList[i]->processStanza(s);
 			processed = true;
 			break;
 		}
+		/*else
+		{
+			printf("[TASK] Won't process this stanza.\n");
+		}*/
+		/*printf("[TASK] Left : %d task(s)\n", taskList.count() - i);
+		printf("[TASK] Next Task : ");
+		Stanza fake(Stanza::BadStanza, "type-fake", "id-fake", "to-fake");
+		i + 1 < taskList.count() ? taskList[i + 1]->canProcess(fake) : printf("NONE\n");*/
 	}
 	if (!processed)
 	{

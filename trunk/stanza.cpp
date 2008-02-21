@@ -84,19 +84,19 @@ void Stanza::setFrom(const Jid& from)
 void Stanza::setTo(const Jid& to)
 {
 	if (to.isValid())
-		 n.toElement().setAttribute("to", to.full());
+		n.toElement().setAttribute("to", to.full());
 }
 
 void Stanza::setId(const QString& id)
 {
 	if (!id.isEmpty())
-		 n.toElement().setAttribute("id", id);
+		n.toElement().setAttribute("id", id);
 }
 
 void Stanza::setType(const QString& type)
 {
 	if (!type.isEmpty())
-		 n.toElement().setAttribute("type", type);
+		n.toElement().setAttribute("type", type);
 }
 
 void Stanza::setKind(Kind kind)
@@ -129,6 +129,11 @@ QString Stanza::type() const
 Stanza::Kind Stanza::kind() const
 {
 	return tagNameToKind(n.localName());
+}
+
+QString Stanza::namespaceURI() const
+{
+	return n.toElement().namespaceURI();
 }
 
 QDomNode Stanza::node() const

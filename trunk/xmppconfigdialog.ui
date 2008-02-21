@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>415</width>
-    <height>278</height>
+    <width>604</width>
+    <height>514</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -24,62 +24,25 @@
       </attribute>
       <layout class="QVBoxLayout" >
        <item>
-        <layout class="QVBoxLayout" >
-         <item>
-          <widget class="QLabel" name="label" >
-           <property name="text" >
-            <string>Profiles :</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="MouseProfilesTableView" native="1" name="profilesTable" >
-           <property name="showGrid" stdset="0" >
-            <bool>false</bool>
-           </property>
-           <property name="cornerButtonEnabled" stdset="0" >
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
         <layout class="QHBoxLayout" >
          <item>
           <layout class="QVBoxLayout" >
-           <property name="spacing" >
-            <number>1</number>
-           </property>
-           <property name="leftMargin" >
-            <number>1</number>
-           </property>
-           <property name="topMargin" >
-            <number>1</number>
-           </property>
-           <property name="rightMargin" >
-            <number>1</number>
-           </property>
-           <property name="bottomMargin" >
-            <number>1</number>
-           </property>
            <item>
             <layout class="QHBoxLayout" >
-             <property name="spacing" >
-              <number>1</number>
-             </property>
-             <property name="leftMargin" >
-              <number>1</number>
-             </property>
-             <property name="topMargin" >
-              <number>1</number>
-             </property>
-             <property name="rightMargin" >
-              <number>1</number>
-             </property>
-             <property name="bottomMargin" >
-              <number>1</number>
-             </property>
+             <item>
+              <widget class="QLabel" name="label_6" >
+               <property name="text" >
+                <string>Profile Name</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="profileNameEdit" />
+             </item>
+            </layout>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" >
              <item>
               <widget class="QLabel" name="label_2" >
                <property name="sizePolicy" >
@@ -129,20 +92,6 @@
              </item>
             </layout>
            </item>
-           <item>
-            <layout class="QHBoxLayout" >
-             <item>
-              <widget class="QLabel" name="label_6" >
-               <property name="text" >
-                <string>Profile Name</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="profileNameEdit" />
-             </item>
-            </layout>
-           </item>
           </layout>
          </item>
          <item>
@@ -150,12 +99,9 @@
            <property name="orientation" >
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeType" >
-            <enum>QSizePolicy::Minimum</enum>
-           </property>
            <property name="sizeHint" >
             <size>
-             <width>16</width>
+             <width>21</width>
              <height>20</height>
             </size>
            </property>
@@ -163,26 +109,6 @@
          </item>
          <item>
           <layout class="QVBoxLayout" >
-           <item>
-            <layout class="QHBoxLayout" >
-             <item>
-              <widget class="QLabel" name="label_3" >
-               <property name="sizePolicy" >
-                <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text" >
-                <string>Personnal Server</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLineEdit" name="personnalServerEdit" />
-             </item>
-            </layout>
-           </item>
            <item>
             <layout class="QHBoxLayout" >
              <item>
@@ -204,6 +130,26 @@
             </layout>
            </item>
            <item>
+            <layout class="QHBoxLayout" >
+             <item>
+              <widget class="QLabel" name="label_3" >
+               <property name="sizePolicy" >
+                <sizepolicy vsizetype="Preferred" hsizetype="Fixed" >
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text" >
+                <string>Personnal Server</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLineEdit" name="personnalServerEdit" />
+             </item>
+            </layout>
+           </item>
+           <item>
             <widget class="QCheckBox" name="registerBox" >
              <property name="text" >
               <string>Create a new account on the server</string>
@@ -220,6 +166,26 @@
        <item>
         <layout class="QHBoxLayout" >
          <item>
+          <spacer>
+           <property name="orientation" >
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" >
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton" >
+           <property name="text" >
+            <string>Modify</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="addBtn" >
            <property name="maximumSize" >
             <size>
@@ -228,17 +194,52 @@
             </size>
            </property>
            <property name="text" >
-            <string>Add >></string>
+            <string>Add</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="Line" name="line" >
+         <property name="orientation" >
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <layout class="QVBoxLayout" >
+         <item>
+          <widget class="QLabel" name="label" >
+           <property name="text" >
+            <string>Profiles :</string>
            </property>
           </widget>
          </item>
          <item>
+          <widget class="MouseProfilesTableView" native="1" name="profilesTable" >
+           <property name="sizePolicy" >
+            <sizepolicy vsizetype="Expanding" hsizetype="Expanding" >
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="showGrid" stdset="0" >
+            <bool>false</bool>
+           </property>
+           <property name="cornerButtonEnabled" stdset="0" >
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" >
+         <item>
           <spacer>
            <property name="orientation" >
             <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeType" >
-            <enum>QSizePolicy::Expanding</enum>
            </property>
            <property name="sizeHint" >
             <size>
@@ -257,7 +258,7 @@
             </size>
            </property>
            <property name="text" >
-            <string>&lt;&lt; Delete</string>
+            <string>Delete</string>
            </property>
           </widget>
          </item>

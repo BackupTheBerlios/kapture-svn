@@ -164,35 +164,43 @@ Stanza *Client::getFirstStanza()
 
 void Client::getRoster()
 {
-	rTask = new RosterTask(task);
-
+	rTask = new RosterTask(xmpp, task);
 	connect(rTask, SIGNAL(finished()), this, SLOT(rosterFinished()));
-	rTask->getRoster(xmpp, j);
+	rTask->getRoster(j);
 }
 
 void Client::rosterFinished()
 {
 	emit rosterReady(rTask->roster());
-	task->removeChild(rTask);
-	
+	//disconnect(rTask);
 	delete rTask;
+	rTask = new RosterTask(xmpp, task);
+	connect(rTask, SIGNAL(finished()), this, SLOT(slotUpdateItem()));
+}
+
+void Client::slotUpdateItem()
+{
+	printf("[CLIENT] Should add an item.\n");
+	emit signalUpdateItem(rTask->roster().contactList().at(0));
 }
 
 void Client::setInitialPresence(QString& show, QString& status, QString& type)
 {
-	pTask = new PresenceTask(task);
+	printf("[CLIENT] setInitialPresence()\n");
+	pTask = new PresenceTask(xmpp, task);
 
 	//QString type = "";
 	connect(pTask, SIGNAL(finished()), this, SLOT(setPresenceFinished()));
-	pTask->setPresence(xmpp, show, status, type);
+	pTask->setPresence(show, status, type);
 }
 
 void Client::setPresence(const QString& show, const QString& status)
 {
-	pTask = new PresenceTask(task);
+	printf("[CLIENT] setPresence()\n");
+	pTask = new PresenceTask(xmpp, task);
 	connect(pTask, SIGNAL(finished()), this, SLOT(setPresenceFinished()));
 	QString type = "";
-	pTask->setPresence(xmpp, show, status, type);
+	pTask->setPresence(show, status, type);
 }
 
 /*
@@ -210,6 +218,42 @@ void Client::presenceFinished()
 {
 	Presence p = ppTask->getPresence();
 	emit presenceReady(p);
+}
+
+// Sends authorization to "to" so "to" can see me.
+void Client::addAuthFor(const QString& to)
+{
+	subTask = new PresenceTask(xmpp, task);
+	subTask->setSubscription(to, "subscribed");
+	task->removeChild(subTask);
+	delete subTask;
+}
+
+// Removes authorization to "to" so "to" cannot see me.
+void Client::removeAuthFor(const QString& to)
+{
+	subTask = new PresenceTask(xmpp, task);
+	subTask->setSubscription(to, "unsubscribed");
+	task->removeChild(subTask);
+	delete subTask;
+}
+
+void Client::requestAuthFor(const QString& to)
+{
+	subTask = new PresenceTask(xmpp, task);
+	subTask->setSubscription(to, "subscribe");
+	connect(subTask, SIGNAL(subApproved()), SLOT(subApproved()));
+	connect(subTask, SIGNAL(subRefused()), SLOT(subRefused()));
+}
+
+void Client::subApproved()
+{
+	printf("Client::subApproved()\n");
+}
+
+void Client::subRefused()
+{
+	printf("Client::subRefused()\n");
 }
 
 void Client::messageFinished()
@@ -250,6 +294,7 @@ void Client::streamTaskError(int errCode, const QString&)
 		printf("User Declined sending invitation.\n");
 		break;
 	}
+	task->removeChild(sTask);
 	delete sTask;
 }
 
@@ -270,6 +315,7 @@ void Client::slotInfoDone()
 		else
 		{
 			printf("File Transfer Cancelled\n");
+			task->removeChild(sTask);
 			delete sTask;
 		}
 	}
@@ -292,7 +338,9 @@ void Client::notConnected()
 {
 	printf("Unable to connect to the target.\n");
 	Jid to = sTask->toJid();
+	task->removeChild(sfTask);
 	delete sfTask;
+	task->removeChild(sTask);
 	delete sTask;
 }
 
@@ -309,18 +357,7 @@ void Client::sendVideo(const QString& to)
 	svTask->initiate(Jid(to));
 }
 
-/*This part if for registration.
-void registerAccount(const QString& username, const QString& password)
+void Client::addItem(const Jid& jid, const QString& name, const QString& /*group*/)
 {
-
+	rTask->addItem(jid, name);
 }
-
-void registerAccount(const Profile& profile)
-{
-
-}
-
-Profile profile() const
-{
-
-}*/

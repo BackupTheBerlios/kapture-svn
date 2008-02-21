@@ -15,21 +15,20 @@
 
 #include "tasks.h"
 
-#define XMLNS_FEATURENEG "http://jabber.org/protocol/feature-neg"
-#define XMLNS_SI "http://jabber.org/protocol/si"
-#define XMLNS_FILETRANSFER "http://jabber.org/protocol/si/profile/file-transfer"
-#define XMLNS_DISCO_INFO "http://jabber.org/protocol/disco#info"
-#define XMLNS_DISCO_ITEMS "http://jabber.org/protocol/disco#items"
-#define XMLNS_BYTESTREAMS "http://jabber.org/protocol/bytestreams"
-#define XMLNS_JINGLE "http://www.xmpp.org/extensions/xep-0166.html#ns"
-#define XMLNS_VIDEO "http://www.xmpp.org/extensions/xep-0180.html#ns"
-#define XMLNS_RTP "http://www.xmpp.org/extensions/xep-0176.html#ns-udp"
-#define TIMEOUT 30000
+#define XMLNS_FEATURENEG 		"http://jabber.org/protocol/feature-neg"
+#define XMLNS_SI 			"http://jabber.org/protocol/si"
+#define XMLNS_FILETRANSFER 		"http://jabber.org/protocol/si/profile/file-transfer"
+#define XMLNS_DISCO_INFO 		"http://jabber.org/protocol/disco#info"
+#define XMLNS_DISCO_ITEMS 		"http://jabber.org/protocol/disco#items"
+#define XMLNS_BYTESTREAMS 		"http://jabber.org/protocol/bytestreams"
+#define XMLNS_JINGLE 			"urn:xmpp:tmp:jingle"
+#define XMLNS_VIDEO 			"urn:xmpp:tmp:jingle:apps:video-rtp"
+#define XMLNS_RAW_UDP 			"urn:xmpp:tmp:jingle:transports:raw-udp"
+#define TIMEOUT 			30000
 
-RosterTask::RosterTask(Task* parent)
-	:Task(parent)
+RosterTask::RosterTask(Xmpp* xmpp, Task* parent)
+	:Task(parent), p(xmpp)
 {
-
 }
 
 RosterTask::~RosterTask()
@@ -37,8 +36,9 @@ RosterTask::~RosterTask()
 
 }
 
-void RosterTask::getRoster(Xmpp* p, Jid& j)
+void RosterTask::getRoster(Jid& j)
 {
+	r.clear();
 	QString type = "get";
 	id = randomString(6);
 	
@@ -52,29 +52,60 @@ void RosterTask::getRoster(Xmpp* p, Jid& j)
 	p->write(stanza);
 }
 
+void RosterTask::addItem(const Jid& jid, const QString& name)
+{
+/* 
+ * TODO:
+ * http://www.xmpp.org/rfcs/rfc3921.html#rfc.section.7.4
+ */
+	QString type = "set";
+	id = randomString(8);
+
+	Stanza stanza(Stanza::IQ, type, id, QString());
+	QDomDocument doc("");
+	QDomElement query = doc.createElement("query");
+	query.setAttribute("xmlns", "jabber:iq:roster");
+	QDomElement item = doc.createElement("item");
+	item.setAttribute("jid", jid.bare());
+	if (name != "")
+		item.setAttribute("name", name);
+	
+	query.appendChild(item);
+	stanza.node().firstChild().appendChild(query);
+
+	p->write(stanza);
+}
+
 bool RosterTask::canProcess(const Stanza& s) const
 {
-	if (s.id() == id && s.type() == "result")
-		return true;
-	else
+	printf("[RosterTask]\n");
+	if (s.kind() != Stanza::IQ)
 		return false;
+
+	if (s.node().firstChildElement().namespaceURI() == "jabber:iq:roster" && s.namespaceURI() == "jabber:client")
+		return true;
+
+	return false;
 }
 
 void RosterTask::processStanza(const Stanza& s)
 {
+	//FIXME: Also receive a stanza like this when subscription has changed !
+	r.clear();
 	QString j;
 	QString n;
 	QString subs;
 	QDomElement query = s.node().firstChildElement();
 	if (query.localName() == "query")
 	{
+		//FIXME:jabberd2 has a bug, item is not in the query tag when updating the roster. Use >=2.1.23
 		QDomNodeList items = query.childNodes();
 		for (int i = 0; i < items.count(); i++)
 		{
 			j = items.at(i).toElement().attribute("jid");
 			n = items.at(i).toElement().attribute("name");
 			subs = items.at(i).toElement().attribute("subscription");
-
+			printf("[RosterTask] Add %s\n", j.toLatin1().constData());
 			r.addContact(j, n, subs);
 		}
 	}
@@ -92,15 +123,13 @@ Roster RosterTask::roster() const
 
 /*
  * Manage this resource presence and status.
- * Changes it with the method setPresence().
+ * Changes it with the setPresence() method.
  */
 
-// FIXME:Maybe no task is needed for that...
-
-PresenceTask::PresenceTask(Task* parent)
-	:Task(parent)
+PresenceTask::PresenceTask(Xmpp *xmpp, Task* parent)
+	:Task(parent), p(xmpp)
 {
-
+	waitSub = false;
 }
 
 PresenceTask::~PresenceTask()
@@ -108,7 +137,7 @@ PresenceTask::~PresenceTask()
 
 }
 
-void PresenceTask::setPresence(Xmpp* p, const QString& show, const QString& status, const QString& type)
+void PresenceTask::setPresence(const QString& show, const QString& status, const QString& type)
 {
 	Stanza stanza(Stanza::Presence, type, randomString(8), QString());
 	QDomNode node = stanza.node().firstChild();
@@ -136,6 +165,33 @@ void PresenceTask::setPresence(Xmpp* p, const QString& show, const QString& stat
 	emit finished();
 }
 
+void PresenceTask::setSubscription(const Jid& to, const QString&  type)
+{
+	if (type == "subscribe")
+		waitSub = true;
+	Stanza stanza(Stanza::Presence, type, QString(), to.bare());
+	stanza.setTo(to);
+	p->write(stanza);
+}
+
+bool PresenceTask::canProcess(const Stanza& s) const
+{
+	printf("[PresenceTask]\n");
+	if (s.kind() == Stanza::Presence && (s.type() == "subscribed" || s.type() == "unsubscribed") && waitSub)
+		return true;
+	return false;
+}
+
+void PresenceTask::processStanza(const Stanza& s)
+{
+	printf("[PresenceTask] processStanza : Not implemented yet !\n");
+	waitSub = false;
+	if (s.type() == "subscribed")
+		emit subApproved();
+	else if (s.type() == "unsubscribed")
+		emit subRefused();
+}
+
 //----------------------------------
 // PullPresenceTask
 //----------------------------------
@@ -157,6 +213,7 @@ PullPresenceTask::~PullPresenceTask()
 
 bool PullPresenceTask::canProcess(const Stanza& s) const
 {
+	printf("[PullPresenceTask]\n");
 	if (s.kind() == Stanza::Presence)
 		return true;
 	return false;
@@ -203,11 +260,15 @@ void PullPresenceTask::processStanza(const Stanza& stanza)
 	emit presenceFinished();
 }
 
-Presence PullPresenceTask::getPresence() const
+Presence PullPresenceTask::getPresence()
 {
-	Presence *pr = new Presence(type, status, show);
-	pr->setFrom(from);
-	return *pr;
+	
+	Presence pr(type, status, show);
+	pr.setFrom(from);
+	type = QString("");
+	status = QString("");
+	show = QString("");
+	return pr;
 }
 
 //-----------------------------
@@ -231,6 +292,7 @@ PullMessageTask::~PullMessageTask()
 
 bool PullMessageTask::canProcess(const Stanza& s) const
 {
+	printf("[PullMessageTask]\n");
 	if (s.kind() == Stanza::Message)
 		return true;
 	return false;
@@ -338,6 +400,7 @@ StreamTask::~StreamTask()
 
 bool StreamTask::canProcess(const Stanza& s) const
 {
+	printf("[StreamTask]\n");
 	if (s.kind() != Stanza::IQ)
 		return false;
 	
@@ -482,7 +545,7 @@ void StreamTask::processStanza(const Stanza& s)
 				    (node.toElement().attribute("type") == "bytestreams"))
 				{
 					proxyList << s.node().toElement().attribute("from");
-					proxyList2 << s.node().toElement().attribute("from");
+					//proxyList2 << s.node().toElement().attribute("from");
 				}
 				node = node.nextSibling();
 			}
@@ -519,9 +582,7 @@ void StreamTask::processStanza(const Stanza& s)
 			if (proxyList.empty())
 				emit finished();
 			else
-			{
 				getProxyIp(proxyList.takeFirst());
-			}
 		}
 	}
 }
@@ -587,7 +648,7 @@ void StreamTask::getProxies()
 </iq>
 */
 	id = randomString(8);
-	Stanza stanza(Stanza::IQ, "get", id, p->node().domain());
+	Stanza stanza(Stanza::IQ, "get", id, p->node().domain()); // Should not work with "UsePersonnalServer"
 	QDomNode node = stanza.node().firstChild();
 	QDomDocument doc("");
 
@@ -723,6 +784,7 @@ FileTransferTask::~FileTransferTask()
 
 bool FileTransferTask::canProcess(const Stanza& s) const
 {
+	printf("[FileTransferTask]\n");
 	printf("Type = %s, Id = %s (expected %s), namespace = %s\n", s.type().toLatin1().constData(),
 			s.id().toLatin1().constData(),
 			id.toLatin1().constData(),
@@ -822,17 +884,17 @@ void FileTransferTask::start(const QString& profile, const QString& SID, const Q
 	proxies = prox;
 	ips = ip;
 	ports = p;
-	//FIXME:Use Defines
-	if (profile == "http://jabber.org/protocol/bytestreams")
-		startByteStream(SID);
-	
 	s = SID;
 	printf("File name = %s\n", file.toLatin1().constData());
 	f = new QFile(file);
 	fileName = file;
+	
+	//FIXME:Use Defines
+	if (profile == "http://jabber.org/protocol/bytestreams")
+		startByteStream();
 }
 
-void FileTransferTask::startByteStream(const QString &SID)
+void FileTransferTask::startByteStream()
 {
 	// Get network address.
 	id = randomString(6);
@@ -842,7 +904,7 @@ void FileTransferTask::startByteStream(const QString &SID)
 	QDomElement query = doc.createElement("query");
 	//FIXME:Use Defines
 	query.setAttribute("xmlns", "http://jabber.org/protocol/bytestreams");
-	query.setAttribute("sid", SID);
+	query.setAttribute("sid", s);
 	query.setAttribute("mode", "tcp");
 	
 	timeOut = new QTimer();
@@ -860,9 +922,9 @@ void FileTransferTask::startByteStream(const QString &SID)
 	{
 		printf("IP : %s\n", interface->allAddresses().at(i).toString().toLatin1().constData());
 		QDomElement streamHost = doc.createElement("streamhost");
-		streamHost.setAttribute("jid", p->node().full());
+		streamHost.setAttribute("jid", p->node().full()); //FIXME:Should I set the full JID ?
 		streamHost.setAttribute("host", interface->allAddresses().at(i).toString());
-		streamHost.setAttribute("port", "8015");
+		streamHost.setAttribute("port", "8015"); //TODO: get it from config !!
 		query.appendChild(streamHost);
 		
 		QTcpServer *tcpServer = new QTcpServer();
@@ -890,8 +952,7 @@ void FileTransferTask::startByteStream(const QString &SID)
 
 void FileTransferTask::noConnection()
 {
-	// Must retry with a proxy.
-	printf("Unable to connect to the target, trying with a proxy.\n");
+	printf("Unable to connect to the target.\n");
 	emit notConnected();
 }
 
@@ -1010,7 +1071,7 @@ void FileTransferTask::tryToConnect(PullStreamTask::StreamHost hostData)
 {
 	socks5Socket = new QTcpSocket();
 	QString host = hostData.host;
-	usedJid = hostData.jid.full();
+	usedJid = hostData.jid;
 	printf("Connecting to %s.\n", host.toLatin1().constData());
 	int port = hostData.port;
 	/*
@@ -1021,7 +1082,7 @@ void FileTransferTask::tryToConnect(PullStreamTask::StreamHost hostData)
 		connect(socks5Socket, SIGNAL(connected()), this, SLOT(s5Connected()));
 		connect(socks5Socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(s5Error(QAbstractSocket::SocketError)));
 		socks5Socket->connectToHost(host, port);
-		printf("[FILETRANSFERTASK] host = %s, port = %d, jid = %s\n", host.toLatin1().constData(), port, usedJid.toLatin1().constData());
+		printf("[FILETRANSFERTASK] host = %s, port = %d, jid = %s\n", host.toLatin1().constData(), port, usedJid.full().toLatin1().constData());
 	}
 	else
 	{
@@ -1084,7 +1145,7 @@ void FileTransferTask::receptionNotify()
 	query.setAttribute("xmlns", XMLNS_BYTESTREAMS);
 
 	QDomElement streamhostused = doc.createElement("streamhost-used");
-	streamhostused.setAttribute("jid", usedJid);
+	streamhostused.setAttribute("jid", usedJid.full());
 
 	node.appendChild(query);
 	query.appendChild(streamhostused);
@@ -1105,11 +1166,12 @@ PullStreamTask::PullStreamTask(Task *parent, Xmpp *xmpp)
 
 bool PullStreamTask::canProcess(const Stanza& s) const
 {
+	printf("[PullStreamTask]\n");
 	if (s.kind() != Stanza::IQ)
 		return false;
 
 	if (s.type() == "get" &&
-	    s.node().firstChildElement().namespaceURI() == XMLNS_DISCO_INFO)
+	    s.node().firstChildElement().namespaceURI() == XMLNS_DISCO_INFO) //FIXME:Stanza has not alway a child element !!!
 		return true;
 	
 	if (s.type() == "set" &&
@@ -1404,6 +1466,7 @@ JingleTask::~JingleTask()
 
 bool JingleTask::canProcess(const Stanza&) const
 {
+	printf("[JingleTask]\n");
 	return false;
 }
 
@@ -1459,7 +1522,7 @@ void JingleTask::initiate(const Jid& to)
 			payload.setAttribute("id", "0"); 
 			payload.setAttribute("name", "JPEG");
 			/* 
-			 * No idea of the right Vale for clockrate.
+			 * No idea of the right Value for clockrate.
 			 */
 			payload.setAttribute("clockrate", "90000");
 			
@@ -1474,7 +1537,25 @@ void JingleTask::initiate(const Jid& to)
 		content.appendChild(description);
 	}
 	QDomElement transport = doc.createElement("transport");
-	transport.setAttribute("xmlns", XMLNS_RTP);
+	transport.setAttribute("xmlns", XMLNS_RAW_UDP);
+
+	QNetworkInterface *interface = new QNetworkInterface();
+	/* TODO:
+	 * 	Should use the external IP in this case as it is 
+	 * 	"the most likely to succeed".
+	 * 	For example, download it from
+	 * 		http://www.swlink.net/~styma/REMOTE_ADDR.shtml
+	 * 		or
+	 * 		http://www.whatismyip.com/automation/n09230945.asp
+	 * 	or use a webservice.
+	 * 	This is not prioritary.
+	 */
+	QDomElement candidate = doc.createElement("candidate");
+	candidate.setAttribute("ip", interface->allAddresses().at(0).toString());
+	candidate.setAttribute("port", QString("13540"));
+	candidate.setAttribute("generation", 0);
+	
+	transport.appendChild(candidate);
 	content.appendChild(transport);
 	jingle.appendChild(content);
 	node.appendChild(jingle);

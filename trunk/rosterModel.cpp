@@ -24,7 +24,7 @@ Model::~Model()
 	
 }
 
-void Model::setData(QList<Contact*> c)
+void Model::setData(QList<Contact*> *c)
 {
 	contacts = c;
 }
@@ -34,8 +34,8 @@ void Model::setData(QModelIndex index, QString value)
 	switch(index.column())
 	{
 		case 1:
-			delete contacts[index.row()]->jid;
-			contacts[index.row()]->jid = new Jid(value);
+			delete contacts->at(index.row())->jid;
+			contacts->at(index.row())->jid = new Jid(value);
 			break;
 		/*case 2:
 			contacts[index.row()].setPresence("", value);
@@ -62,19 +62,19 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	if (role == Qt::DecorationRole && index.column() == 0)
 	{
 		QImage *img;
-		if (contacts[index.row()]->isAvailable())
+		if (contacts->at(index.row())->isAvailable())
 		{
 			//FIXME: 'img' may be used uninitialized in this function.
-			printf("[RosterModel] Contact is %s\n", contacts[index.row()]->show().toLatin1().constData());
-			if (contacts[index.row()]->show() == "")
+			printf("[RosterModel] Contact is %s\n", contacts->at(index.row())->show().toLatin1().constData());
+			if (contacts->at(index.row())->show() == "")
 				img = new QImage(QString(DATADIR) + QString("/icons/") + "online.png");
-			if (contacts[index.row()]->show() == "away")
+			if (contacts->at(index.row())->show() == "away")
 				img = new QImage(QString(DATADIR) + QString("/icons/") + "away.png");
-			if (contacts[index.row()]->show() == "chat")
+			if (contacts->at(index.row())->show() == "chat")
 				img = new QImage(QString(DATADIR) + QString("/icons/") + "chat.png");
-			if (contacts[index.row()]->show() == "xa")
+			if (contacts->at(index.row())->show() == "xa")
 				img = new QImage(QString(DATADIR) + QString("/icons/") + "xa.png");
-			if (contacts[index.row()]->show() == "dnd")
+			if (contacts->at(index.row())->show() == "dnd")
 				img = new QImage(QString(DATADIR) + QString("/icons/") + "dnd.png");
 
 		}
@@ -91,9 +91,9 @@ QVariant Model::data(const QModelIndex &index, int role) const
 		switch(index.column())
 		{
 			case 1: 
-				str = contacts[index.row()]->vCard()->nickname() == "" ? contacts[index.row()]->jid->full() : contacts[index.row()]->vCard()->nickname();
-				if (contacts[index.row()]->isAvailable() && contacts[index.row()]->show() != "")
-					str = str + QString(" (") + showToPretty(contacts[index.row()]->show()) + QString(")");
+				str = contacts->at(index.row())->vCard()->nickname() == "" ? contacts->at(index.row())->jid->full() : contacts->at(index.row())->vCard()->nickname();
+				if (contacts->at(index.row())->isAvailable() && contacts->at(index.row())->show() != "")
+					str = str + QString(" (") + showToPretty(contacts->at(index.row())->show()) + QString(")");
 				return str;
 				break;
 			default : return QVariant();
@@ -101,7 +101,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
 	}
 	if (role == Qt::WhatsThisRole)
 	{
-		return contacts[index.row()]->jid->full();
+		return contacts->at(index.row())->jid->full();
 	}
 	return QVariant();
 }
@@ -125,7 +125,7 @@ QModelIndex Model::index(int row, int column, const QModelIndex&) const
 
 int Model::rowCount(const QModelIndex&) const
 {
-	return contacts.count();
+	return contacts->count();
 }
 
 int Model::columnCount(const QModelIndex&) const
@@ -135,5 +135,5 @@ int Model::columnCount(const QModelIndex&) const
 
 QList<Contact*> Model::getContactList()
 {
-	return contacts;
+	return *contacts;
 }

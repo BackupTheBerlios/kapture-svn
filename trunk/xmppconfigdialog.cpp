@@ -52,7 +52,7 @@ void XmppConfigDialog::selectChange(QString& profileName)
 		if (profiles[i].name() == profileName)
 			break;
 	}
-	ui.jidEdit->setText(profiles[i].jid());
+	ui.jidEdit->setText(profiles[i].jid().full());
 	ui.passwordEdit->setText(profiles[i].password());
 	ui.personnalServerEdit->setText(profiles[i].personnalServer());
 	ui.portEdit->setText(profiles[i].port());
@@ -80,7 +80,7 @@ void XmppConfigDialog::add()
 	}
 
 	QString pName = ui.profileNameEdit->text();
-	QString pJid = ui.jidEdit->text();
+	Jid pJid = Jid(ui.jidEdit->text());
 	QString pPass = ui.passwordEdit->text();
 	QString pServer = ui.personnalServerEdit->text();
 	QString pPort = ui.portEdit->text();

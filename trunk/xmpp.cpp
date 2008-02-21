@@ -1,5 +1,5 @@
 /*
- *      Kapture
+ *      Kapture -- xmpp.cpp
  *
  *      Copyright (C) 2006-2007
  *          Detlev Casanova (detlev.casanova@gmail.com)

@@ -26,8 +26,10 @@ Jid::Jid(const char*)
 
 Jid::Jid(const QString& j)
 {
+	printf("[JID] create from \"%s\"\n", j.toLatin1().constData());
 	if (j.isEmpty())
 	{
+		printf("NOT VALID\n");
 		valid = false;
 		n = "";
 		d = "";
@@ -98,6 +100,8 @@ QString Jid::full() const
 
 bool Jid::isValid() const
 {
+	if (!valid)
+		printf("Not valid JID.\n");
 	return valid;
 }
 

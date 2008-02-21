@@ -14,6 +14,7 @@
 #include "roster.h"
 #include "xmppconfigdialog.h"
 #include "emoticons.h"
+#include "rosterdelegate.h"
 
 //class Message;
 
@@ -31,7 +32,7 @@ public slots:
 	void processPresence(const Presence&);
 	void processMessage(const Message&);
 	void sendMessage(QString&, QString&);
-	void startChat(const QString &to);
+	void startChat(const Jid &to);
 	void error(Xmpp::ErrorType);
 	void showConfigDial();
 	void changeProfile(int p);
@@ -43,11 +44,16 @@ public slots:
 	void connectingLogo();
 	void statusChanged();
 	void sendVideo(QString&);
-	void showMenu(const QString&, const QPoint&);
+	void showMenu(const Jid&, const QPoint&);
 	void showvCard();
 	void startChatFromMenu();
 	void quitApp();
 	void systrayActivated(QSystemTrayIcon::ActivationReason);
+	void slotAddAuth();
+	void slotRemAuth();
+	void slotReqAuth();
+	void addItem();
+	void updateRosterItem(Contact*);
 
 private:
 	Ui::xmppWin ui;
@@ -55,6 +61,7 @@ private:
 	QList<Contact*> contactList; // TODO:Should be replaced by a Roster.
 	QList<Model::Nodes> nodes;
 	Model *m;
+	ContactWidgetDelegate *d;
 	QByteArray config;
 	QList<Profile> profileList;
 	Config *conf;
@@ -67,8 +74,8 @@ private:
 	enum State {Online = 0, Chat, Dnd, Away, Xa, Invisible, Offline} connectionStatus;
 	void jabberConnect();
 	void jabberDisconnect();
-	QString menuTo;
-	QString pJid;
+	Jid menuTo;
+	Jid pJid;
 	QString password;
 	QString serverEdit;
 	QString portEdit;
@@ -80,6 +87,8 @@ private:
 	QSystemTrayIcon *sti;
 	QMenu *sysTrayMenu;
 	bool useSystemTray;
+	QMenu *menu;
+	QMenu *mSubsMenu;
 };
 #endif
 

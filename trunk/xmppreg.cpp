@@ -29,7 +29,7 @@ void XmppReg::registerAccount(const Profile& profile)
 {
 	p = profile;
 	connect(x, SIGNAL(registerReady()), SLOT(slotRegister()));
-	x->prepareToRegister(p.jid1().domain());
+	x->prepareToRegister(p.jid().domain());
 }
 
 void XmppReg::slotRegister()
@@ -120,7 +120,7 @@ void XmppReg::sendRegistration()
 	if (needUsername)
 	{
 		QDomElement username = doc.createElement("username");
-		QDomText text = doc.createTextNode(p.jid1().node());
+		QDomText text = doc.createTextNode(p.jid().node());
 		username.appendChild(text);
 		query.appendChild(username);
 	}
@@ -136,7 +136,7 @@ void XmppReg::sendRegistration()
 	if (needEmail)
 	{
 		QDomElement email = doc.createElement("email");
-		QDomText text = doc.createTextNode(p.jid1().bare());
+		QDomText text = doc.createTextNode(p.jid().bare());
 		email.appendChild(text);
 		query.appendChild(email);
 	}

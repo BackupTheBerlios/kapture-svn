@@ -18,6 +18,7 @@ class Contact : public QObject
 public:
 	Contact(const QString&);
 	Contact(const QString&, const QString&);
+	Contact(const QString&, const QString&, const QString&);
 	Contact(const char*);
 	~Contact();
 	
@@ -35,6 +36,8 @@ public:
 	void setEmoticons(Emoticons*);
 	QString show() const {return p->show();}; // Deprectated, use presence()
 	Presence *presence() const {return p;};
+	void setSubscription(const QString&);
+	QString subscription() const {return sub;};
 
 private:
 	Contact();
@@ -49,6 +52,7 @@ private:
 	QString showToPretty(const QString&);
 	Presence *p;
 	int newMessages;
+	QString sub;
 
 public slots:
 	void messageToSend(QString message);

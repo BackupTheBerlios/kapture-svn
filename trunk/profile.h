@@ -10,22 +10,19 @@ public:
 	Profile(QString &name);
 	Profile();
 	~Profile();
-	void setData(QString &jid, QString &password, QString &server, QString &port);
-	QString jid() const;
-	Jid jid1() const; //FIXME
+	void setData(Jid &jid, QString &password, QString &server, QString &port);
+	Jid jid() const;
 	QString password() const;
 	QString personnalServer() const;
 	QString port() const;
 	QString name() const;
 	void setName(QString&);
-	void setJid(QString&);
+	void setJid(Jid&);
 	void setPassword(QString&);
 	void setPersonnalServer(QString&);
 	void setPort(QString&);
 private:
-	/*Jid*/
-	QString j;  // Jid
-	/*Jid*/
+	Jid j;  // Jid
 	QString p;  // Password
 	QString s;  // Personnal server
 	QString po; // Port

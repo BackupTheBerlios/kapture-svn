@@ -75,7 +75,7 @@ Config::Config()
 		QDomNodeList profilesNodeList = classes.at(xmppwinN).childNodes();
 		for (int j = 0; j < profilesNodeList.count(); j++)
 		{
-			cJid = "";
+			cJid = Jid("");
 			cPassword = "";
 			cPersonnalServer = "";
 			cPort = "5222";
@@ -84,7 +84,7 @@ Config::Config()
 			for (i = 0; i < infos.count(); i++)
 			{
 				if (infos.at(i).toElement().tagName() == "jid" && infos.at(i).hasChildNodes())
-					cJid = infos.at(i).firstChild().toText().data();
+					cJid = Jid(infos.at(i).firstChild().toText().data());
 	
 				if (infos.at(i).toElement().tagName() == "password" && infos.at(i).hasChildNodes())
 					cPassword = QByteArray::fromBase64(infos.at(i).firstChild().toText().data().toLatin1());
@@ -172,7 +172,7 @@ QList<Profile> Config::profileList() const
 	return profiles;
 }
 
-QString Config::jid(QString& profile) const
+Jid Config::jid(QString& profile) const
 {
 	for (int i = 0; i < profiles.count(); i++)
 	{
@@ -225,7 +225,7 @@ void Config::addProfile(const Profile& p)
 		prof.setAttribute("name", p.name());
 		
 		QDomElement eJid = doc->createElement("jid");
-		QDomText vJid = doc->createTextNode(p.jid());
+		QDomText vJid = doc->createTextNode(p.jid().full());
 		eJid.appendChild(vJid);
 		
 		QDomElement ePassword = doc->createElement("password");
@@ -272,7 +272,7 @@ void Config::addProfile(const Profile& p)
 		prof.setAttribute("name", p.name());
 		
 		QDomElement eJid = d.createElement("jid");
-		QDomText vJid = d.createTextNode(p.jid());
+		QDomText vJid = d.createTextNode(p.jid().full());
 		eJid.appendChild(vJid);
 		
 		QDomElement ePassword = d.createElement("password");
@@ -328,6 +328,24 @@ void Config::delProfile(const QString &profileName)
 	}
 	file->write(d.toByteArray(1));
 	delete file;
+}
+
+void Config::setFTPort(int port)
+{
+	// Not Implemented YET !!!!!!!!!!!!!!!!!!!!!!
+	cFTPort = port;
+}
+
+void Config::setProxy(const QString& proxy)
+{
+	// Not Implemented YET !!!!!!!!!!!!!!!!!!!!!!
+	cProxy = proxy;
+}
+
+void Config::setResource(const QString& resource)
+{
+	// Not Implemented YET !!!!!!!!!!!!!!!!!!!!!!
+	cResource = resource;
 }
 	
 int Config::ftPort() const

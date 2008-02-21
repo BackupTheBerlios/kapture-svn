@@ -23,16 +23,21 @@ Roster::~Roster()
 
 }
 
-void Roster::addContact(const QString& jid, const QString& nickname, const QString&/*subscription*/)
+void Roster::addContact(const QString& jid, const QString& nickname, const QString& subscription)
 {
 /*
  * Subscription not managed yet
  */
-	Contact *contact = new Contact(jid, nickname);
+	Contact *contact = new Contact(jid, nickname, subscription);
 	c << contact;
 }
 
 QList<Contact*> Roster::contactList() const
 {
 	return c;
+}
+
+void Roster::clear()
+{
+	c.clear();
 }

@@ -2,6 +2,7 @@
 #define MOUSEROSTERTABLEVIEW_H
 
 #include <QTableView>
+#include "jid.h"
 
 class MouseRosterTableView : public QTableView
 {
@@ -9,8 +10,8 @@ class MouseRosterTableView : public QTableView
 public:
 	MouseRosterTableView(QWidget *parent);
 signals:
-	void doubleClicked(const QString& to);
-	void leftClick(const QString&, const QPoint&);
+	void doubleClicked(const Jid& to);
+	void rightClick(const Jid&, const QPoint&);
 
 protected:
 	void mouseDoubleClickEvent(QMouseEvent *e);

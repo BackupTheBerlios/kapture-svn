@@ -18,7 +18,7 @@ public:
 		Jid *jid;
 		QString presenceType;
 	};
-	void setData(QList<Contact*>);
+	void setData(QList<Contact*>*);
 	void setData(QModelIndex index, QString value);
 	QVariant data(const QModelIndex &index, int role) const;
 	Qt::ItemFlags flags(const QModelIndex &index) const;
@@ -29,6 +29,6 @@ public:
 	QList<Contact*> getContactList();
 
 private:
-	QList<Contact*> contacts;
+	QList<Contact*> *contacts;
 };
 #endif

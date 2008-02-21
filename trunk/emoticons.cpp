@@ -1,5 +1,5 @@
 /*
- *      Kapture
+ *      Kapture -- emoticons.cpp
  *
  *      Copyright (C) 2006-2007
  *          Detlev Casanova (detlev.casanova@gmail.com)
@@ -11,6 +11,7 @@
  *
  */
 
+#include <QtCore>
 #include <QStringList>
 
 #include "emoticons.h"
@@ -19,11 +20,13 @@ Emoticons::Emoticons()
 {
 	emoticons.append(Emoticon(":)", "smile.png"));
 	emoticons.append(Emoticon(":-)", "smile.png"));
+
 	// TODO: add more emoticons and load other from file or directory.
 }
 
 QString Emoticons::changeEmoticons(const QString& m/*, QString jid*/)
 {
+	//QString temp = Qt::escape(m); --> FIXME:Why isn't escape a member of Qt (/usr/share/doc/qt-4.3.3/html/qt.html#escape)
 	QString temp = m;
 	for (int i = 0; i < emoticons.count(); i++)
 	{

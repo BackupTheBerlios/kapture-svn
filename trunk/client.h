@@ -33,13 +33,11 @@ public:
 			};
 	void sendVideo(const QString&);
 	void setPresence(const QString& show, const QString& status);
+	void addAuthFor(const QString& to);
+	void removeAuthFor(const QString& to);
+	void requestAuthFor(const QString& to);
+	void addItem(const Jid&, const QString&, const QString&);
 	
-	/*This part if for registration.
-	void registerAccount(const QString& , const QString&);
-	void registerAccount(const Profile&);
-	bool registeredOk() const {return regOk;};
-	Profile profile() const;*/
-
 public slots:
 	void read();
 	void rosterFinished();
@@ -57,6 +55,9 @@ public slots:
 	void ftDecline();
 	void receiveFileReady();
 	void connectionError(Xmpp::ErrorType);
+	void subApproved();
+	void subRefused();
+	void slotUpdateItem();
 
 signals:
 	/*!
@@ -64,6 +65,7 @@ signals:
 	 */
 	void connected();
 	void rosterReady(Roster);
+	void signalUpdateItem(Contact*);
 	void presenceReady(const Presence&);
 	void messageReady(const Message&);
 	void error(Xmpp::ErrorType);
@@ -76,7 +78,7 @@ private:
 
 	Jid j;
 	QString r;  	// Resource
-	QString pS; 	// Personnam Server
+	QString pS; 	// Personnal Server
 	int p;      	// Port
 	QString pass;	// Password
 	QFile *f;
@@ -84,6 +86,7 @@ private:
 	Task *task;
 	RosterTask *rTask; 		//rosterTask
 	PresenceTask *pTask;		//presenceTask
+	PresenceTask *subTask;		//subscriptionTask
 	MessageTask *mTask;		//messageTask
 	PullPresenceTask *ppTask;	//pullPresenceTask
 	PullMessageTask *pmTask;	//pullMessageTask

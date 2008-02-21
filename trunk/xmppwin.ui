@@ -152,6 +152,36 @@
        </attribute>
        <layout class="QVBoxLayout" >
         <item>
+         <layout class="QHBoxLayout" >
+          <item>
+           <spacer>
+            <property name="orientation" >
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" >
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QToolButton" name="addItemBtn" >
+            <property name="toolTip" >
+             <string>Add a contact</string>
+            </property>
+            <property name="text" >
+             <string>+</string>
+            </property>
+            <property name="toolButtonStyle" >
+             <enum>Qt::ToolButtonIconOnly</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
          <widget class="MouseRosterTableView" native="1" name="tableView" >
           <property name="showGrid" stdset="0" >
            <bool>false</bool>

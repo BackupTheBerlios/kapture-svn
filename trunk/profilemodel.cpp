@@ -32,13 +32,15 @@ void ProfileModel::setProfileList(QList<Profile> p)
 
 void ProfileModel::setData(QModelIndex index, QString value)
 {
+	Jid jid;
 	switch(index.column())
 	{
 		case 0:
 			profiles[index.row()].setName(value);
 			break;
 		case 1:
-			profiles[index.row()].setJid(value);
+			jid = Jid(value);
+			profiles[index.row()].setJid(jid);
 			break;
 		case 2:
 			profiles[index.row()].setPersonnalServer(value);
@@ -60,7 +62,7 @@ QVariant ProfileModel::data(const QModelIndex &index, int role) const
 		switch(index.column())
 		{
 			case 0: return tmp.name();
-			case 1: return tmp.jid();
+			case 1: return tmp.jid().full();
 			case 2: return tmp.personnalServer();
 			case 3: return tmp.port();
 			//case 4: return profiles[index.row()].getPort();

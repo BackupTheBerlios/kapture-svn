@@ -16,25 +16,40 @@
 class RosterTask : public Task
 {
 public:
-	RosterTask(Task* parent = 0);
+	RosterTask(Xmpp* p, Task* parent = 0);
 	~RosterTask();
-	void getRoster(Xmpp* p, Jid& j);
+	void getRoster(Jid& j);
 	bool canProcess(const Stanza& s) const;
 	void processStanza(const Stanza& s);
 	Roster roster() const;
+	void addItem(const Jid& jid, const QString& name);
 private:
 	Roster r;
 	QString id;
+	Xmpp *p;
+	bool addContact;
 };
 
 
 
 class PresenceTask : public Task
 {
+	Q_OBJECT
 public:
-	PresenceTask(Task* parent = 0);
+	PresenceTask(Xmpp *xmpp, Task* parent = 0);
 	~PresenceTask();
-	void setPresence(Xmpp* p, const QString& show, const QString& status, const QString& type); //There should be a Status class.
+	void setPresence(const QString& show, const QString& status, const QString& type); //FIXME:There should be a Status class.
+	void setSubscription(const Jid& to, const QString&  type);
+	bool canProcess(const Stanza& s) const;
+	void processStanza(const Stanza& s);
+
+signals:
+	void subApproved();
+	void subRefused();
+
+private:
+	bool waitSub;
+	Xmpp *p;
 };
 
 
@@ -47,7 +62,7 @@ public:
 	~PullPresenceTask();
 	bool canProcess(const Stanza& s) const;
 	void processStanza(const Stanza& s);
-	Presence getPresence() const;
+	Presence getPresence();
 
 signals:
 	void presenceFinished();
@@ -227,7 +242,7 @@ private:
 	QString filename; // Ouch !
 	QString s; //SID
 	QString id;
-	QString usedJid;
+	Jid usedJid;
 	QTimer *timeOut;
 	qint64 writtenData;
 	Socks5 *socks5;
@@ -236,9 +251,9 @@ private:
 	Xmpp *p;
 	Jid to;
 	bool connectToProxy;
-	bool isRecept;
+	bool isRecept; // Tells if we are receiving (true) or sending (false) a file.
 	bool fileOpened;
-	void startByteStream(const QString&);
+	void startByteStream();
 	void cancel();
 	void tryToConnect(PullStreamTask::StreamHost host);
 	int prc, prc2, filesize;

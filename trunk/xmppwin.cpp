@@ -10,6 +10,8 @@
 XmppWin::XmppWin()
 {
 	ui.setupUi(this);
+	QIcon i(QString(DATADIR) + QString("/icons/16x16.png"));
+	setWindowIcon(i);
 	ui.statusBox->setCurrentIndex(Offline);
 	connect(ui.statusBox, SIGNAL(currentIndexChanged(int)), this, SLOT(statusChanged()));
 	connect(ui.configBtn, SIGNAL(clicked()), this, SLOT(showConfigDial()));
@@ -17,6 +19,7 @@ XmppWin::XmppWin()
 	ui.tableView->horizontalHeader()->hide();
 	ui.tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.tableView->setSelectionMode(QAbstractItemView::SingleSelection);
+	ui.addItemBtn->setEnabled(false);
 
 	// Loads predifined Profiles.
 	conf = new Config();
@@ -46,7 +49,7 @@ XmppWin::XmppWin()
 		sti->setToolTip(QString("Kapture"));
 
 		sysTrayMenu = new QMenu(0);
-		sysTrayMenu->setTitle(QString("Kapture -- ") + pJid);
+		sysTrayMenu->setTitle(QString("Kapture -- ") + pJid.full());
 		for (int i = 0; i < conf->profileList().count(); i++)
 		{
 			QAction *contactActionMenu = sysTrayMenu->addAction(conf->profileList().at(i).name());
@@ -93,6 +96,9 @@ void XmppWin::quitApp()
 
 void XmppWin::statusChanged()
 {
+	/*
+	 * There should be a way to cancel a connection that, for example, went wrong.
+	 */
 	switch (ui.statusBox->currentIndex())
 	{
 	case Online :
@@ -217,7 +223,7 @@ void XmppWin::setPresence()
 
 void XmppWin::jabberConnect()
 {
-	jid = new Jid(pJid + QString("/") + res);
+	jid = new Jid(pJid.bare() + QString("/") + res);
 	
 	if (!jid->isValid())
 	{
@@ -258,7 +264,7 @@ void XmppWin::jabberDisconnect()
 	{
 		contactList[i]->setPresence(pr);
 	}
-	m->setData(contactList);
+	m->setData(&contactList);
 	for (int i = 0; i < contactList.count(); i++)
 	{
 		ui.tableView->update(m->index(i, 0));
@@ -291,9 +297,40 @@ void XmppWin::clientAuthenticated()
 	connect(client, SIGNAL(rosterReady(Roster)), this, SLOT(setRoster(Roster)));
 	connect(client, SIGNAL(presenceReady(const Presence&)), this, SLOT(processPresence(const Presence&)));
 	connect(client, SIGNAL(messageReady(const Message&)), this, SLOT(processMessage(const Message&)));
+	connect(client, SIGNAL(signalUpdateItem(Contact*)), SLOT(updateRosterItem(Contact*)));
 	connectionStatus = Online;
 	sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/online.png")));
-	sti->showMessage("Kapture - Connected", QString("You are now connected with %1.").arg(pJid));
+	sti->showMessage("Kapture - Connected", QString("You are now connected with %1.").arg(pJid.full()));
+}
+
+void XmppWin::updateRosterItem(Contact *c)
+{
+	printf("[XMPPWIN] updateRosterItem();\n");
+	Contact *contact = contactWithJid(*(c->jid));
+	if (contact == NULL)
+	{
+		printf("[XMPPWIN] Add %s\n", c->jid->full().toLatin1().constData());
+		c->setEmoticons(emoticons);
+		connect(c, SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
+		connect(c, SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
+		connect(c, SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
+
+		contactList << c;
+		sortContactList();
+		m->setData(&contactList);
+		ui.tableView->setModel(m);
+		for (int j = 0; j < contactList.count(); j++)
+		{
+			ui.tableView->update(m->index(j, 0));
+			ui.tableView->update(m->index(j, 1));
+		}
+		ui.tableView->resizeColumnsToContents();
+	}
+	else
+	{
+		printf("[XMPPWIN] Update %s\n", c->jid->full().toLatin1().constData());
+		contact->setSubscription(c->subscription());
+	}
 }
 
 #include <math.h>
@@ -301,8 +338,17 @@ void XmppWin::clientAuthenticated()
 
 void XmppWin::setRoster(Roster roster)
 {
+	/*
+	 * FIXME:
+	 * setRoster should behave like updateRosterItem() as when disconnecting and reconnecting,
+	 * the whole contactList is rebuild and actives contacts windows become obsolete.
+	 * So, if a contact already exists when receiving the roster, just update it.
+	 * Otherwise, add it to the contact list. If we are reconnecting (find a way to know it, for example, contact list not empty), contacts
+	 * present in the list but not present in the new received roster should be removed (and their window eventually cloased)
+	 */
 	r = roster;
 	m = new Model();
+	d = new ContactWidgetDelegate(); 
 	contactList.clear();
 	contactList = r.contactList();
 	// Connecting contacts.
@@ -313,21 +359,18 @@ void XmppWin::setRoster(Roster roster)
 		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
 		connect(contactList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
 		connect(contactList[i], SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
-		
+
 		QGraphicsTextItem *text = gScene->addText(contactList[i]->jid->full());
 		text->setPos(30*sin(i*PI/4), i*15);
-		
+
 		QPolygonF polygonF;
 		polygonF << QPointF(-5, -5) << QPointF(5, -5) << QPointF(0, +5);
 		gScene->addPolygon(polygonF)->setPos(150, (i*15)+7.5);
 	}
-	ui.graphicsView->setScene(gScene);
-
-	sortContactList();
-	m->setData(contactList);
-	ui.tableView->setModel(m);
-	connect(ui.tableView, SIGNAL(doubleClicked(const QString&)), this, SLOT(startChat(const QString&)));
-	connect(ui.tableView, SIGNAL(leftClick(const QString&, const QPoint&)), this, SLOT(showMenu(const QString&, const QPoint&)));
+	
+	
+	connect(ui.tableView, SIGNAL(doubleClicked(const Jid&)), this, SLOT(startChat(const Jid&)));
+	connect(ui.tableView, SIGNAL(rightClick(const Jid&, const QPoint&)), this, SLOT(showMenu(const Jid&, const QPoint&)));
 	if (ui.statusBox->currentIndex() != Invisible)
 	{
 		QString a = firstShow;
@@ -341,13 +384,31 @@ void XmppWin::setRoster(Roster roster)
 		QString b = "";
 		QString c = "unavailable";
 		client->setInitialPresence(a, b, c);
-		//FIXME:Maybe we should ask for each contact's presence.
 	}
+	waitingTimer->stop();
+	setWindowTitle("Kapture -- " + jid->full());
+	ui.addItemBtn->setEnabled(true);
+	connect(ui.addItemBtn, SIGNAL(clicked()), SLOT(addItem()));
+
+	ui.graphicsView->setScene(gScene);
+
+	sortContactList();
+	m->setData(&contactList);
+	ui.tableView->setModel(m);
+	ui.tableView->setItemDelegate(d);
+	
 	ui.tableView->setColumnWidth(0, 22);
 	ui.tableView->resizeColumnsToContents();
-	waitingTimer->stop();
-	//delete waitingTimer;
-	setWindowTitle("Kapture -- " + jid->full());
+}
+
+void XmppWin::addItem()
+{
+	bool ok;
+	QString text = QInputDialog::getText(this, tr("Adding a contact"), tr("Jid [e.g. cazou88@jabber.org] :"), QLineEdit::Normal, QString(), &ok);
+	if (ok && Jid(text).isValid())
+	{
+		client->addItem(Jid(text), QString(""), QString("")); //FIXME:Should create a dialog to get the name and the group.
+	}
 }
 
 Contact* XmppWin::contactWithJid(const Jid& cJid)
@@ -357,38 +418,89 @@ Contact* XmppWin::contactWithJid(const Jid& cJid)
 		if (contactList[i]->jid->equals(cJid))
 			return contactList[i];
 	}
-	return new Contact("");
+	return NULL;
 }
 
-void XmppWin::showMenu(const QString& to, const QPoint& point)
+void XmppWin::showMenu(const Jid& to, const QPoint& point)
 {
 	menuTo = to;
 	printf("[XMPPWIN] Show Menu.\n");
-	QMenu *menu = new QMenu(0);
-	menu->setTitle(to);
+	menu = new QMenu(0);
+	menu->setTitle(to.full());
 	QAction *vCardAction = menu->addAction("View vCard");
 	connect(vCardAction, SIGNAL(triggered()), this, SLOT(showvCard()));
 	menu->addSeparator();
-	QAction *sChatAction = menu->addAction(QString("Start chat with ") + to);
-	if (contactWithJid(Jid(to))->isAvailable())
+	QAction *sChatAction = menu->addAction(QString("Start chat with ") + to.full());
+	if (contactWithJid(to)->isAvailable())
 		connect(sChatAction, SIGNAL(triggered()), this, SLOT(startChatFromMenu()));
 	else
-	{
 		sChatAction->setEnabled(false);
+
+	QMenu *mSubsMenu = new QMenu(0);
+	mSubsMenu->setTitle("Manage Subscriptions");
+	menu->addMenu(mSubsMenu);
+
+	if (contactWithJid(to)->subscription() == "both")
+	{
+		QAction *addAuthAction = mSubsMenu->addAction(QString("Resend authorization to ") + to.full());
+		connect(addAuthAction, SIGNAL(triggered()), this, SLOT(slotAddAuth()));
+		QAction *remAuthAction = mSubsMenu->addAction(QString("Remove authorization of ") + to.full());
+		connect(remAuthAction, SIGNAL(triggered()), this, SLOT(slotRemAuth()));
+	}
+
+	if (contactWithJid(to)->subscription() == "to")
+	{
+		QAction *addAuthAction = mSubsMenu->addAction(QString("Resend authorization to ") + to.full());
+		connect(addAuthAction, SIGNAL(triggered()), this, SLOT(slotAddAuth()));
+	}
+
+	if (contactWithJid(to)->subscription() == "from")
+	{
+		QAction *reqAuthAction = mSubsMenu->addAction(QString("Request authorization from ") + to.full());
+		connect(reqAuthAction, SIGNAL(triggered()), this, SLOT(slotReqAuth()));
+		QAction *remAuthAction = mSubsMenu->addAction(QString("Remove authorization of ") + to.full());
+		connect(remAuthAction, SIGNAL(triggered()), this, SLOT(slotRemAuth()));
+	}
+	
+	if (contactWithJid(to)->subscription() == "none")
+	{
+		QAction *addAuthAction = mSubsMenu->addAction(QString("Resend authorization to ") + to.full());
+		connect(addAuthAction, SIGNAL(triggered()), this, SLOT(slotAddAuth()));
+		QAction *reqAuthAction = mSubsMenu->addAction(QString("Request authorization from ") + to.full());
+		connect(reqAuthAction, SIGNAL(triggered()), this, SLOT(slotReqAuth()));
 	}
 	menu->popup(point);
 	menu->show();
 	//FIXME:The menu should be destroid when it is clicked.
 }
 
+void XmppWin::slotAddAuth()
+{
+	client->addAuthFor(menuTo.full());
+	delete menu;
+}
+
+void XmppWin::slotRemAuth()
+{
+	client->removeAuthFor(menuTo.full());
+	delete menu;
+}
+
+void XmppWin::slotReqAuth()
+{
+	client->requestAuthFor(menuTo.full());
+	delete menu;
+}
+
 void XmppWin::startChatFromMenu()
 {
-	startChat(menuTo);
+	startChat(menuTo.full());
+	delete menu;
 }
 
 void XmppWin::showvCard()
 {
-	printf("[XMPPWIN] Show vCard of %s\n", menuTo.toLatin1().constData());
+	printf("[XMPPWIN] Show vCard of %s\n", menuTo.full().toLatin1().constData());
 }
 
 void XmppWin::sendVideo(QString& to)
@@ -439,6 +551,8 @@ void XmppWin::processPresence(const Presence& presence)
 			}
 
 			// Set eventual new resource for this contact.
+			// FIXME: should be done only if the contact has no resource yet.
+			// TODO: should add the resource to a resourceList for this contact as it can be connected with more than 1 resource.
 			contactList[i]->jid->setResource(presence.from().resource());
 
 			// Set contact's presence.
@@ -448,7 +562,7 @@ void XmppWin::processPresence(const Presence& presence)
 			sortContactList();
 
 			// Updating Table View.
-			m->setData(contactList);
+			//m->setData(contactList);
 			for (int j = 0; j < contactList.count(); j++)
 			{
 				ui.tableView->update(m->index(j, 0));
@@ -479,14 +593,11 @@ void XmppWin::sendMessage(QString &to, QString &message)
 		QMessageBox::critical(this, tr("Jabber"), tr("You are not logged in right now !!!"), QMessageBox::Ok);
 }
 
-void XmppWin::startChat(const QString &sTo)
+void XmppWin::startChat(const Jid& to)
 {
-	// Start Chat with "to" if it isn't done yet.
-	Jid *to = new Jid(sTo);
-	
 	for (int i = 0; i < contactList.count(); i++)
 	{
-		if (contactList[i]->jid->equals(*to))
+		if (contactList[i]->jid->equals(to))
 		{
 			contactList[i]->startChat();
 		}

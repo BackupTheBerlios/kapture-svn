@@ -33,6 +33,7 @@ public:
 	Jid to() const;
 	QString id() const;
 	QString type() const;
+	QString namespaceURI() const;
 	QDomNode node() const;
 
 	void setKind(Kind);

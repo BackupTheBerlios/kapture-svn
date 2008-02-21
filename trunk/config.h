@@ -6,6 +6,7 @@
 #include <QMessageBox>
 
 #include "profile.h"
+#include "jid.h"
 
 class Config
 {
@@ -14,7 +15,7 @@ public:
 	~Config();
 	QStringList profileNames() const;
 	QList<Profile> profileList() const;
-	QString jid(QString &profile) const;
+	Jid jid(QString &profile) const;
 	QString password(QString &profile) const;
 	QString personnalServer(QString &profile) const;
 	QString port(QString &profile) const;
@@ -26,10 +27,14 @@ public:
 	int ftPort() const;
 	QString proxy() const;
 	QString resource() const;
+	void setFTPort(int);
+	void setProxy(const QString&);
+	void setResource(const QString&);
 
 private:
-	QString cJid, cPassword, cPersonnalServer, cPort, cProfile,
+	QString cPassword, cPersonnalServer, cPort, cProfile,
 		cFTPort, cProxy, cResource;
+	Jid cJid;
 	bool cUseSysTray;
 	QList<Profile> profiles;
 	QDomDocument d;
