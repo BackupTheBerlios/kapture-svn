@@ -26,7 +26,7 @@ Jid::Jid(const char*)
 
 Jid::Jid(const QString& j)
 {
-	printf("[JID] create from \"%s\"\n", j.toLatin1().constData());
+//	printf("[JID] create from \"%s\"\n", j.toLatin1().constData());
 	if (j.isEmpty())
 	{
 		printf("NOT VALID\n");

@@ -11,7 +11,7 @@
  *
  */
 
-#include "rosterModel.h"
+#include "rostermodel.h"
 
 Model::Model(QObject *parent)
 	: QAbstractTableModel(parent)

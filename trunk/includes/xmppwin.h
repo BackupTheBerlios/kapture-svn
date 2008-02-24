@@ -7,7 +7,7 @@
 #include "client.h"
 #include "chatwin.h"
 #include "contact.h"
-#include "rosterModel.h"
+#include "rostermodel.h"
 #include "jid.h"
 #include "profile.h"
 #include "config.h"

@@ -12,6 +12,7 @@
  */
 
 #include <stdio.h>
+#include "merror.h"
 
 #ifdef DEBUG
 void KError(char* error, int errorno)

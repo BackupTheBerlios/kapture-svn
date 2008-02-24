@@ -53,7 +53,7 @@ XmppWin::XmppWin()
 		for (int i = 0; i < conf->profileList().count(); i++)
 		{
 			QAction *contactActionMenu = sysTrayMenu->addAction(conf->profileList().at(i).name());
-			connect(contactActionMenu, SIGNAL(triggered()), this, SLOT(jabberConnect()));
+			//connect(contactActionMenu, SIGNAL(triggered()), this, SLOT(jabberConnect()));
 		}
 		sysTrayMenu->addSeparator();
 		QAction *sQuitAction = sysTrayMenu->addAction(QString("Quit"));

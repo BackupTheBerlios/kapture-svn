@@ -22,10 +22,5 @@ int main(int argc, char **argv)
 	QApplication app(argc, argv);
 	XmppWin *xw = new XmppWin();
 	xw->show();
-	//app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
-	/*
-	 * The systemtray must close the application.
-	 * TODO: What if the system tray isn't used ?
-	 */
 	return app.exec();
 }

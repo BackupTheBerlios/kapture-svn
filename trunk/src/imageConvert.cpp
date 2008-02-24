@@ -18,6 +18,8 @@
 #include <QImage>
 #include <QColor>
 
+#include "imageConvert.h"
+
 #undef MIN
 #undef MAX
 #define MIN(a,b) (((a)<(b))?(a):(b))
