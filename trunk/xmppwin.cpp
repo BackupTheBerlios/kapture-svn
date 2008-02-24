@@ -439,6 +439,8 @@ void XmppWin::showMenu(const Jid& to, const QPoint& point)
 	QMenu *mSubsMenu = new QMenu(0);
 	mSubsMenu->setTitle("Manage Subscriptions");
 	menu->addMenu(mSubsMenu);
+	QAction *delAction = menu->addAction("Delete contact");
+	connect(delAction, SIGNAL(triggered()), SLOT(delItem()));
 
 	if (contactWithJid(to)->subscription() == "both")
 	{
@@ -472,6 +474,11 @@ void XmppWin::showMenu(const Jid& to, const QPoint& point)
 	menu->popup(point);
 	menu->show();
 	//FIXME:The menu should be destroid when it is clicked.
+}
+
+void XmppWin::delItem()
+{
+	client->delItem(menuTo);
 }
 
 void XmppWin::slotAddAuth()

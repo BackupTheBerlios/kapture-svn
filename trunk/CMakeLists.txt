@@ -59,6 +59,9 @@ install(FILES
   encrypted.png
   offline.png
   online.png
+  online-none.png
+  online-to.png
+  online-from.png
   chat.png
   xa.png
   dnd.png

@@ -357,7 +357,12 @@ void Client::sendVideo(const QString& to)
 	svTask->initiate(Jid(to));
 }
 
-void Client::addItem(const Jid& jid, const QString& name, const QString& /*group*/)
+void Client::addItem(const Jid& item, const QString& name, const QString& /*group*/)
 {
-	rTask->addItem(jid, name);
+	rTask->addItem(item, name);
+}
+
+void Client::delItem(const Jid& item)
+{
+	rTask->delItem(item);
 }

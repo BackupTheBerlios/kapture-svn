@@ -37,6 +37,7 @@ public:
 	void removeAuthFor(const QString& to);
 	void requestAuthFor(const QString& to);
 	void addItem(const Jid&, const QString&, const QString&);
+	void delItem(const Jid&);
 	
 public slots:
 	void read();

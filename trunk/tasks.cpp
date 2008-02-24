@@ -76,6 +76,11 @@ void RosterTask::addItem(const Jid& jid, const QString& name)
 	p->write(stanza);
 }
 
+void RosterTask::delItem(const Jid& jid)
+{
+
+}
+
 bool RosterTask::canProcess(const Stanza& s) const
 {
 	printf("[RosterTask]\n");
@@ -90,7 +95,6 @@ bool RosterTask::canProcess(const Stanza& s) const
 
 void RosterTask::processStanza(const Stanza& s)
 {
-	//FIXME: Also receive a stanza like this when subscription has changed !
 	r.clear();
 	QString j;
 	QString n;
@@ -98,7 +102,7 @@ void RosterTask::processStanza(const Stanza& s)
 	QDomElement query = s.node().firstChildElement();
 	if (query.localName() == "query")
 	{
-		//FIXME:jabberd2 has a bug, item is not in the query tag when updating the roster. Use >=2.1.23
+		//WARNING:jabberd2 has a bug, item is not in the query tag when updating the roster. Use >=2.1.23
 		QDomNodeList items = query.childNodes();
 		for (int i = 0; i < items.count(); i++)
 		{

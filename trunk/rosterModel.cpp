@@ -67,7 +67,16 @@ QVariant Model::data(const QModelIndex &index, int role) const
 			//FIXME: 'img' may be used uninitialized in this function.
 			printf("[RosterModel] Contact is %s\n", contacts->at(index.row())->show().toLatin1().constData());
 			if (contacts->at(index.row())->show() == "")
-				img = new QImage(QString(DATADIR) + QString("/icons/") + "online.png");
+			{
+				if (contacts->at(index.row())->subscription() == "both")
+					img = new QImage(QString(DATADIR) + QString("/icons/") + "online.png");
+				if (contacts->at(index.row())->subscription() == "from")
+					img = new QImage(QString(DATADIR) + QString("/icons/") + "online-from.png");
+				if (contacts->at(index.row())->subscription() == "to")
+					img = new QImage(QString(DATADIR) + QString("/icons/") + "online-to.png");
+				if (contacts->at(index.row())->subscription() == "none")
+					img = new QImage(QString(DATADIR) + QString("/icons/") + "online-none.png");
+			}
 			if (contacts->at(index.row())->show() == "away")
 				img = new QImage(QString(DATADIR) + QString("/icons/") + "away.png");
 			if (contacts->at(index.row())->show() == "chat")

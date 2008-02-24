@@ -23,6 +23,7 @@ public:
 	void processStanza(const Stanza& s);
 	Roster roster() const;
 	void addItem(const Jid& jid, const QString& name);
+	void delItem(const Jid& jid);
 private:
 	Roster r;
 	QString id;

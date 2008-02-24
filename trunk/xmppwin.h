@@ -54,6 +54,7 @@ public slots:
 	void slotReqAuth();
 	void addItem();
 	void updateRosterItem(Contact*);
+	void delItem();
 
 private:
 	Ui::xmppWin ui;
