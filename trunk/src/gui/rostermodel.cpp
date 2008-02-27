@@ -64,8 +64,8 @@ QVariant Model::data(const QModelIndex &index, int role) const
 		QImage *img;
 		if (contacts->at(index.row())->isAvailable())
 		{
-			//FIXME: 'img' may be used uninitialized in this function.
-			printf("[RosterModel] Contact is %s\n", contacts->at(index.row())->show().toLatin1().constData());
+			//FIXME: 'img' may be used uninitialized in this function. (Says gcc...)
+			//printf("[RosterModel] Contact is %s\n", contacts->at(index.row())->show().toLatin1().constData());
 			if (contacts->at(index.row())->show() == "")
 			{
 				if (contacts->at(index.row())->subscription() == "both")

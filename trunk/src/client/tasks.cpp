@@ -1206,6 +1206,7 @@ void PullStreamTask::processStanza(const Stanza& s)
 		identity.setAttribute("type", "pc");
 
 		// Supported protocols
+		// TODO:should add [Jingle], [Jingle video], [Raw-UDP],...
 		QDomElement feature = doc.createElement("feature");
 		feature.setAttribute("var", XMLNS_SI);
 		

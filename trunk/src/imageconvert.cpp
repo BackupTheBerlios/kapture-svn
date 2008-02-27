@@ -18,7 +18,7 @@
 #include <QImage>
 #include <QColor>
 
-#include "imageConvert.h"
+#include "imageconvert.h"
 
 #undef MIN
 #undef MAX

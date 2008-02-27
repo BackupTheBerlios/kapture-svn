@@ -41,103 +41,65 @@
     <item>
      <layout class="QHBoxLayout" >
       <item>
-       <layout class="QVBoxLayout" >
+       <widget class="QComboBox" name="profilesComboBox" />
+      </item>
+      <item>
+       <widget class="QComboBox" name="statusBox" >
         <item>
-         <layout class="QHBoxLayout" >
-          <item>
-           <widget class="QComboBox" name="profilesComboBox" />
-          </item>
-          <item>
-           <widget class="QComboBox" name="statusBox" >
-            <item>
-             <property name="text" >
-              <string>Online</string>
-             </property>
-            </item>
-            <item>
-             <property name="text" >
-              <string>Free for chat</string>
-             </property>
-            </item>
-            <item>
-             <property name="text" >
-              <string>Do not disturb</string>
-             </property>
-            </item>
-            <item>
-             <property name="text" >
-              <string>Away</string>
-             </property>
-            </item>
-            <item>
-             <property name="text" >
-              <string>Far far away</string>
-             </property>
-            </item>
-            <item>
-             <property name="text" >
-              <string>Invisible</string>
-             </property>
-            </item>
-            <item>
-             <property name="text" >
-              <string>Offline</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-         </layout>
+         <property name="text" >
+          <string>Online</string>
+         </property>
         </item>
         <item>
-         <layout class="QHBoxLayout" >
-          <property name="spacing" >
-           <number>1</number>
-          </property>
-          <item>
-           <widget class="QPushButton" name="configBtn" >
-            <property name="text" >
-             <string>Configuration</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer>
-            <property name="orientation" >
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeType" >
-             <enum>QSizePolicy::MinimumExpanding</enum>
-            </property>
-            <property name="sizeHint" >
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-          <item>
-           <widget class="QLabel" name="tlsIconLabel" >
-            <property name="minimumSize" >
-             <size>
-              <width>32</width>
-              <height>32</height>
-             </size>
-            </property>
-            <property name="maximumSize" >
-             <size>
-              <width>32</width>
-              <height>32</height>
-             </size>
-            </property>
-            <property name="text" >
-             <string/>
-            </property>
-           </widget>
-          </item>
-         </layout>
+         <property name="text" >
+          <string>Free for chat</string>
+         </property>
         </item>
-       </layout>
+        <item>
+         <property name="text" >
+          <string>Do not disturb</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Away</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Far far away</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Invisible</string>
+         </property>
+        </item>
+        <item>
+         <property name="text" >
+          <string>Offline</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="tlsIconLabel" >
+        <property name="minimumSize" >
+         <size>
+          <width>32</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="maximumSize" >
+         <size>
+          <width>32</width>
+          <height>32</height>
+         </size>
+        </property>
+        <property name="text" >
+         <string/>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
@@ -165,6 +127,13 @@
              </size>
             </property>
            </spacer>
+          </item>
+          <item>
+           <widget class="QPushButton" name="configBtn" >
+            <property name="text" >
+             <string>Configuration</string>
+            </property>
+           </widget>
           </item>
           <item>
            <widget class="QToolButton" name="addItemBtn" >

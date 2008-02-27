@@ -69,7 +69,7 @@ LINK_LIBRARIES(${SSL_LIBRARY} ${QT_LIBRARIES} ${QT_QTNETWORK_LIBRARIES}
 
 SET(Kapture_SRCS
 	src/main.cpp
-	src/imageConvert.cpp
+	src/imageconvert.cpp
 	src/merror.cpp
 	src/webcam.cpp
 	src/emoticons.cpp

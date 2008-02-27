@@ -11,6 +11,13 @@
  *
  */
 
+/* TODO:
+ * * This class was first written in C, a lots is still "C-like"
+ * * This class does not use the Qt Library as as it should (char* --> QString)
+ * * WARNING : in Qt 4.4, this class will be obsolete and replaced 
+ *   by phonon if stable enough and if it supports Pan/Tilt, etc...
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -35,7 +42,7 @@
 #include <QSocketNotifier>
 
 #include "webcam.h"
-#include "imageConvert.h"
+#include "imageconvert.h"
 #include "merror.h"
 
 
