@@ -1523,11 +1523,15 @@ void JingleTask::initiate(const Jid& to)
 			 * More to be added.
 			 */
 			QDomElement payload = doc.createElement("payload-type");
-			/* FIXME: I don't know if there is a particular id to set for JPEG*/
-			payload.setAttribute("id", "0"); 
+			/*
+			 * JPEG id is 26.
+			 * See http://tools.ietf.org/html/rfc3551#page-33
+			 */
+			payload.setAttribute("id", "26"); 
 			payload.setAttribute("name", "JPEG");
 			/* 
-			 * No idea of the right Value for clockrate.
+			 * clockrate for JPEG is 90000.
+			 * See http://tools.ietf.org/html/rfc3551#page-33
 			 */
 			payload.setAttribute("clockrate", "90000");
 			
@@ -1535,8 +1539,8 @@ void JingleTask::initiate(const Jid& to)
 			 * Maybe width and height will not be used.
 			 * Remove those two lines if it is the case.
 			 */
-			payload.setAttribute("height", "240");
-			payload.setAttribute("width",  "320");
+			//payload.setAttribute("height", "240");
+			//payload.setAttribute("width",  "320");
 			description.appendChild(payload);
 		}
 		content.appendChild(description);
@@ -1567,4 +1571,58 @@ void JingleTask::initiate(const Jid& to)
 
 	p->write(stanza);
 }
+
+/*
+ * PullJingleTask
+ */
+PullJingleTask::PullJingleTask(Task* parent, Xmpp* xmpp)
+	:Task(parent), p(xmpp)
+{
+
+}
+
+PullJingleTask::~PullJingleTask()
+{
+
+}
+
+bool PullJingleTask::canProcess(const Stanza& s) const
+{
+	if (s.kind() == Stanza::IQ && s.type() == "set" && s.node().firstChild().firstChild().namespaceURI() == "urn:xmpp:tmp:jingle")
+		return true;
+	return false;
+}
+
+void PullJingleTask::processStanza(const Stanza& s)
+{
+/*
+<iq from="cazou88@localhost/Kapture" type="set" id="umifoegvbs" to="cazou1988@localhost/Psi" >
+ <jingle xmlns="urn:xmpp:tmp:jingle" initiator="cazou88@localhost/Kapture" action="session-initiate" sid="agucdxelxl" >
+  <content creator="initiator" profile="RTP/AVP" name="prop" >
+   <description xmlns="urn:xmpp:tmp:jingle:apps:video-rtp">
+    <payload-type id="26" name="JPEG" clockrate="90000" />
+   </description>
+   <transport xmlns="urn:xmpp:tmp:jingle:transports:raw-udp">
+    <candidate port="13540" ip="127.0.0.1" generation="0" />
+   </transport>
+  </content>
+ </jingle>
+</iq>
+*/
+	/*
+	 * Now, we must
+	 * * Aknowledge the session-initiation request;
+	 * * MUST attempt to send media data via UDP to the IP and port specified in the initiator's Raw UDP candidate;
+	 * * SHOULD send its own Raw UDP candidate to the initiator via a Jingle "transport-info" message;
+	 * * SHOULD send an informational message of <trying/>.
+	 */
+}
+
+
+
+
+
+
+
+
 

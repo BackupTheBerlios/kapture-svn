@@ -282,4 +282,17 @@ private:
 	QStringList cList; // contentList
 };
 
+class PullJingleTask : public Task
+{
+	Q_OBJECT
+public:
+	PullJingleTask(Task* parent, Xmpp* xmpp);
+	~PullJingleTask();
+	bool canProcess(const Stanza&) const;
+	void processStanza(const Stanza&);
+private:
+	Xmpp *p;
+	QString id;
+};
+
 #endif

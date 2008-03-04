@@ -20,6 +20,10 @@ XmppWin::XmppWin()
 	ui.tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
 	ui.tableView->setSelectionMode(QAbstractItemView::SingleSelection);
 	ui.addItemBtn->setEnabled(false);
+	QPixmap *pixmap = new QPixmap(QString(DATADIR) + QString("/icons/") + "decrypted.png");
+	ui.tlsIconLabel->setToolTip(tr("You are not connected right now."));
+	ui.tlsIconLabel->setPixmap(*pixmap);
+	ui.tlsIconLabel->setEnabled(false);
 
 	// Loads predifined Profiles.
 	conf = new Config();
@@ -348,12 +352,52 @@ void XmppWin::setRoster(Roster roster)
 	 */
 	r = roster;
 	m = new Model();
-	d = new ContactWidgetDelegate(); 
-	contactList.clear();
-	contactList = r.contactList();
+	d = new ContactWidgetDelegate();
+	//Add new contacts
+	
+	QList<Contact*> newList = r.contactList();
+	for (int i = 0; i < newList.count(); i++)
+	{
+		bool found = false;
+		for (int j = 0; j < contactList.count(); j++)
+		{
+			if (newList[i]->jid->bare() == contactList[j]->jid->bare())
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			newList[i]->setEmoticons(emoticons);
+			connect(newList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
+			connect(newList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
+			connect(newList[i], SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
+			contactList << newList[i];
+		}
+	}
+	
+	//Delete old ones
+	for (int i = 0; i < contactList.count(); i++)
+	{
+		bool found = false;
+		for (int j = 0; j < newList.count(); j++)
+		{
+			if (newList[i]->jid->bare() == contactList[j]->jid->bare())
+			{
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+			contactList.takeAt(i);
+	}
+
+	/*contactList.clear();
+	contactList = r.contactList();*/
 	// Connecting contacts.
 	gScene = new QGraphicsScene(ui.graphicsView);
-	for (int i = 0; i < contactList.count(); i++)
+	/*for (int i = 0; i < contactList.count(); i++)
 	{
 		contactList[i]->setEmoticons(emoticons);
 		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
@@ -366,9 +410,9 @@ void XmppWin::setRoster(Roster roster)
 		QPolygonF polygonF;
 		polygonF << QPointF(-5, -5) << QPointF(5, -5) << QPointF(0, +5);
 		gScene->addPolygon(polygonF)->setPos(150, (i*15)+7.5);
-	}
+	}*/
 	
-	
+	//FIXME:Only if not already connected :
 	connect(ui.tableView, SIGNAL(doubleClicked(const Jid&)), this, SLOT(startChat(const Jid&)));
 	connect(ui.tableView, SIGNAL(rightClick(const Jid&, const QPoint&)), this, SLOT(showMenu(const Jid&, const QPoint&)));
 	if (ui.statusBox->currentIndex() != Invisible)
