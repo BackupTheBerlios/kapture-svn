@@ -58,6 +58,8 @@ void Client::authenticate()
 	psTask = new PullStreamTask(task, xmpp);
 	connect(psTask, SIGNAL(fileTransferIncoming()), this, SLOT(fileTransferIncoming()));
 	connect(psTask, SIGNAL(receiveFileReady()), this, SLOT(receiveFileReady()));
+	pjTask = new PullJingleTask(task, xmpp);
+	//connect(pjTask, SIGNAL(...), SLOT(...));
 	
 	connect(xmpp, SIGNAL(connected()), this, SLOT(authFinished()));
 	connect(xmpp, SIGNAL(readyRead()), this, SLOT(read()));

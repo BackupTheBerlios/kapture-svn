@@ -1469,25 +1469,41 @@ JingleTask::~JingleTask()
 
 }
 
-bool JingleTask::canProcess(const Stanza&) const
+bool JingleTask::canProcess(const Stanza& s) const
 {
 	printf("[JingleTask]\n");
+	if (s.kind() == Stanza::IQ && s.id() == id)
+		return true;
 	return false;
 }
 
-void JingleTask::processStanza(const Stanza&)
+void JingleTask::processStanza(const Stanza& s)
 {
-	
+//	if (s.type() == "result")
+//		waitConnection = true;
+	if (s.type() == "error")
+	{
+		//emit error
+		printf("Error, responder does not want it...\n");
+		return;
+	}
+		
 }
 
 void JingleTask::initiate(const Jid& to)
 {
+	//WARNING: More than one connection at a time is NOT possible.
+	//A way to do this has to be found.
+
+	/*
+	 * What I understood is that by initiating this, we will *receive* video (or audio)
+	 */
 	QStringList contentList;
 	contentList << XMLNS_VIDEO;
 	id = randomString(10);
 	t = to;
 	cList = contentList;
-	s = randomString(10);
+	sID = randomString(10);
 
 	Stanza stanza(Stanza::IQ, "set", id, t.full());
 	QDomNode node = stanza.node().firstChild();
@@ -1497,7 +1513,7 @@ void JingleTask::initiate(const Jid& to)
 	jingle.setAttribute("xmlns", XMLNS_JINGLE);
 	jingle.setAttribute("action", "session-initiate");
 	jingle.setAttribute("initiator", p->node().full());
-	jingle.setAttribute("sid", s);
+	jingle.setAttribute("sid", sID);
 
 	QDomElement content = doc.createElement("content");
 	content.setAttribute("creator", "initiator");
@@ -1569,8 +1585,66 @@ void JingleTask::initiate(const Jid& to)
 	jingle.appendChild(content);
 	node.appendChild(jingle);
 
+	tcpServer = new QTcpServer();
+	connect(tcpServer, SIGNAL(newConnection()), SLOT(newConnection()));
+	if (!tcpServer->listen(interface->allAddresses().at(0), 13540))
+	{
+		//emit error();
+		printf("An error occured.");
+		return;
+	}
+	//TODO: MUST create a QTcpServer to receive testing Media Data.
+	//	Once data has been received, send an informational message <received/>
+	//	(See specification : http://www.xmpp.org/extensions/xep-0177.html#response-send)
+
 	p->write(stanza);
 }
+
+void JingleTask::newConnection()
+{
+	tcpStream = tcpServer->nextPendingConnection();
+	connect(tcpStream, SIGNAL(readyRead()), SLOT(dataRead()));
+	//
+}
+
+void JingleTask::dataRead()
+{
+	//Aknowledge that we received data.
+	if (state == WaitData)
+	{
+/*
+<iq from='romeo@montague.net/orchard'
+    id='received1'
+    to='juliet@capulet.com/balcony'
+    type='set'>
+  <jingle xmlns='urn:xmpp:tmp:jingle'
+          action='session-info'
+          initiator='romeo@montague.net/orchard'
+          sid='a73sjjvkla37jfea'>
+    <received xmlns='urn:xmpp:tmp:jingle:transports:raw-udp:info'/>
+  </jingle>
+</iq>
+*/
+		id = randomString(8);
+		Stanza stanza(Stanza::IQ, "set", id, t.full());
+		QDomDocument doc("");
+		QDomElement jingle = doc.createElement("jingle");
+		jingle.setAttribute("xmlns", XMLNS_JINGLE);
+		jingle.setAttribute("action", "session-info");
+		jingle.setAttribute("intitiator", p->node().full());
+		jingle.setAttribute("sid", sID);
+
+		QDomElement received = doc.createElement("received");
+		received.setAttribute("xmlns", "urn:xmpp:tmp:jingle:transports:raw-udp:info");
+
+		stanza.node().appendChild(jingle);
+		jingle.appendChild(received);
+
+		p->write(stanza);
+	}
+	
+}
+
 
 /*
  * PullJingleTask
@@ -1595,30 +1669,163 @@ bool PullJingleTask::canProcess(const Stanza& s) const
 
 void PullJingleTask::processStanza(const Stanza& s)
 {
-/*
-<iq from="cazou88@localhost/Kapture" type="set" id="umifoegvbs" to="cazou1988@localhost/Psi" >
- <jingle xmlns="urn:xmpp:tmp:jingle" initiator="cazou88@localhost/Kapture" action="session-initiate" sid="agucdxelxl" >
-  <content creator="initiator" profile="RTP/AVP" name="prop" >
-   <description xmlns="urn:xmpp:tmp:jingle:apps:video-rtp">
-    <payload-type id="26" name="JPEG" clockrate="90000" />
-   </description>
-   <transport xmlns="urn:xmpp:tmp:jingle:transports:raw-udp">
-    <candidate port="13540" ip="127.0.0.1" generation="0" />
-   </transport>
-  </content>
- </jingle>
-</iq>
-*/
 	/*
 	 * Now, we must
-	 * * Aknowledge the session-initiation request;
+	 * * Aknowledge the session-initiation request
+	 * 
+	 * And then we
 	 * * MUST attempt to send media data via UDP to the IP and port specified in the initiator's Raw UDP candidate;
 	 * * SHOULD send its own Raw UDP candidate to the initiator via a Jingle "transport-info" message;
 	 * * SHOULD send an informational message of <trying/>.
 	 */
+	// Aknowledge the session-initiation request
+	to = s.from();
+	Stanza stanza(Stanza::IQ, "result", s.id(), s.from().full());
+	p->write(stanza);
+
+	// Parse the stanza (FIXME:maybe do this BEFORE Aknowledge the session-initiation request)
+	QDomElement node = s.node().firstChildElement();
+	if (node.tagName() != "jingle")
+	{
+		//emit error(...)
+		printf("tagname = %s\n", node.tagName().toLatin1().constData());
+		return;
+	}
+	printf("jingle found ! \n");
+	
+	if (node.namespaceURI() != "urn:xmpp:tmp:jingle" || node.attribute("action") != "session-initiate")
+	{
+		//emit error
+		printf("tagname = %s\n", node.tagName().toLatin1().constData());
+		return;
+	}
+	sID = node.attribute("sid");
+
+	if (node.firstChildElement().tagName() == "content")
+	{
+		printf("content found ! \n");
+		node = node.firstChildElement();
+	}
+	node = node.firstChildElement();
+	if (node.tagName() == "description")
+	{
+		printf("description found ! \n");
+
+		QDomElement desc = node;
+		if (desc.namespaceURI() != "urn:xmpp:tmp:jingle:apps:video-rtp")
+		{
+			//emit error(NOTSUPPORTED...)
+			return;
+		}
+		desc = desc.firstChildElement();
+		if (desc.tagName() != "payload-type")
+		{
+			//emit error(NOTSUPPORTED...)
+			return;
+		}
+		pId = desc.attribute("id");
+		pName = desc.attribute("name");
+		pCR = desc.attribute("clockrate");
+	}
+	node = node.nextSibling().toElement();
+	
+	if (node.tagName() == "transport")
+	{
+		printf("transport found ! \n");
+
+		QDomElement trans = node;
+		if (trans.namespaceURI() != "urn:xmpp:tmp:jingle:transports:raw-udp")
+		{
+			//emit error(NOTSUPPORTED...)
+			printf("error urn:xmpp:tmp:jingle:transprots:raw-udp\n");
+			return;
+		}
+		trans = trans.firstChildElement();
+		if (trans.tagName() != "candidate")
+		{
+			//emit error(NOTSUPPORTED...)
+			printf("error candidate\n");
+			return;
+		}
+		tPort = trans.attribute("port");
+		tIp = trans.attribute("ip");
+		tGen = trans.attribute("generation");
+	}
+
+	printf("[PULLJINGLETASK] * Jingle : sid = %s\n", sID.toLatin1().constData());
+	printf("[PULLJINGLETASK] * Description : id = %s, name = %s, clockrate = %s\n", pId.toLatin1().constData(), pName.toLatin1().constData(), pCR.toLatin1().constData());
+	printf("[PULLJINGLETASK] * Transport : port = %s, ip = %s, generation = %s\n", tPort.toLatin1().constData(), tIp.toLatin1().constData(), tGen.toLatin1().constData());
+
+	tryToConnect();
 }
 
+void PullJingleTask::tryToConnect()
+{
+	/* 
+	 * Here we
+	 * * (1) MUST attempt to send media data via UDP to the IP and port specified in the initiator's Raw UDP candidate;
+	 * * (2) SHOULD send its own Raw UDP candidate to the initiator via a Jingle "transport-info" message;
+	 * * (3) SHOULD send an informational message of <trying/>.
+	 */
 
+
+	// This is the Raw-UDP candidate for the initiator. (2)
+/*
+<iq from='juliet@capulet.com/balcony'
+    id='jingle2'
+    to='romeo@montague.net/orchard'
+    type='set'>
+  <jingle xmlns='urn:xmpp:tmp:jingle'
+          action='transport-info'
+          initiator='romeo@montague.net/orchard'
+          sid='a73sjjvkla37jfea'>
+    <content creator='initiator' name='this-is-the-audio-content'>
+      <transport xmlns='urn:xmpp:tmp:jingle:transports:raw-udp'>
+        <candidate ip='208.245.212.67' port='9876' generation='0'/>
+      </transport>
+    </content>
+  </jingle>
+</iq>
+*/
+	id = randomString(8);
+	Stanza stanza(Stanza::IQ, "set", id, to.full());
+	QDomDocument doc("");
+	QDomElement jingle = doc.createElement("jingle");
+	jingle.setAttribute("xmlns", XMLNS_JINGLE);
+	jingle.setAttribute("action", "session-initiate");
+	jingle.setAttribute("initiator", to.full());
+	jingle.setAttribute("sid", sID);
+
+	QDomElement content = doc.createElement("content");
+	content.setAttribute("creator", "initiator");
+	content.setAttribute("name", "prop"); //FIXME:I don't know if this the good thing to do.
+
+	QDomElement transport = doc.createElement("transport");
+	transport.setAttribute("xmlns", XMLNS_RAW_UDP);
+
+	QNetworkInterface *interface = new QNetworkInterface();
+	/* TODO:
+	 * 	Should use the external IP in this case as it is 
+	 * 	"the most likely to succeed".
+	 * 	For example, download it from
+	 * 		http://www.swlink.net/~styma/REMOTE_ADDR.shtml
+	 * 		or
+	 * 		http://www.whatismyip.com/automation/n09230945.asp
+	 * 	or use a webservice.
+	 * 	This is not prioritary.
+	 */
+	QDomElement candidate = doc.createElement("candidate");
+	candidate.setAttribute("ip", interface->allAddresses().at(0).toString());
+	candidate.setAttribute("port", "13540");
+	candidate.setAttribute("generation", "0");
+
+	stanza.node().appendChild(jingle);
+	jingle.appendChild(content);
+	content.appendChild(transport);
+	transport.appendChild(candidate);
+
+	p->write(stanza);
+}
 
 
 

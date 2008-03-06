@@ -45,8 +45,14 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="toolTip" >
+          <string>Don't push me !!!</string>
+         </property>
+         <property name="layoutDirection" >
+          <enum>Qt::LeftToRight</enum>
+         </property>
          <property name="text" >
-          <string>Video</string>
+          <string>Receive video</string>
          </property>
         </widget>
        </item>

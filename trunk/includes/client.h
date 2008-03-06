@@ -96,6 +96,7 @@ private:
 	FileTransferTask *sfTask;	//sendFileTask
 	FileTransferTask *rfTask;	//receiveFileTask
 	JingleTask *svTask; 		//sendVideoTask
+	PullJingleTask *pjTask;
 	QString fileName;
 };
 #endif

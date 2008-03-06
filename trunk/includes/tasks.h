@@ -274,12 +274,20 @@ public:
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
 	void initiate(const Jid& to);
+
+public slots:
+	void newConnection();
+	void dataRead();
+
 private:
 	Xmpp *p;
 	QString id;
-	QString s; // SID
+	QString sID; // SID
 	Jid t; // to
 	QStringList cList; // contentList
+	enum States {WaitData = 0, Streaming} state;
+	QTcpServer *tcpServer;
+	QTcpSocket *tcpStream;
 };
 
 class PullJingleTask : public Task
@@ -293,6 +301,10 @@ public:
 private:
 	Xmpp *p;
 	QString id;
+	Jid to;
+	void tryToConnect();
+	QString sID, tPort, tIp, tGen, pId, pName, pCR;
+	QTcpServer *tcpServer;
 };
 
 #endif
