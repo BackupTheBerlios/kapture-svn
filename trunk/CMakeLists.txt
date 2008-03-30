@@ -15,7 +15,7 @@ FIND_PACKAGE(Qt4 4.3 REQUIRED)
 FIND_PACKAGE(OpenSSL REQUIRED)
 
 INCLUDE(${QT_USE_FILE})
-INCLUDE_DIRECTORIES(includes)
+INCLUDE_DIRECTORIES(include)
 
 #SET(DATADIR)
 
@@ -35,28 +35,28 @@ QT4_WRAP_UI(Kapture_UIS_H ${Kapture_UIS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 SET(Kapture_OBJECTS
-	includes/client.h
-	includes/xmppwin.h
-	includes/kapturewin.h
-	includes/webcam.h
-	includes/mainframewin.h
-	includes/xmpp.h
-	includes/tlshandler.h
-	includes/stanza.h
-	includes/rostermodel.h
-	includes/chatwin.h
-	includes/mouserostertableview.h
-	includes/contact.h
-	includes/xmppconfigdialog.h
-	includes/profilemodel.h
-	includes/mouseprofilestableview.h
-	includes/task.h
-	includes/tasks.h
-	includes/socks5.h
-	includes/incomingfiledialog.h
-	includes/joystick.h
-	includes/xmppreg.h
-	includes/rosterdelegate.h
+	include/client.h
+	include/xmppwin.h
+	include/kapturewin.h
+	include/webcam.h
+	include/mainframewin.h
+	include/xmpp.h
+	include/tlshandler.h
+	include/stanza.h
+	include/rostermodel.h
+	include/chatwin.h
+	include/mouserostertableview.h
+	include/contact.h
+	include/xmppconfigdialog.h
+	include/profilemodel.h
+	include/mouseprofilestableview.h
+	include/task.h
+	include/tasks.h
+	include/socks5.h
+	include/incomingfiledialog.h
+	include/joystick.h
+	include/xmppreg.h
+	include/rosterdelegate.h
 )
 QT_WRAP_CPP(Kapture MOC_FILES ${Kapture_OBJECTS})
 
