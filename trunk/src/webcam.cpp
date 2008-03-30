@@ -138,7 +138,6 @@ QList<int> Webcam::getFormatList(QList<QString> &description) const
 
 QList<QSize> Webcam::getSizesList() const
 {
-#ifdef USE_UVCVIDEO
 	int i = 0;
 	QList<QSize> rSizes;
 	QSize tmp;
@@ -155,17 +154,6 @@ QList<QSize> Webcam::getSizesList() const
 		sizes.index = i;
 	}
 	return rSizes;
-#else
-	QList<QSize> rSizes;
-	QSize tmp;
-
-	tmp.setWidth(320);
-	tmp.setHeight(240);
-	
-	rSizes << tmp;
-
-	return rSizes;
-#endif
 }
 
 

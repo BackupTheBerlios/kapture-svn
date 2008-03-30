@@ -59,7 +59,7 @@ void Client::authenticate()
 	connect(psTask, SIGNAL(fileTransferIncoming()), this, SLOT(fileTransferIncoming()));
 	connect(psTask, SIGNAL(receiveFileReady()), this, SLOT(receiveFileReady()));
 	pjTask = new PullJingleTask(task, xmpp);
-	//connect(pjTask, SIGNAL(...), SLOT(...));
+	connect(pjTask, SIGNAL(newSession()), SLOT(newJingleSession()));
 	
 	connect(xmpp, SIGNAL(connected()), this, SLOT(authFinished()));
 	connect(xmpp, SIGNAL(readyRead()), this, SLOT(read()));
@@ -368,3 +368,20 @@ void Client::delItem(const Jid& item)
 {
 	rTask->delItem(item);
 }
+
+void Client::newJingleSession()
+{
+	if (!pjTask->hasPendingSession())
+	{
+		printf("[CLIENT] There is a bug in the Jingle implementation. This is not an important one.\n");
+		return;
+	}
+	sessionList << pjTask->getNextSession();
+	emit newJingleSessionReady();
+}
+
+JingleTask *Client::getNextPendingJingleSession()
+{
+	return sessionList.takeFirst();
+}
+

@@ -38,6 +38,7 @@ public:
 	void requestAuthFor(const QString& to);
 	void addItem(const Jid&, const QString&, const QString&);
 	void delItem(const Jid&);
+	JingleTask *getNextPendingJingleSession();
 	
 public slots:
 	void read();
@@ -59,6 +60,7 @@ public slots:
 	void subApproved();
 	void subRefused();
 	void slotUpdateItem();
+	void newJingleSession();
 
 signals:
 	/*!
@@ -73,6 +75,7 @@ signals:
 	void prcentChanged(Jid&, QString&, int); 
 	void streamError(streamErrorType);
 	void registrationFinished();
+	void newJingleSessionReady();
 
 private:
 	IncomingFileDialog *ifd;
@@ -98,5 +101,6 @@ private:
 	JingleTask *svTask; 		//sendVideoTask
 	PullJingleTask *pjTask;
 	QString fileName;
+	QList<JingleTask*> sessionList;
 };
 #endif

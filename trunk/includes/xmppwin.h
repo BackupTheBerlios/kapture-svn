@@ -55,6 +55,7 @@ public slots:
 	void addItem();
 	void updateRosterItem(Contact*);
 	void delItem();
+	void newJingleSessionReady();
 
 private:
 	Ui::xmppWin ui;

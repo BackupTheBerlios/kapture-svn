@@ -1456,6 +1456,7 @@ void PullStreamTask::ftAgree(const QString&, const Jid&, const QString& saveFile
 
 //-------------------------------
 // JingleTask
+// FIXME:WARNING: BAD IMPLEMENTATION !!! Restart from Jingle Spec.
 //-------------------------------
 
 JingleTask::JingleTask(Task* parent, Xmpp *xmpp)
@@ -1575,6 +1576,8 @@ void JingleTask::initiate(const Jid& to)
 	 * 	or use a webservice.
 	 * 	This is not prioritary.
 	 */
+	QHttp("http://www.whatismyip.com/automation/n09230945.asp");
+
 	QDomElement candidate = doc.createElement("candidate");
 	candidate.setAttribute("ip", interface->allAddresses().at(0).toString());
 	candidate.setAttribute("port", QString("13540"));
@@ -1593,9 +1596,6 @@ void JingleTask::initiate(const Jid& to)
 		printf("An error occured.");
 		return;
 	}
-	//TODO: MUST create a QTcpServer to receive testing Media Data.
-	//	Once data has been received, send an informational message <received/>
-	//	(See specification : http://www.xmpp.org/extensions/xep-0177.html#response-send)
 
 	p->write(stanza);
 }
@@ -1604,7 +1604,6 @@ void JingleTask::newConnection()
 {
 	tcpStream = tcpServer->nextPendingConnection();
 	connect(tcpStream, SIGNAL(readyRead()), SLOT(dataRead()));
-	//
 }
 
 void JingleTask::dataRead()
@@ -1645,12 +1644,71 @@ void JingleTask::dataRead()
 	
 }
 
+void JingleTask::setData(const QString& SID,
+		     const Jid& to,
+		     const QString& pId,
+		     const QString& pName,
+		     const QString& pCR,
+		     const QString& tPort,
+		     const QString& tIp,
+		     const QString& tGen)
+{
+	t = to;
+	sID = SID;
+	/*TODO:set others*/
+}
+
+void JingleTask::decline()
+{
+/*
+<iq from='laertes@shakespeare.lit/castle'
+    id='term1'
+    to='kingclaudius@shakespeare.lit/castle'
+    type='set'>
+  <jingle xmlns='urn:xmpp:tmp:jingle'
+          action='session-terminate'
+          initiator='kingclaudius@shakespeare.lit/castle'
+          sid='a73sjjvkla37jfea'>
+    <reason>
+      <condition><decline/></condition>
+    </reason>
+</iq>
+*/
+
+	Stanza stanza(Stanza::IQ, "set", randomString(8), t.full());
+	QDomDocument doc("");
+	QDomElement jingle = doc.createElement("jingle");
+	jingle.setAttribute("xmlns", XMLNS_JINGLE);
+	jingle.setAttribute("action", "session-terminate");
+	jingle.setAttribute("initiator", t.full());
+	jingle.setAttribute("sid", sID);
+
+	QDomElement reason = doc.createElement("reason");
+
+	QDomElement condition = doc.createElement("condition");
+	
+	QDomElement decline = doc.createElement("decline");
+
+	stanza.node().firstChild().appendChild(jingle);
+	jingle.appendChild(reason);
+	reason.appendChild(condition);
+	condition.appendChild(decline);
+
+	p->write(stanza);
+
+}
+
+void JingleTask::startReceive()
+{
+	//TODO:tryToConnect must go here.
+}
 
 /*
  * PullJingleTask
+ * FIXME:WARNING: BAD IMPLEMENTATION !!! Restart from Jingle Spec.
  */
 PullJingleTask::PullJingleTask(Task* parent, Xmpp* xmpp)
-	:Task(parent), p(xmpp)
+	:Task(parent), p(xmpp), task(parent)
 {
 
 }
@@ -1679,7 +1737,6 @@ void PullJingleTask::processStanza(const Stanza& s)
 	 * * SHOULD send an informational message of <trying/>.
 	 */
 	// Aknowledge the session-initiation request
-	to = s.from();
 	Stanza stanza(Stanza::IQ, "result", s.id(), s.from().full());
 	p->write(stanza);
 
@@ -1755,12 +1812,35 @@ void PullJingleTask::processStanza(const Stanza& s)
 	printf("[PULLJINGLETASK] * Jingle : sid = %s\n", sID.toLatin1().constData());
 	printf("[PULLJINGLETASK] * Description : id = %s, name = %s, clockrate = %s\n", pId.toLatin1().constData(), pName.toLatin1().constData(), pCR.toLatin1().constData());
 	printf("[PULLJINGLETASK] * Transport : port = %s, ip = %s, generation = %s\n", tPort.toLatin1().constData(), tIp.toLatin1().constData(), tGen.toLatin1().constData());
+	
+	//CREATE a Jingle session (JingleTask for example) and put it in a list.
+	session = new JingleTask(task, p);
+	session->setData(sID, s.from(), pId, pName, pCR, tPort, tIp, tGen);
+	               /*Sid, from, pId, pName, pCR, tPort, tIp, tGen*/
+	sessionList << session;
 
-	tryToConnect();
+	emit newSession();
+
+	//tryToConnect(); That will NOT be managed in PullJingleTask but in JingleTask.
+	//JingleTask will be able to receive and send data.
+	//This Class (PullJingleTask) works like QTcpServer : 
+	//	it receive Initiation stanza and give then a JingleTask (would be QTcpSocket)
+	//	to the Client so it can continue the session negotiation.
+}
+
+JingleTask *PullJingleTask::getNextSession()
+{
+	return sessionList.takeFirst();
+}
+
+bool PullJingleTask::hasPendingSession()
+{
+	return !sessionList.empty();
 }
 
 void PullJingleTask::tryToConnect()
 {
+	// !!!!!!!!!!!!!!!! THIS HAS TO BE IMPLEMENTED IN JINGLETASK !!!!!!!!!!
 	/* 
 	 * Here we
 	 * * (1) MUST attempt to send media data via UDP to the IP and port specified in the initiator's Raw UDP candidate;

@@ -274,6 +274,17 @@ public:
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
 	void initiate(const Jid& to);
+	void setData(const QString& SID,
+		     const Jid& to,
+		     const QString& pId,
+		     const QString& pName,
+		     const QString& pCR,
+		     const QString& tPort,
+		     const QString& tIp,
+		     const QString& tGen);
+	void startReceive();
+	void decline();
+	Jid to() const {return t;};
 
 public slots:
 	void newConnection();
@@ -298,6 +309,10 @@ public:
 	~PullJingleTask();
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
+	JingleTask *getNextSession();
+	bool hasPendingSession();
+signals:
+	void newSession();
 private:
 	Xmpp *p;
 	QString id;
@@ -305,6 +320,9 @@ private:
 	void tryToConnect();
 	QString sID, tPort, tIp, tGen, pId, pName, pCR;
 	QTcpServer *tcpServer;
+	JingleTask *session;
+	QList<JingleTask*> sessionList;
+	Task *task;
 };
 
 #endif

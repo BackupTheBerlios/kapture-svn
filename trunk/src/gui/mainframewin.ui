@@ -13,7 +13,7 @@
    </rect>
   </property>
   <property name="windowTitle" >
-   <string>Main Video</string>
+   <string>Jingle Video chat with romeo@montague/outside</string>
   </property>
   <property name="toolButtonStyle" >
    <enum>Qt::ToolButtonIconOnly</enum>

@@ -302,9 +302,24 @@ void XmppWin::clientAuthenticated()
 	connect(client, SIGNAL(presenceReady(const Presence&)), this, SLOT(processPresence(const Presence&)));
 	connect(client, SIGNAL(messageReady(const Message&)), this, SLOT(processMessage(const Message&)));
 	connect(client, SIGNAL(signalUpdateItem(Contact*)), SLOT(updateRosterItem(Contact*)));
+	connect(client, SIGNAL(newJingleSessionReady()), SLOT(newJingleSessionReady()));
 	connectionStatus = Online;
 	sti->setIcon(QIcon(QString(DATADIR) + QString("/icons/online.png")));
 	sti->showMessage("Kapture - Connected", QString("You are now connected with %1.").arg(pJid.full()));
+}
+
+void XmppWin::newJingleSessionReady()
+{
+	JingleTask *js = client->getNextPendingJingleSession();
+	// js should be in a list so all incoming connections are in the list.
+	if (contactWithJid(js->to())->askForJingleStart(js->to(), "Video"))
+	{
+		js->startReceive();
+	}
+	else
+	{
+		js->decline();
+	}
 }
 
 void XmppWin::updateRosterItem(Contact *c)

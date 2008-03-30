@@ -15,6 +15,7 @@
 #include <QScrollBar>
 #include <QDate>
 #include <QTime>
+#include <QMessageBox>
 
 #include "contact.h"
 
@@ -77,6 +78,31 @@ void Contact::sendFile()
 {
 	QString to = jid->full();
 	emit sendFileSignal(to);
+}
+
+bool Contact::askForJingleStart(const Jid& from, const QString& /*type*/)
+{
+	if (!isChatting)
+	{
+		chatWin = new ChatWin();
+		chatWin->setWindowTitle(jid->full());
+		connect(chatWin, SIGNAL(sendMessage(QString)), this, SLOT(messageToSend(QString)));
+		connect(chatWin, SIGNAL(sendFile()), this, SLOT(sendFile()));
+		connect(chatWin, SIGNAL(sendVideo()), this, SLOT(slotSendVideo()));
+		connect(chatWin, SIGNAL(shown()), this, SLOT(updateChatWinTitle()));
+		isChatting = true;
+	}
+	chatWin->show();
+	int ret = QMessageBox::question(chatWin,
+					QString("Jingle Video"),
+					QString("The contact ") + 
+					from.full() + 
+					QString(" wants to start a Jingle video chat with you (should be send and receive...)\nDo you agree ?"), 
+					QMessageBox::Yes | QMessageBox::No);
+	if (ret != QMessageBox::Yes)
+		return false;
+	else
+		return true;
 }
 
 void Contact::newMessage(const QString &m /*Message*/)

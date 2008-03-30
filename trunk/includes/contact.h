@@ -38,6 +38,7 @@ public:
 	Presence *presence() const {return p;};
 	void setSubscription(const QString&);
 	QString subscription() const {return sub;};
+	bool askForJingleStart(const Jid& from, const QString& type);
 
 private:
 	Contact();
