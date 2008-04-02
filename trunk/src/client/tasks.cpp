@@ -1,5 +1,5 @@
 /*
- *      Kapture
+ *      Kapture -- tasks.cpp
  *
  *      Copyright (C) 2006-2007
  *          Detlev Casanova (detlev.casanova@gmail.com)
@@ -36,7 +36,7 @@ RosterTask::~RosterTask()
 
 }
 
-void RosterTask::getRoster(Jid& j)
+void RosterTask::getRoster(const Jid& j)
 {
 	r.clear();
 	QString type = "get";
@@ -1651,7 +1651,7 @@ void JingleTask::setData(const QString& SID,
 		     const QString& pCR,
 		     const QString& tPort,
 		     const QString& tIp,
-		     const QString& tGen)
+		     const QString& tGen) /*--> SHOULD CREATE A SESSION CLASS <-- more than just raw UDP has to be supported (ice-udp)*/
 {
 	t = to;
 	sID = SID;
@@ -1660,21 +1660,6 @@ void JingleTask::setData(const QString& SID,
 
 void JingleTask::decline()
 {
-/*
-<iq from='laertes@shakespeare.lit/castle'
-    id='term1'
-    to='kingclaudius@shakespeare.lit/castle'
-    type='set'>
-  <jingle xmlns='urn:xmpp:tmp:jingle'
-          action='session-terminate'
-          initiator='kingclaudius@shakespeare.lit/castle'
-          sid='a73sjjvkla37jfea'>
-    <reason>
-      <condition><decline/></condition>
-    </reason>
-</iq>
-*/
-
 	Stanza stanza(Stanza::IQ, "set", randomString(8), t.full());
 	QDomDocument doc("");
 	QDomElement jingle = doc.createElement("jingle");
@@ -1790,23 +1775,24 @@ void PullJingleTask::processStanza(const Stanza& s)
 	{
 		printf("transport found ! \n");
 
-		QDomElement trans = node;
-		if (trans.namespaceURI() != "urn:xmpp:tmp:jingle:transports:raw-udp")
+		while (!node.isNull())
 		{
-			//emit error(NOTSUPPORTED...)
-			printf("error urn:xmpp:tmp:jingle:transprots:raw-udp\n");
-			return;
+			QDomElement trans = node;
+			if (trans.namespaceURI() == "urn:xmpp:tmp:jingle:transports:raw-udp")
+			{
+				trans = trans.firstChildElement();
+				if (trans.tagName() != "candidate")
+				{
+					//emit error(NOTSUPPORTED...)
+					printf("error candidate\n");
+					return;
+				}
+				tPort = trans.attribute("port");
+				tIp = trans.attribute("ip");
+				tGen = trans.attribute("generation");
+			}
+			node = node.nextSiblingElement();
 		}
-		trans = trans.firstChildElement();
-		if (trans.tagName() != "candidate")
-		{
-			//emit error(NOTSUPPORTED...)
-			printf("error candidate\n");
-			return;
-		}
-		tPort = trans.attribute("port");
-		tIp = trans.attribute("ip");
-		tGen = trans.attribute("generation");
 	}
 
 	printf("[PULLJINGLETASK] * Jingle : sid = %s\n", sID.toLatin1().constData());

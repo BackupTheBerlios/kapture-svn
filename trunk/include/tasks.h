@@ -18,7 +18,7 @@ class RosterTask : public Task
 public:
 	RosterTask(Xmpp* p, Task* parent = 0);
 	~RosterTask();
-	void getRoster(Jid& j);
+	void getRoster(const Jid& j);
 	bool canProcess(const Stanza& s) const;
 	void processStanza(const Stanza& s);
 	Roster roster() const;

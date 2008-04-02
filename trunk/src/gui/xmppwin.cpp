@@ -68,8 +68,6 @@ XmppWin::XmppWin()
 		sti->show();
 	}
 	
-	waitingTimer = new QTimer();
-
 	// Concerns Joystick.
 	//Joystick *js0 = new Joystick("/dev/js0");
 }
@@ -239,13 +237,14 @@ void XmppWin::jabberConnect()
 	
 	client = new Client(*jid, serverEdit, portEdit);
 	connect(client, SIGNAL(prcentChanged(Jid&, QString&, int)), this, SLOT(prcentChanged(Jid&, QString&, int)));
-	connect(waitingTimer, SIGNAL(timeout()), this, SLOT(connectingLogo()));
-	waitingTimer->start(1000);
 	connect(client, SIGNAL(error(Xmpp::ErrorType)), this, SLOT(error(Xmpp::ErrorType)));
 	connect(client, SIGNAL(connected()), this, SLOT(clientAuthenticated()));
 	client->setResource(jid->resource());
 	client->setPassword(password);
 	client->authenticate();
+	waitingTimer = new QTimer();
+	connect(waitingTimer, SIGNAL(timeout()), this, SLOT(connectingLogo()));
+	waitingTimer->start(1000);
 }
 
 void XmppWin::connectingLogo()
@@ -263,6 +262,7 @@ void XmppWin::jabberDisconnect()
 {
 	delete client;
 	delete jid;
+	delete waitingTimer;
 	Presence pr(QString(""), QString(""), QString(""));
 	for (int i = 0; i < contactList.count(); i++)
 	{
@@ -398,34 +398,21 @@ void XmppWin::setRoster(Roster roster)
 		bool found = false;
 		for (int j = 0; j < newList.count(); j++)
 		{
-			if (newList[i]->jid->bare() == contactList[j]->jid->bare())
+			if (newList[j]->jid->bare() == contactList[i]->jid->bare())
 			{
 				found = true;
 				break;
 			}
 		}
 		if (!found)
+		{
 			contactList.takeAt(i);
+			// A contact has been removed, we must check the one which has taken it's place.
+			i--;
+		}
 	}
 
-	/*contactList.clear();
-	contactList = r.contactList();*/
-	// Connecting contacts.
 	gScene = new QGraphicsScene(ui.graphicsView);
-	/*for (int i = 0; i < contactList.count(); i++)
-	{
-		contactList[i]->setEmoticons(emoticons);
-		connect(contactList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
-		connect(contactList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
-		connect(contactList[i], SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
-
-		QGraphicsTextItem *text = gScene->addText(contactList[i]->jid->full());
-		text->setPos(30*sin(i*PI/4), i*15);
-
-		QPolygonF polygonF;
-		polygonF << QPointF(-5, -5) << QPointF(5, -5) << QPointF(0, +5);
-		gScene->addPolygon(polygonF)->setPos(150, (i*15)+7.5);
-	}*/
 	
 	//FIXME:Only if not already connected :
 	connect(ui.tableView, SIGNAL(doubleClicked(const Jid&)), this, SLOT(startChat(const Jid&)));
