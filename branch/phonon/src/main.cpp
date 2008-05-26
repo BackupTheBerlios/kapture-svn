@@ -19,6 +19,7 @@
 
 int main(int argc, char **argv)
 {
+	printf("THIS IS PHONON VERSION !\n");
 	QApplication app(argc, argv);
 	XmppWin *xw = new XmppWin();
 	xw->show();
