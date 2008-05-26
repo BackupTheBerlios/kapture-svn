@@ -18,7 +18,7 @@ XmppConfigDialog::XmppConfigDialog()
 	connect(ui.addBtn, SIGNAL(clicked()), this, SLOT(add()));
 	connect(ui.delBtn, SIGNAL(clicked()), this, SLOT(del()));
 	connect(ui.buttonBox, SIGNAL(accepted()), this, SLOT(saveConfig()));
-	connect(ui.webcamBtn, SIGNAL(clicked()), this, SLOT(configWebcam()));
+	connect(ui.tabWidget, SIGNAL(currentChanged(int)), this, SLOT(tabChanged(int)));
 
 	ui.ftPortEdit->setValue(conf->ftPort());
 	ui.proxyEdit->setText(conf->proxy());
@@ -29,6 +29,13 @@ XmppConfigDialog::XmppConfigDialog()
 XmppConfigDialog::~XmppConfigDialog()
 {
 
+}
+
+void XmppConfigDialog::tabChanged(int newTab)
+{
+	if (newTab != 2)
+		return;
+	
 }
 
 void XmppConfigDialog::saveConfig()

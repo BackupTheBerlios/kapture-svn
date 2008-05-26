@@ -9,7 +9,7 @@ else (UVCVIDEO)
 	MESSAGE(" * If you want to, re-run cmake -D UVCVIDEO=/path/to/uvcvideo /path/to/Kapture/source")
 ENDIF(UVCVIDEO)
 
-ADD_DEFINITIONS("-g -O2 -fno-inline -W -Wall -Wextra")
+ADD_DEFINITIONS("-g -O0 -fno-inline -W -Wall -Wextra")
 
 FIND_PACKAGE(Qt4 4.3 REQUIRED)
 FIND_PACKAGE(OpenSSL REQUIRED)
@@ -57,6 +57,8 @@ SET(Kapture_OBJECTS
 	include/joystick.h
 	include/xmppreg.h
 	include/rosterdelegate.h
+	include/jinglestanza.h
+	include/videowidget.h
 )
 QT_WRAP_CPP(Kapture MOC_FILES ${Kapture_OBJECTS})
 
@@ -82,6 +84,7 @@ SET(Kapture_SRCS
 	src/client/xmlhandler.cpp
 	src/client/event.cpp
 	src/client/stanza.cpp
+	src/client/jinglestanza.cpp
 	src/client/contact.cpp
 	src/client/jid.cpp
 	src/client/vcard.cpp
@@ -103,6 +106,7 @@ SET(Kapture_SRCS
 	src/gui/filetransferwidget.cpp
 	src/gui/incomingfiledialog.cpp
 	src/gui/rosterdelegate.cpp
+	src/gui/videowidget.cpp
 	src/net/tlshandler.cpp
 	src/net/socks5.cpp
 )

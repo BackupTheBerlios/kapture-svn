@@ -12,19 +12,78 @@
  */
 
 #include <QTcpServer>
+#include <QSysInfo>
 
 #include "tasks.h"
 
+#define KAPTURE_VERSION			"svn"
 #define XMLNS_FEATURENEG 		"http://jabber.org/protocol/feature-neg"
 #define XMLNS_SI 			"http://jabber.org/protocol/si"
 #define XMLNS_FILETRANSFER 		"http://jabber.org/protocol/si/profile/file-transfer"
 #define XMLNS_DISCO_INFO 		"http://jabber.org/protocol/disco#info"
 #define XMLNS_DISCO_ITEMS 		"http://jabber.org/protocol/disco#items"
 #define XMLNS_BYTESTREAMS 		"http://jabber.org/protocol/bytestreams"
+#define XMLNS_IQ_VERSION		"jabber:iq:version"
+/* FIXME: Warning:
+ * Jingle Namespaces are temporary namespaces because the specification
+ * is still in a "Draft" state. As soon as the specification is accepted
+ * by the Xmpp foundation, the namespaces will change and become of the
+ * form of "http://jabber.org/protocol/jingle[...]", [...] depending of
+ * the jingle namespace. Or not...
+ */
 #define XMLNS_JINGLE 			"urn:xmpp:tmp:jingle"
-#define XMLNS_VIDEO 			"urn:xmpp:tmp:jingle:apps:video-rtp"
+#define XMLNS_VIDEO 			"urn:xmpp:tmp:jingle:apps:video-rtp" 
 #define XMLNS_RAW_UDP 			"urn:xmpp:tmp:jingle:transports:raw-udp"
+
 #define TIMEOUT 			30000
+
+QString osVersionString()
+{
+#ifdef Q_WS_WIN
+	switch (QSysInfo::WindowsVersion)
+	{
+	case QSysInfo::WV_32s :
+		return "Windows 3.1 with Win 32s";
+	case QSysInfo::WV_95 :
+		return "Windows 95";
+	case QSysInfo::WV_98 :
+		return "Windows 98";
+	case QSysInfo::WV_Me :
+		return "Windows ME";
+	case QSysInfo::WV_NT :
+		return "Windows NT";
+	case QSysInfo::WV_XP :
+		return "Windows XP";
+	case QSysInfo::WV_2000 :
+		return "Windows 2000";
+	case QSysInfo::WV_VISTA :
+		return "Windows Vista";
+	case QSysInfo::WV_2003 :
+		return "Windows 2003";
+	}
+	return "Windows";
+
+#endif
+#ifdef Q_WS_MAC
+	
+	switch (QSysInfo::MacintoshVersion)
+	{
+	case QSysInfo::MV_PANTHER :
+		return "Mac OS X (panther)";
+	case QSysInfo::MV_TIGER :
+		return "Mac OS X (tiger)";
+	case QSysInfo::MV_LEOPARD :
+		return "Mac OS X (leopard)";
+	}
+	return "Mac OS X";
+
+#endif
+#ifdef Q_WS_X11
+
+	return "GNU/Linux"; //FIXME: more details.
+#endif
+	return "Unknown";
+}
 
 RosterTask::RosterTask(Xmpp* xmpp, Task* parent)
 	:Task(parent), p(xmpp)
@@ -102,7 +161,7 @@ void RosterTask::processStanza(const Stanza& s)
 	QDomElement query = s.node().firstChildElement();
 	if (query.localName() == "query")
 	{
-		//WARNING:jabberd2 has a bug, item is not in the query tag when updating the roster. Use >=2.1.23
+		//WARNING:jabberd 2.1.21 has a bug, item is not in the query tag when updating the roster. Use >=2.1.23.
 		QDomNodeList items = query.childNodes();
 		for (int i = 0; i < items.count(); i++)
 		{
@@ -304,6 +363,17 @@ bool PullMessageTask::canProcess(const Stanza& s) const
 
 void PullMessageTask::processStanza(const Stanza& stanza)
 {
+/* TODO: should manage that kind of error :
+ * <message xmlns='jabber:client' from='ffgfg@localhost' to='cazou88@localhost/Kapture' id='mjzodi' type='error'>
+ *  <error type='cancel' code='503'>
+ *   <service-unavailable xmlns='urn:ietf:params:xml:ns:xmpp-stanzas'/>
+ *  </error>
+ *  <body>dddddddddddddd</body>
+ * </message>
+ * Currently, The message will just be shown to the user af if he sent it to himself.
+ * That really is not good.
+ */
+
 	ty = stanza.type();
 	f = stanza.from();
 	t = stanza.to();
@@ -367,7 +437,7 @@ MessageTask::~MessageTask()
 
 void MessageTask::sendMessage(Xmpp* p, const Message& message)
 {
-	QString id = randomString(6); //FIXME:Must send a random string.
+	QString id = randomString(6); 
 	Jid to = message.to();
 	Stanza stanza(Stanza::Message, message.type(), id, to.full());
 	QDomDocument doc("");
@@ -427,6 +497,12 @@ bool StreamTask::canProcess(const Stanza& s) const
 
 void StreamTask::processStanza(const Stanza& s)
 {
+/*
+ * FIXME:
+ * 	Working with proxies does not seem to work correctly.
+ * TODO:
+ * 	Some correction have been done, check if proxies is repaired.
+ */
 	switch (state)
 	{
 	case WaitDiscoInfo:
@@ -593,7 +669,7 @@ void StreamTask::processStanza(const Stanza& s)
 
 QStringList StreamTask::proxies() const
 {
-	return proxyList2;
+	return proxyList;
 }
 
 QStringList StreamTask::ips() const
@@ -643,16 +719,11 @@ QString StreamTask::negProfile() const
 
 void StreamTask::getProxies()
 {
-/*
-<iq type='get' 
-    from='initiator@host1/foo'
-    to='host1' 
-    id='server_items'>
-  <query xmlns='http://jabber.org/protocol/disco#items'/>
-</iq>
-*/
 	id = randomString(8);
-	Stanza stanza(Stanza::IQ, "get", id, p->node().domain()); // Should not work with "UsePersonnalServer"
+	/* FIXME:Should not work with "UsePersonnalServer"
+	 * Maybe in that case, one's has to use a personnal proxy.
+	 */
+	Stanza stanza(Stanza::IQ, "get", id, p->node().domain());
 	QDomNode node = stanza.node().firstChild();
 	QDomDocument doc("");
 
@@ -1174,8 +1245,18 @@ bool PullStreamTask::canProcess(const Stanza& s) const
 	if (s.kind() != Stanza::IQ)
 		return false;
 
+	if (s.isJingle())
+	{
+		printf("[PullStreamTask] Jingle stanza, not processing.\n");
+		return false;
+	}
+
 	if (s.type() == "get" &&
-	    s.node().firstChildElement().namespaceURI() == XMLNS_DISCO_INFO) //FIXME:Stanza has not alway a child element !!!
+	    s.node().firstChildElement().namespaceURI() == XMLNS_DISCO_INFO) 	//FIXME: Stanza has not alway a child element !!!
+	    	return true;							//FIXED: Would return "" is no child exists
+	
+	if (s.type() == "get" &&
+	    s.node().firstChildElement().namespaceURI() == XMLNS_IQ_VERSION)
 		return true;
 	
 	if (s.type() == "set" &&
@@ -1191,7 +1272,38 @@ bool PullStreamTask::canProcess(const Stanza& s) const
 
 void PullStreamTask::processStanza(const Stanza& s)
 {
+	printf("[PullStreamTask] PROCESSING\n");
 	id = s.id();
+	if (s.node().firstChildElement().namespaceURI() == XMLNS_IQ_VERSION)
+	{
+		Stanza stanza(Stanza::IQ, "result", id, s.from().full());
+		QDomNode node = stanza.node().firstChild();
+		QDomDocument doc("");
+
+		QDomElement query = doc.createElement("query");
+		query.setAttribute("xmlns", XMLNS_IQ_VERSION);
+
+		QDomElement name = doc.createElement("name");
+		QDomText nameText = doc.createTextNode("Kapture");
+		name.appendChild(nameText);
+
+		QDomElement version = doc.createElement("version");
+		QDomText versionText = doc.createTextNode(KAPTURE_VERSION);
+		version.appendChild(versionText);
+		
+		QDomElement os = doc.createElement("os");
+		QDomText osText = doc.createTextNode(osVersionString());
+		os.appendChild(osText);
+
+		query.appendChild(name);
+		query.appendChild(version);
+		query.appendChild(os);
+
+		node.appendChild(query);
+
+		p->write(stanza);
+		return; // To be sure we do not enter another "if".
+	}
 	if (s.node().firstChildElement().namespaceURI() == XMLNS_DISCO_INFO)
 	{
 		Stanza stanza(Stanza::IQ, "result", id, s.from().full());
@@ -1329,41 +1441,6 @@ void PullStreamTask::processStanza(const Stanza& s)
 	}
 }
 
-QList<PullStreamTask::StreamHost> PullStreamTask::streamHosts() const
-{
-	return streamHostList;
-}
-
-Jid PullStreamTask::from() const
-{
-	return f;
-}
-
-QString PullStreamTask::fileName() const
-{
-	return name;
-}
-
-int PullStreamTask::fileSize() const
-{
-	return size;
-}
-
-QString PullStreamTask::fileDesc() const
-{
-	return desc;
-}
-
-QString PullStreamTask::sid() const
-{
-	return SID;
-}
-
-QString PullStreamTask::lastId() const
-{
-	return id;
-}
-
 void PullStreamTask::ftDecline(const QString&, const Jid&)
 {
 	Stanza stanza(Stanza::IQ, "error", id, f.full());
@@ -1380,11 +1457,6 @@ void PullStreamTask::ftDecline(const QString&, const Jid&)
 
 	p->write(stanza);
 
-}
-
-QString PullStreamTask::saveFileName() const
-{
-	return sfn;
 }
 
 void PullStreamTask::ftAgree(const QString&, const Jid&, const QString& saveFileName)
@@ -1456,7 +1528,6 @@ void PullStreamTask::ftAgree(const QString&, const Jid&, const QString& saveFile
 
 //-------------------------------
 // JingleTask
-// FIXME:WARNING: BAD IMPLEMENTATION !!! Restart from Jingle Spec.
 //-------------------------------
 
 JingleTask::JingleTask(Task* parent, Xmpp *xmpp)
@@ -1473,22 +1544,62 @@ JingleTask::~JingleTask()
 bool JingleTask::canProcess(const Stanza& s) const
 {
 	printf("[JingleTask]\n");
-	if (s.kind() == Stanza::IQ && s.id() == id)
+	JingleStanza js(s);
+	if (js.isValid())
+		if (js.sid() == sID)
+			return true;
+	else if (js.id() == id)
 		return true;
+
 	return false;
 }
 
 void JingleTask::processStanza(const Stanza& s)
 {
-//	if (s.type() == "result")
-//		waitConnection = true;
-	if (s.type() == "error")
+	JingleStanza js(s);
+	if (js.type() == "error")
 	{
 		//emit error
 		printf("Error, responder does not want it...\n");
 		return;
 	}
-		
+	
+	printf("[JingleTask::processStanza] DEBUG : %d\n", js.action());
+
+	QDomElement elem;
+	switch (js.action())
+	{
+	case JingleStanza::SessionTerminate :
+		// Checking the reason : Why has it been terminated ?
+		elem = js.node().firstChildElement();
+		while (elem.hasChildNodes())
+		{
+			elem = elem.firstChildElement();
+			if (elem.localName() == "condition")
+			{
+				if (elem.firstChildElement().localName() == "decline")
+				{
+					printf("[JingleTask::processStanza] DEBUG : declined\n");
+					emit sessionDeclined(/*session*/);
+					break;
+				}
+				/*Others here...*/
+			}
+		}
+		break;
+	case JingleStanza::SessionInitiate :
+	case JingleStanza::SessionInfo :
+	case JingleStanza::SessionAccept :
+	case JingleStanza::ContentAccept :
+	case JingleStanza::ContentAdd :
+	case JingleStanza::ContentModify :
+	case JingleStanza::ContentRemove :
+	case JingleStanza::ContentReplace :
+	case JingleStanza::TransportInfo :
+	case JingleStanza::NoAction :
+	default :
+		break;
+	}
 }
 
 void JingleTask::initiate(const Jid& to)
@@ -1576,7 +1687,7 @@ void JingleTask::initiate(const Jid& to)
 	 * 	or use a webservice.
 	 * 	This is not prioritary.
 	 */
-	QHttp("http://www.whatismyip.com/automation/n09230945.asp");
+	//QHttp("http://www.whatismyip.com/automation/n09230945.asp");
 
 	QDomElement candidate = doc.createElement("candidate");
 	candidate.setAttribute("ip", interface->allAddresses().at(0).toString());
@@ -1660,7 +1771,8 @@ void JingleTask::setData(const QString& SID,
 
 void JingleTask::decline()
 {
-	Stanza stanza(Stanza::IQ, "set", randomString(8), t.full());
+	id = randomString(10);
+	Stanza stanza(Stanza::IQ, "set", id, t.full());
 	QDomDocument doc("");
 	QDomElement jingle = doc.createElement("jingle");
 	jingle.setAttribute("xmlns", XMLNS_JINGLE);
@@ -1705,7 +1817,11 @@ PullJingleTask::~PullJingleTask()
 
 bool PullJingleTask::canProcess(const Stanza& s) const
 {
-	if (s.kind() == Stanza::IQ && s.type() == "set" && s.node().firstChild().firstChild().namespaceURI() == "urn:xmpp:tmp:jingle")
+	printf("[PullJingleTask]\n");
+	JingleStanza js(s);
+	if (!js.isValid())
+		return false;
+	if (js.action() == JingleStanza::SessionInitiate)
 		return true;
 	return false;
 }
@@ -1892,10 +2008,4 @@ void PullJingleTask::tryToConnect()
 
 	p->write(stanza);
 }
-
-
-
-
-
-
 

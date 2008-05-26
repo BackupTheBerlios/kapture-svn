@@ -12,7 +12,7 @@
   <property name="windowTitle" >
    <string>Contact's jid</string>
   </property>
-  <layout class="QVBoxLayout" >
+  <layout class="QHBoxLayout" >
    <item>
     <layout class="QVBoxLayout" >
      <item>

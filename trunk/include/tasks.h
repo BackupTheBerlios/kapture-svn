@@ -10,7 +10,7 @@
 #include "roster.h"
 #include "presence.h"
 #include "message.h"
-#include "stanza.h"
+#include "jinglestanza.h"
 #include "socks5.h"
 
 class RosterTask : public Task
@@ -169,16 +169,16 @@ public:
 	PullStreamTask(Task *parent, Xmpp *xmpp);
 	bool canProcess(const Stanza&) const;
 	void processStanza(const Stanza&);
-	Jid from() const;
-	QString fileName() const;
-	int fileSize() const;
-	QString fileDesc() const;
 	void ftDecline(const QString&, const Jid&);
 	void ftAgree(const QString&, const Jid&, const QString&);
-	QList<StreamHost> streamHosts() const;
-	QString sid() const;
-	QString lastId() const;
-	QString saveFileName() const;
+	Jid from() const {return f;}
+	QString fileName() const {return name;}
+	int fileSize() const {return size;}
+	QString fileDesc() const {return desc;}
+	QList<StreamHost> streamHosts() const {return streamHostList;}
+	QString sid() const {return SID;}
+	QString lastId() const {return id;}
+	QString saveFileName() const {return sfn;}
 
 signals:
 	void fileTransferIncoming();
@@ -289,6 +289,9 @@ public:
 public slots:
 	void newConnection();
 	void dataRead();
+
+signals:
+	void sessionDeclined(/*const Session&*/);
 
 private:
 	Xmpp *p;

@@ -29,7 +29,7 @@ public:
 	~Webcam();
 	
 	void close();
-	int  open(const char *devFile);
+	int  open(const QString&);
 	QList<int>   getFormatList(QList<QString> &description) const;
 	QList<QSize> getSizesList() const;
 	int setFormat(unsigned int width, unsigned int height, int pixelformat=V4L2_PIX_FMT_MJPEG);
@@ -42,7 +42,7 @@ public:
 	int changeCtrl(int ctrl, int value = 0);
 	int defaultCtrlVal(unsigned int control, int &defaultValue);
 	bool isStreaming() const {return streaming;};
-	bool isOpened() const {return opened;}; // Should not be used, Webcam should managed it itself.
+	bool isOpened() const {return opened;};
 	bool panTiltSupported();
 	enum Control {Saturation = 0,
 		      PowerLineFreq,
@@ -51,7 +51,6 @@ public:
 		      Sharpness,
 		      PanTiltReset};
 	
-
 signals:
 	void imageReady();
 
@@ -64,9 +63,9 @@ public slots:
 
 private:
 	int dev;
-	struct v4l2_format fmt;
-	struct v4l2_buffer buf;
-	struct v4l2_requestbuffers rb;
+	v4l2_format fmt;
+	v4l2_buffer buf;
+	v4l2_requestbuffers rb;
 	bool allocated;
 	
 	uchar *mem[2];

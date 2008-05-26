@@ -22,5 +22,7 @@ int main(int argc, char **argv)
 	QApplication app(argc, argv);
 	XmppWin *xw = new XmppWin();
 	xw->show();
-	return app.exec();
+	app.exec();
+	delete xw;
+	return 0;
 }

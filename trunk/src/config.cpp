@@ -143,7 +143,6 @@ Config::Config()
 	}
 	/* TODO:
 	 * 	Should create an initial config if there's none at all.
-	 * 	Maybe using QConfig should be better.
 	 */
 }
 

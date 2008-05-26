@@ -138,6 +138,7 @@ void Contact::newMessage(const QString &m /*Message*/)
 
 void Contact::slotSendVideo()
 {
+	chatWin->writeEvent("Ask to start Jingle Video.");
 	QString to = jid->full();
 	emit sendVideo(to);
 }
@@ -238,7 +239,7 @@ void Contact::setPresence(const Presence& pr)
 	printf("[CONTACT] Presence : type = %s, show = %s, status %s\n", p->type().toLatin1().constData(),
 							       p->show().toLatin1().constData(),
 							       p->status().toLatin1().constData());
-	printf("[CONTACT] Contact has a new nickname : %s\n", vcard->nickname().toLatin1().constData());
+	printf("[CONTACT] WARNING: THIS IS NOT A VCARD NICKNAME !!!! Contact has a new nickname : %s\n", vcard->nickname().toLatin1().constData());
 }
 
 void Contact::setResource(QString& r)

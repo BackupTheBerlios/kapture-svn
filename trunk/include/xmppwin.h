@@ -91,6 +91,7 @@ private:
 	bool useSystemTray;
 	QMenu *menu;
 	QMenu *mSubsMenu;
+	JingleTask *js; //FIXME: There should not be Tasks here, tasks stays in client.
 };
 #endif
 

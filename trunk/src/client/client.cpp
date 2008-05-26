@@ -377,11 +377,22 @@ void Client::newJingleSession()
 		return;
 	}
 	sessionList << pjTask->getNextSession();
+	connect(sessionList.last(), SIGNAL(sessionDeclined()), this, SLOT(jingleSessionDeclined()));
+
+	/*!* FIXME: Tasks should not get out of the client !!!!! *!*/
+	/*!* 	    Should return a Session Object (to write...) *!*/
 	emit newJingleSessionReady();
 }
 
 JingleTask *Client::getNextPendingJingleSession()
 {
+	/*!* FIXME: Tasks should not get out of the client !!!!! *!*/
+	/*!* 	    Should return a Session Object (to write...) *!*/
 	return sessionList.takeFirst();
 }
 
+void Client::jingleSessionDeclined()
+{
+	printf("[Client] jingleSessionDeclined()\n");
+	// How to now which session has been declined ?????
+}

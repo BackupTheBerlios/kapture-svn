@@ -3,7 +3,7 @@
 
 #include <QString>
 #include <QtXml>
-//#define XMLNS_DISCO "http://jabber.org/protocol/disco#info"
+
 #include "jid.h"
 
 class Stanza : public QObject
@@ -34,7 +34,8 @@ public:
 	QString id() const;
 	QString type() const;
 	QString namespaceURI() const;
-	QDomNode node() const;
+	virtual QDomNode node() const;
+	bool isJingle() const;
 
 	void setKind(Kind);
 	void setType(QString &s);

@@ -310,7 +310,7 @@ void XmppWin::clientAuthenticated()
 
 void XmppWin::newJingleSessionReady()
 {
-	JingleTask *js = client->getNextPendingJingleSession();
+	js = client->getNextPendingJingleSession();
 	// js should be in a list so all incoming connections are in the list.
 	if (contactWithJid(js->to())->askForJingleStart(js->to(), "Video"))
 	{

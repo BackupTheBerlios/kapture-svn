@@ -24,6 +24,7 @@ public slots:
 	void saveConfig();
 	void read();
 	void registerError();
+	void tabChanged(int);
 
 signals:
 	void accepted();

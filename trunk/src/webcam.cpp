@@ -71,7 +71,7 @@ void Webcam::close()
 	allocated = false;
 }
 
-int Webcam::open(const char *devFile)
+int Webcam::open(const QString& devFile)
 {
 	struct v4l2_capability cap;
 	int ret;
@@ -80,11 +80,11 @@ int Webcam::open(const char *devFile)
 	if (opened)
 		close();
 
-	dev = ::open(devFile, O_RDWR);
+	dev = ::open(devFile.toLatin1().constData(), O_RDWR);
 	if (dev < 0) 
 	{
 		strcpy(str, "Error Opening ");
-		KError(strcat(str, devFile), errno);
+		KError(QString("Error Opening ") + devFile, errno);
 		return EXIT_FAILURE;
 	}
 
@@ -92,15 +92,13 @@ int Webcam::open(const char *devFile)
         ret = ioctl(dev, VIDIOC_QUERYCAP, &cap);
         if (ret < 0) 
 	{
-		strcpy(str, "Error querying capabilities for ");
-		KError(strcat(str, devFile), errno);
+		KError(QString("Unable to query capabilities") + devFile, errno);
                 return EXIT_FAILURE;
 	}
 
 	if ((cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) == 0) 
 	{
-		strcpy(str, "Error checking caps for ");
-		KError(strcat(str, devFile), errno);
+		KError(QString("Unable to query capabilities") + QString(devFile), errno);
                 return -EINVAL;
 	}
 	opened = true;

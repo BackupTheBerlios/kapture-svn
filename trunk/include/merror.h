@@ -11,4 +11,7 @@
  *
  */
 
-void KError(char* error, int errorno);
+#include <QString>
+
+void KError(char*, int);
+void KError(const QString&, int);

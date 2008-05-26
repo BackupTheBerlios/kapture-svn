@@ -140,3 +140,8 @@ QDomNode Stanza::node() const
 {
 	return n;
 }
+
+bool Stanza::isJingle() const
+{
+	return (n.firstChildElement().localName() == "jingle");
+}

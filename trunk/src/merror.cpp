@@ -23,3 +23,13 @@ void KError(char*, int)
 {
 #endif
 }
+
+#ifdef DEBUG
+void KError(const QString& error, int errorno)
+{
+	printf(" E %s (Error %d)\n", error.toLatin1().constData(), errorno);
+#else
+void KError(const QString&, int)
+{
+#endif
+}

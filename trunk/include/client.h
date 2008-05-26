@@ -61,6 +61,7 @@ public slots:
 	void subRefused();
 	void slotUpdateItem();
 	void newJingleSession();
+	void jingleSessionDeclined();
 
 signals:
 	/*!
