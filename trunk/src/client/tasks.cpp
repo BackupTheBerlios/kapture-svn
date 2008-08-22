@@ -33,6 +33,9 @@
  */
 #define XMLNS_JINGLE 			"urn:xmpp:tmp:jingle"
 #define XMLNS_VIDEO 			"urn:xmpp:tmp:jingle:apps:video-rtp" 
+#define XMLNS_AUDIO 			"urn:xmpp:tmp:jingle:apps:audio-rtp"
+#define XMLNS_JINGLE_VIDEO		XMLNS_VIDEO 
+#define XMLNS_JINGLE_AUDIO		XMLNS_AUDIO 
 #define XMLNS_RAW_UDP 			"urn:xmpp:tmp:jingle:transports:raw-udp"
 
 #define TIMEOUT 			30000
@@ -378,12 +381,17 @@ void PullMessageTask::processStanza(const Stanza& stanza)
 	f = stanza.from();
 	t = stanza.to();
 	QDomElement s = stanza.node().toElement();
+	m = "";
+	sub = "";
+	thr = "";
 	
 	if (!s.hasChildNodes())
-		m = "";
-	else
-		s = s.firstChildElement();
+	{
+		emit messageFinished();
+		return;
+	}
 	
+	s = s.firstChildElement();
 	while (!s.isNull())
 	{
 		if (s.localName() == "body")
@@ -395,27 +403,22 @@ void PullMessageTask::processStanza(const Stanza& stanza)
 			 */
 			if (s.firstChild().isText())
 				m = s.firstChild().toText().data();
-			else
-				m = "";
 		}
 
 		if (s.localName() == "subject") // Not used yet.
 		{
 			if (s.firstChild().isText())
 				sub = s.firstChild().toText().data();
-			else
-				sub = "";
 		}
 		
 		if (s.localName() == "thread") // Not used yet.
 		{
 			if (s.firstChild().isText())
 				thr = s.firstChild().toText().data();
-			else
-				thr = "";
 		}
 		s = s.nextSibling().toElement();
 	}
+	printf("PullMessageTask::processStanza() : debug1\n");
 	emit messageFinished();
 }
 
@@ -1328,10 +1331,22 @@ void PullStreamTask::processStanza(const Stanza& s)
 		QDomElement feature2 = doc.createElement("feature");
 		feature2.setAttribute("var", XMLNS_BYTESTREAMS);
 
+		QDomElement feature3 = doc.createElement("feature");
+		feature3.setAttribute("var", XMLNS_JINGLE);
+
+		QDomElement feature4 = doc.createElement("feature");
+		feature4.setAttribute("var", XMLNS_JINGLE_VIDEO);
+
+		QDomElement feature5 = doc.createElement("feature");
+		feature4.setAttribute("var", XMLNS_JINGLE_AUDIO);
+
 		query.appendChild(identity);
 		query.appendChild(feature);
 		query.appendChild(feature1);
 		query.appendChild(feature2);
+		query.appendChild(feature3);
+		query.appendChild(feature4);
+		query.appendChild(feature5);
 		node.appendChild(query);
 
 		p->write(stanza);

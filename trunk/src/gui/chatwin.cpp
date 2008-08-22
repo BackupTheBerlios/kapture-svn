@@ -38,7 +38,7 @@ ChatWin::~ChatWin()
 
 void ChatWin::slotSendVideo()
 {
-	videoWidget = new VideoWidget();
+	/*videoWidget = new VideoWidget();
 	if (!videoWidget->initCamera())
 	{
 		writeEvent("No camera found.", Error);
@@ -54,7 +54,7 @@ void ChatWin::slotSendVideo()
 	vbox->addStretch();
 	ui.hboxLayout->addWidget(line);
 	ui.hboxLayout->addLayout(vbox);
-	videoWidget->play();
+	videoWidget->play();*/
 	emit sendVideo();
 }
 

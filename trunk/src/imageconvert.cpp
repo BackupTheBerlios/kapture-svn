@@ -36,7 +36,7 @@
 	b  = MAX(0, MIN(255, (b)))
 
 #define MEAN(a,b)\
-	(a + b) / 2
+	(((a) + (b)) / 2)
 
 unsigned char jpeg_dht[0x1a4] = {
     0xff, 0xc4, 0x01, 0xa2,
@@ -147,7 +147,7 @@ int mjpegToJpeg(unsigned char *inFrame, unsigned char *outFrame, unsigned int bu
 int yuvToJpeg(unsigned char *inFrame, QImage *outFrame, int width, int height)
 {
 	QImage *image = new QImage(width, height, QImage::Format_RGB32);
-	const int size = width*height;
+	const int size = width * height;
 	int y, u, v, y2, u2, v2, r, g, b;
 	int i = 2;
 	int j = 4;
@@ -162,7 +162,7 @@ int yuvToJpeg(unsigned char *inFrame, QImage *outFrame, int width, int height)
 	STORERGB(r, g, b);
 	image->setPixel(w, h, qRgb(r, g, b));
 	
-	while(i <= size/2)
+	while(i <= size / 2)
 	{
 		u2  = inFrame[j+1];
 		v2   = inFrame[j+3];
@@ -198,7 +198,7 @@ int yuvToJpeg(unsigned char *inFrame, QImage *outFrame, int width, int height)
 	}
 
 	*outFrame = image->copy(QRect(0, 0, width, height));
-	image->~QImage();
+	delete image;
 	return 0;
 }
 

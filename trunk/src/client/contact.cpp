@@ -107,6 +107,8 @@ bool Contact::askForJingleStart(const Jid& from, const QString& /*type*/)
 
 void Contact::newMessage(const QString &m /*Message*/)
 {
+	if (m == NULL || m.isNull() || m == "")
+		return;
 	if (!isChatting)
 	{
 		chatWin = new ChatWin();
