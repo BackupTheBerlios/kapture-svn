@@ -11,13 +11,6 @@
  *
  */
 
-/* TODO:
- * * This class was first written in C, a lots is still "C-like"
- * * This class does not use the Qt Library as as it should (char* --> QString)
- * * WARNING : in Qt 4.4, this class will be obsolete and replaced 
- *   by phonon if stable enough and if it supports Pan/Tilt, etc...
- */
-
 #include <stdio.h>
 #include <string.h>
 #include <fcntl.h>
@@ -28,9 +21,6 @@
 #include <sys/select.h>
 
 #include <linux/videodev.h>
-#ifdef USE_UVCVIDEO
-#include <uvcvideo.h>
-#endif //USE_UVCVIDEO
 
 #include <QtGui>
 #include <QApplication>
@@ -42,7 +32,7 @@
 #include <QSocketNotifier>
 
 #include "webcam.h"
-#include "imageconvert.h"
+#include "imageConvert.h"
 #include "merror.h"
 
 
@@ -71,7 +61,7 @@ void Webcam::close()
 	allocated = false;
 }
 
-int Webcam::open(const QString& devFile)
+int Webcam::open(const char *devFile)
 {
 	struct v4l2_capability cap;
 	int ret;
@@ -80,11 +70,11 @@ int Webcam::open(const QString& devFile)
 	if (opened)
 		close();
 
-	dev = ::open(devFile.toLatin1().constData(), O_RDWR);
+	dev = ::open(devFile, O_RDWR);
 	if (dev < 0) 
 	{
 		strcpy(str, "Error Opening ");
-		KError(QString("Error Opening ") + devFile, errno);
+		KError(strcat(str, devFile), errno);
 		return EXIT_FAILURE;
 	}
 
@@ -92,13 +82,15 @@ int Webcam::open(const QString& devFile)
         ret = ioctl(dev, VIDIOC_QUERYCAP, &cap);
         if (ret < 0) 
 	{
-		KError(QString("Unable to query capabilities") + devFile, errno);
+		strcpy(str, "Error querying capabilities for ");
+		KError(strcat(str, devFile), errno);
                 return EXIT_FAILURE;
 	}
 
 	if ((cap.capabilities & V4L2_CAP_VIDEO_CAPTURE) == 0) 
 	{
-		KError(QString("Unable to query capabilities") + QString(devFile), errno);
+		strcpy(str, "Error checking caps for ");
+		KError(strcat(str, devFile), errno);
                 return -EINVAL;
 	}
 	opened = true;
@@ -136,6 +128,7 @@ QList<int> Webcam::getFormatList(QList<QString> &description) const
 
 QList<QSize> Webcam::getSizesList() const
 {
+#ifdef VIDIOC_ENUM_FRAMESIZES
 	int i = 0;
 	QList<QSize> rSizes;
 	QSize tmp;
@@ -152,6 +145,17 @@ QList<QSize> Webcam::getSizesList() const
 		sizes.index = i;
 	}
 	return rSizes;
+#else
+	QList<QSize> rSizes;
+	QSize tmp;
+
+	tmp.setWidth(320);
+	tmp.setHeight(240);
+	
+	rSizes << tmp;
+
+	return rSizes;
+#endif
 }
 
 
@@ -239,7 +243,7 @@ int Webcam::startStreaming()
 			return EXIT_FAILURE;
 		}
 		
-		mem[i] = (uchar *) mmap(0, buf.length, PROT_READ, MAP_SHARED, dev, buf.m.offset);
+		mem[i] = (uchar *) mmap(0, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, dev, buf.m.offset);
 		if (mem[i] == MAP_FAILED) {
 			KError("Unable to map buffer", errno);
 			return EXIT_FAILURE;
@@ -376,17 +380,21 @@ int Webcam::changeCtrl(int ctrl, int value) // an enum for formats and reorganis
 			CTRL = V4L2_CID_CONTRAST;
 			break;
 		}
-#ifdef USE_UVCVIDEO
+#ifdef V4L2_CID_POWER_LINE_FREQUENCY
 		case PowerLineFreq: 
 		{
 			CTRL = V4L2_CID_POWER_LINE_FREQUENCY;
 			break;
 		}
+#endif
+#ifdef V4L2_CID_SHARPNESS
 		case Sharpness:
 		{
 			CTRL = V4L2_CID_SHARPNESS;
 			break;
 		}
+#endif
+#ifdef V4L2_CID_PANTILT_RESET
 		case PanTiltReset:
 		{
 			CTRL = V4L2_CID_PANTILT_RESET;
@@ -472,13 +480,15 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 			queryctrl.id = V4L2_CID_CONTRAST;
 			break;
 		}
-#ifdef USE_UVCVIDEO
+#ifdef V4L2_CID_POWER_LINE_FREQUENCY
 		case PowerLineFreq : 
 		{
 			ctrl = "Powerline Frequecy";
 			queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
 			break;
 		}
+#endif
+#ifdef V4L2_CID_SHARPNESS
 		case Sharpness : 
 		{
 			ctrl = "Sharpness";
@@ -506,7 +516,7 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 
 bool Webcam::panTiltSupported()
 {
-#ifdef USE_UVCVIDEO
+#ifdef V4L2_CID_TILT_RELATIVE
 	struct v4l2_queryctrl queryctrl;
 
 	if(!opened)
@@ -538,7 +548,7 @@ bool Webcam::panTiltSupported()
 
 void Webcam::turnRight()
 {
-#ifdef USE_UVCVIDEO
+#ifdef V4L2_CID_PAN_RELATIVE
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 
@@ -566,7 +576,7 @@ void Webcam::turnRight()
 
 void Webcam::turnLeft()
 {
-#ifdef USE_UVCVIDEO
+#ifdef V4L2_CID_PAN_RELATIVE
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 
@@ -594,7 +604,7 @@ void Webcam::turnLeft()
 
 void Webcam::turnUp()
 {
-#ifdef USE_UVCVIDEO
+#ifdef V4L2_CID_TILT_RELATIVE
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 	
@@ -622,7 +632,7 @@ void Webcam::turnUp()
 
 void Webcam::turnDown()
 {
-#ifdef USE_UVCVIDEO
+#ifdef V4L2_CID_TILT_RELATIVE
 	struct v4l2_queryctrl queryctrl;
 	struct v4l2_control control;
 

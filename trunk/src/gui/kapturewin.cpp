@@ -45,7 +45,6 @@ QImage *imageZoomed = new QImage(60,60,QImage::Format_RGB32);
 KaptureWin::KaptureWin()
 	: QMainWindow()
 {
-//	QMessageBox::critical(this, QString("Je trouve que..."), QString("Ca marche tres bien comme ça."), QMessageBox::Ok);
 	int i = 0;
 	otherVideoDevice = false;
 	for( ;i < qApp->arguments().size(); i++)
@@ -82,30 +81,30 @@ KaptureWin::KaptureWin()
 	camera->defaultCtrlVal(Webcam::Saturation, defaultSat); // Get default Saturation
 	camera->defaultCtrlVal(Webcam::Brightness, defaultBright);  // Get default Brightness
 	camera->defaultCtrlVal(Webcam::Contrast, defaultCont);  // Get default Contrast
-#ifdef USE_UVCVIDEO
+//#ifdef USE_UVCVIDEO
 	int defaultFreq, defaultSharp;
 	camera->defaultCtrlVal(Webcam::PowerLineFreq, defaultFreq);  // Get default Frequency
 	camera->defaultCtrlVal(Webcam::Sharpness, defaultSharp);  // Get default Sharpness
 	panTiltSupported = camera->panTiltSupported();
-#endif
+//#endif
 
 	camera->changeCtrl(Webcam::Saturation, defaultSat); // Saturation to default
 	camera->changeCtrl(Webcam::Brightness, defaultBright);  // Brightness to default
 	camera->changeCtrl(Webcam::Contrast, defaultCont);  // Contrast to default
-#ifdef USE_UVCVIDEO
+//#ifdef USE_UVCVIDEO
 	camera->changeCtrl(Webcam::PowerLineFreq, defaultFreq);  // Frequency to default
 	camera->changeCtrl(Webcam::Sharpness, defaultSharp);  // Contrast to default
 	if (panTiltSupported)
 		camera->changeCtrl(Webcam::PanTiltReset); // Reset to the center position
-#endif
+//#endif
 
 	ui.satManualValueBox->setValue(defaultSat);
 	ui.brightManualValueBox->setValue(defaultBright);
 	ui.contManualValueBox->setValue(defaultCont);
-#ifdef USE_UVCVIDEO
+//#ifdef USE_UVCVIDEO
 	ui.freqBox->setChecked((defaultFreq == 1) ? true : false);
 	ui.sharpManualValueBox->setValue(defaultSharp);
-#endif
+//#endif
 
 	crImage = QImage(320, 240, QImage::Format_RGB32);
 	
@@ -115,7 +114,7 @@ KaptureWin::KaptureWin()
 	connect(&keepZoomer,    SIGNAL(timeout () ), this, SLOT(keepZoomerTimeOut()) );
 	connect(camera,    	SIGNAL(imageReady () ), this, SLOT(getImage() ));
 	connect(ui.crButton,	SIGNAL(clicked () ), this, SLOT(crStartStop() ) );
-#ifdef USE_UVCVIDEO
+//#ifdef USE_UVCVIDEO
 	if (panTiltSupported)
 	{
 		connect(mfw, SIGNAL(turnRightEvent()), camera, SLOT(turnRight()));
@@ -124,7 +123,7 @@ KaptureWin::KaptureWin()
 		connect(mfw, SIGNAL(turnUpEvent()), camera, SLOT(turnUp()));
 	}
 	else
-#endif
+//#endif
 	{
 		mfw->ui.rightBtn->hide();
 		mfw->ui.leftBtn->hide();
@@ -135,10 +134,10 @@ KaptureWin::KaptureWin()
 	connect(ui.satManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( satChanged()) );
 	connect(ui.brightManualValueBox,SIGNAL(valueChanged (int) ), this, SLOT( brightChanged()) );
 	connect(ui.contManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( contChanged()) );
-#ifdef USE_UVCVIDEO
+//#ifdef USE_UVCVIDEO
 	connect(ui.freqBox,		SIGNAL(stateChanged (int) ), this, SLOT( freqChanged()) );
 	connect(ui.sharpManualValueBox,	SIGNAL(valueChanged (int) ), this, SLOT( sharpChanged()) );
-#endif
+//#endif
 	
 	connect(ui.redSlider,   SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
 	connect(ui.greenSlider, SIGNAL(sliderMoved (int) ), this, SLOT(colorChanged() ));
