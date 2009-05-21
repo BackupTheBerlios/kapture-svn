@@ -1,7 +1,7 @@
 /*
  *      webcam.cpp -- Kapture
  *
- *      Copyright (C) 2006-2007
+ *      Copyright (C) 2006-2009
  *          Detlev Casanova (detlev.casanova@gmail.com)
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -32,7 +32,7 @@
 #include <QSocketNotifier>
 
 #include "webcam.h"
-#include "imageConvert.h"
+#include "imageconvert.h"
 #include "merror.h"
 
 
@@ -59,6 +59,11 @@ void Webcam::close()
 	imageNotifier = 0;
 	opened = false;
 	allocated = false;
+}
+
+int Webcam::open(const QString& devFile)
+{
+	return this->open(devFile.toUtf8().constData());
 }
 
 int Webcam::open(const char *devFile)
@@ -452,7 +457,7 @@ int Webcam::currentPixelFormat() const
 int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 {
 	struct v4l2_queryctrl queryctrl;
-	char *ctrl;
+	QString ctrl;
 	
 	if(!opened)
 	{
@@ -500,12 +505,12 @@ int Webcam::defaultCtrlVal(unsigned int control, int &defaultValue)
 			ctrl = "ERROR";
 	}
 
-	char str[128];
+	QString str;
 	if (-1 == ioctl(dev, VIDIOC_QUERYCTRL, &queryctrl))
 	{
-		strcpy(str, "Unable to set control ");
+		str = "Unable to set control ";
 		printf("ERROR\n");
-		KError(strcat(str, ctrl), errno);
+		KError(str + ctrl, errno);
 		return false;
 	}
 

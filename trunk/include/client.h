@@ -31,14 +31,14 @@ public:
 			Unknown = 1,
 			Declined
 			};
-	void sendVideo(const QString&);
+	//void sendVideo(const QString&);
 	void setPresence(const QString& show, const QString& status);
 	void addAuthFor(const QString& to);
 	void removeAuthFor(const QString& to);
 	void requestAuthFor(const QString& to);
 	void addItem(const Jid&, const QString&, const QString&);
 	void delItem(const Jid&);
-	JingleTask *getNextPendingJingleSession();
+	//JingleTask *getNextPendingJingleSession();
 	
 public slots:
 	void read();
@@ -60,8 +60,8 @@ public slots:
 	void subApproved();
 	void subRefused();
 	void slotUpdateItem();
-	void newJingleSession();
-	void jingleSessionDeclined();
+	//void newJingleSession();
+	//void jingleSessionDeclined();
 
 signals:
 	/*!
@@ -76,7 +76,7 @@ signals:
 	void prcentChanged(Jid&, QString&, int); 
 	void streamError(streamErrorType);
 	void registrationFinished();
-	void newJingleSessionReady();
+	//void newJingleSessionReady();
 
 private:
 	IncomingFileDialog *ifd;
@@ -99,9 +99,9 @@ private:
 	StreamTask *sTask;		//streamTask
 	FileTransferTask *sfTask;	//sendFileTask
 	FileTransferTask *rfTask;	//receiveFileTask
-	JingleTask *svTask; 		//sendVideoTask
-	PullJingleTask *pjTask;
 	QString fileName;
-	QList<JingleTask*> sessionList;
+	//JingleTask *svTask; 		//sendVideoTask
+	//PullJingleTask *pjTask;
+	//QList<JingleTask*> sessionList;
 };
 #endif

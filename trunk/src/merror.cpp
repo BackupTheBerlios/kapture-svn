@@ -1,7 +1,7 @@
 /*
  *      merror.cpp -- Kapture
  *
- *      Copyright (C) 2006-2007
+ *      Copyright (C) 2006-2009
  *          Detlev Casanova (detlev.casanova@gmail.com)
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -15,11 +15,11 @@
 #include "merror.h"
 
 #ifdef DEBUG
-void KError(char* error, int errorno)
+void KError(const char* error, int errorno)
 {
 	printf(" E %s (Error %d)\n", error, errorno);
 #else
-void KError(char*, int)
+void KError(const char*, int)
 {
 #endif
 }

@@ -60,12 +60,12 @@ bool VideoWidget::initCamera()
 
 bool VideoWidget::setFormat(VideoWidget::Format)
 {
-
+	return false;
 }
 
 bool VideoWidget::setSize(const QSize&)
 {
-
+	return false;
 }
 
 void VideoWidget::play()

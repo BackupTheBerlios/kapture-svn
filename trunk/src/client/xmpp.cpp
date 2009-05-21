@@ -1,7 +1,7 @@
 /*
  *      Kapture -- xmpp.cpp
  *
- *      Copyright (C) 2006-2007
+ *      Copyright (C) 2006-2009
  *          Detlev Casanova (detlev.casanova@gmail.com)
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -534,11 +534,16 @@ void Xmpp::processEvent(Event *event)
 			}
 			break;
 		case active:
+		{
 			Stanza *s = new Stanza(event->node());
 			QDomDocument doc = event->node().toDocument();
 			printf("[XMPP] Xmpp::processEvent : node = %s\n", doc.toString().toLatin1().constData());
 			stanzaList << s;
 			emit readyRead();
+			break;
+		}
+		default :
+			break;
 	}
 }
 

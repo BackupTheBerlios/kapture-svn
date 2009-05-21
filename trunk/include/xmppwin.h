@@ -43,7 +43,7 @@ public slots:
 	void prcentChanged(Jid&, QString&, int);
 	void connectingLogo();
 	void statusChanged();
-	void sendVideo(QString&);
+	//void sendVideo(QString&);
 	void showMenu(const Jid&, const QPoint&);
 	void showvCard();
 	void startChatFromMenu();
@@ -55,7 +55,7 @@ public slots:
 	void addItem();
 	void updateRosterItem(Contact*);
 	void delItem();
-	void newJingleSessionReady();
+	//void newJingleSessionReady();
 
 private:
 	Ui::xmppWin ui;
@@ -91,7 +91,7 @@ private:
 	bool useSystemTray;
 	QMenu *menu;
 	QMenu *mSubsMenu;
-	JingleTask *js; //FIXME: There should not be Tasks here, tasks stays in client.
+	//JingleTask *js; //FIXME: There should not be Tasks here, tasks stays in client.
 };
 #endif
 

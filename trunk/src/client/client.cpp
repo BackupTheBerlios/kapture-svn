@@ -1,7 +1,7 @@
 /*
  *      Kapture
  *
- *      Copyright (C) 2006-2007
+ *      Copyright (C) 2006-2009
  *          Detlev Casanova (detlev.casanova@gmail.com)
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -58,8 +58,8 @@ void Client::authenticate()
 	psTask = new PullStreamTask(task, xmpp);
 	connect(psTask, SIGNAL(fileTransferIncoming()), this, SLOT(fileTransferIncoming()));
 	connect(psTask, SIGNAL(receiveFileReady()), this, SLOT(receiveFileReady()));
-	pjTask = new PullJingleTask(task, xmpp);
-	connect(pjTask, SIGNAL(newSession()), SLOT(newJingleSession()));
+	//pjTask = new PullJingleTask(task, xmpp);
+	//connect(pjTask, SIGNAL(newSession()), SLOT(newJingleSession()));
 	
 	connect(xmpp, SIGNAL(connected()), this, SLOT(authFinished()));
 	connect(xmpp, SIGNAL(readyRead()), this, SLOT(read()));
@@ -353,11 +353,11 @@ void Client::transferFinished()
 	delete sfTask;
 }
 
-void Client::sendVideo(const QString& to)
+/*void Client::sendVideo(const QString& to)
 {
 	svTask = new JingleTask(task, xmpp);
 	svTask->initiate(Jid(to));
-}
+}*/
 
 void Client::addItem(const Jid& item, const QString& name, const QString& /*group*/)
 {
@@ -369,6 +369,7 @@ void Client::delItem(const Jid& item)
 	rTask->delItem(item);
 }
 
+/*
 void Client::newJingleSession()
 {
 	if (!pjTask->hasPendingSession())
@@ -379,15 +380,15 @@ void Client::newJingleSession()
 	sessionList << pjTask->getNextSession();
 	connect(sessionList.last(), SIGNAL(sessionDeclined()), this, SLOT(jingleSessionDeclined()));
 
-	/*!* FIXME: Tasks should not get out of the client !!!!! *!*/
-	/*!* 	    Should return a Session Object (to write...) *!*/
+	!* FIXME: Tasks should not get out of the client !!!!! *!
+	!* 	    Should return a Session Object (to write...) *!
 	emit newJingleSessionReady();
 }
 
 JingleTask *Client::getNextPendingJingleSession()
 {
-	/*!* FIXME: Tasks should not get out of the client !!!!! *!*/
-	/*!* 	    Should return a Session Object (to write...) *!*/
+	*!* FIXME: Tasks should not get out of the client !!!!! *!*
+	*!* 	    Should return a Session Object (to write...) *!*
 	return sessionList.takeFirst();
 }
 
@@ -396,3 +397,4 @@ void Client::jingleSessionDeclined()
 	printf("[Client] jingleSessionDeclined()\n");
 	// How to now which session has been declined ?????
 }
+*/

@@ -29,6 +29,7 @@ public:
 	~Webcam();
 	
 	void close();
+	int  open(const char*);
 	int  open(const QString&);
 	QList<int>   getFormatList(QList<QString> &description) const;
 	QList<QSize> getSizesList() const;

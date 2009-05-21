@@ -28,6 +28,7 @@ Joystick::Joystick()
 
 Joystick::Joystick(const QString& devName)
 {
+	Q_UNUSED(devName)
 	dev = open("/dev/js0", O_RDONLY);
 	device = new QSocketNotifier(dev, QSocketNotifier::Read);
 	connect(device, SIGNAL(activate(int)), SLOT(read()));

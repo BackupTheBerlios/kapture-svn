@@ -13,5 +13,5 @@
 
 #include <QString>
 
-void KError(char*, int);
+void KError(const char*, int);
 void KError(const QString&, int);

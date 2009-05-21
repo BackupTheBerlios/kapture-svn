@@ -22,7 +22,8 @@ XmppReg::~XmppReg()
 
 void XmppReg::registerAccount(const QString& username, const QString& password)
 {
-
+	Q_UNUSED(username)
+	Q_UNUSED(password)
 }
 
 void XmppReg::registerAccount(const Profile& profile)

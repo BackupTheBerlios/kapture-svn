@@ -1,7 +1,7 @@
 /*
  *      Kapture -- tasks.cpp
  *
- *      Copyright (C) 2006-2007
+ *      Copyright (C) 2006-2009
  *          Detlev Casanova (detlev.casanova@gmail.com)
  *
  *      This program is free software; you can redistribute it and/or modify
@@ -140,7 +140,7 @@ void RosterTask::addItem(const Jid& jid, const QString& name)
 
 void RosterTask::delItem(const Jid& jid)
 {
-
+	Q_UNUSED(jid)
 }
 
 bool RosterTask::canProcess(const Stanza& s) const
@@ -1545,6 +1545,8 @@ void PullStreamTask::ftAgree(const QString&, const Jid&, const QString& saveFile
 // JingleTask
 //-------------------------------
 
+#if 0
+
 JingleTask::JingleTask(Task* parent, Xmpp *xmpp)
 	:Task(parent)
 {
@@ -2024,3 +2026,4 @@ void PullJingleTask::tryToConnect()
 	p->write(stanza);
 }
 
+#endif //0

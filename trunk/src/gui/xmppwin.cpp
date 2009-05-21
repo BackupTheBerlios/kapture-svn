@@ -56,7 +56,7 @@ XmppWin::XmppWin()
 		sysTrayMenu->setTitle(QString("Kapture -- ") + pJid.full());
 		for (int i = 0; i < conf->profileList().count(); i++)
 		{
-			QAction *contactActionMenu = sysTrayMenu->addAction(conf->profileList().at(i).name());
+			/*QAction *contactActionMenu = */sysTrayMenu->addAction(conf->profileList().at(i).name());
 			//connect(contactActionMenu, SIGNAL(triggered()), this, SLOT(jabberConnect()));
 		}
 		sysTrayMenu->addSeparator();
@@ -308,7 +308,7 @@ void XmppWin::clientAuthenticated()
 	sti->showMessage("Kapture - Connected", QString("You are now connected with %1.").arg(pJid.full()));
 }
 
-void XmppWin::newJingleSessionReady()
+/*void XmppWin::newJingleSessionReady()
 {
 	js = client->getNextPendingJingleSession();
 	// js should be in a list so all incoming connections are in the list.
@@ -320,7 +320,7 @@ void XmppWin::newJingleSessionReady()
 	{
 		js->decline();
 	}
-}
+}*/
 
 void XmppWin::updateRosterItem(Contact *c)
 {
@@ -332,7 +332,7 @@ void XmppWin::updateRosterItem(Contact *c)
 		c->setEmoticons(emoticons);
 		connect(c, SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
 		connect(c, SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
-		connect(c, SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
+		//connect(c, SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
 
 		contactList << c;
 		sortContactList();
@@ -387,7 +387,7 @@ void XmppWin::setRoster(Roster roster)
 			newList[i]->setEmoticons(emoticons);
 			connect(newList[i], SIGNAL(sendMessage(QString&, QString&)), this, SLOT(sendMessage(QString&, QString&)));
 			connect(newList[i], SIGNAL(sendFileSignal(QString&)), this, SLOT(sendFile(QString&)));
-			connect(newList[i], SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
+			//connect(newList[i], SIGNAL(sendVideo(QString&)), this, SLOT(sendVideo(QString&)));
 			contactList << newList[i];
 		}
 	}
@@ -556,10 +556,10 @@ void XmppWin::showvCard()
 	printf("[XMPPWIN] Show vCard of %s\n", menuTo.full().toLatin1().constData());
 }
 
-void XmppWin::sendVideo(QString& to)
+/*void XmppWin::sendVideo(QString& to)
 {
 	client->sendVideo(to);
-}
+}*/
 
 bool sortFct(Contact *c1, Contact *c2)
 {

@@ -264,6 +264,7 @@ private:
  * JingleTask
  * ---------------------------------------------
  */
+#if 0
 
 class JingleTask : public Task
 {
@@ -328,4 +329,5 @@ private:
 	Task *task;
 };
 
+#endif
 #endif
