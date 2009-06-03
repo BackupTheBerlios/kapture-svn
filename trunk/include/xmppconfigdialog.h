@@ -3,12 +3,13 @@
 
 #include "ui_xmppconfigdialog.h"
 #include "profile.h"
-#include "config.h"
-#include "profilemodel.h"
-#include "mouseprofilestableview.h"
-#include "xmppreg.h"
-#include "xmpp.h"
 
+class WebcamConfigWidget;
+class Xmpp;
+class XmppReg;
+class ProfileModel;
+class Config;
+class Task;
 class XmppConfigDialog : public QDialog
 {
 	Q_OBJECT
@@ -36,8 +37,11 @@ private:
 	QString selectedProfile;
 	XmppReg *xmppReg;
 	void addProfile(const Profile&);
+	void initWebcam();
+	void stopWebcam();
 	Task *task;
 	Xmpp *xmpp;
+	WebcamConfigWidget *wcw;
 };
 
 #endif

@@ -61,6 +61,11 @@ void Webcam::close()
 	allocated = false;
 }
 
+int Webcam::open()
+{
+	return this->open(m_name);
+}
+
 int Webcam::open(const QString& devFile)
 {
 	return this->open(devFile.toUtf8().constData());
@@ -71,6 +76,8 @@ int Webcam::open(const char *devFile)
 	struct v4l2_capability cap;
 	int ret;
 	char str[256];
+
+	m_name = QString(devFile);
 
 	if (opened)
 		close();

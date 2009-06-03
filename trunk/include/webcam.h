@@ -29,6 +29,7 @@ public:
 	~Webcam();
 	
 	void close();
+	int  open();
 	int  open(const char*);
 	int  open(const QString&);
 	QList<int>   getFormatList(QList<QString> &description) const;
@@ -45,6 +46,8 @@ public:
 	bool isStreaming() const {return streaming;};
 	bool isOpened() const {return opened;};
 	bool panTiltSupported();
+	QString name() const {return m_name;}
+
 	enum Control {Saturation = 0,
 		      PowerLineFreq,
 		      Brightness,
@@ -76,6 +79,7 @@ private:
 	bool streaming;
 	bool opened;
 	bool mmaped;
+	QString m_name;
 };
 #endif
 

@@ -1,12 +1,22 @@
 #include <QAbstractItemModel>
 
 #include "xmppconfigdialog.h"
+#include "webcamconfigwidget.h"
 #include "kapturewin.h"
 
+#include "profilemodel.h"
+#include "xmppreg.h"
+#include "xmpp.h"
+//#include ""
+//#include ""
+//#include ""
+
+
 XmppConfigDialog::XmppConfigDialog()
+ : conf(new Config()), wcw(0)
 {
 	ui.setupUi(this);
-	conf = new Config();
+	//conf = new Config();
 	profiles = conf->profileList();
 	model = new ProfileModel();
 	model->setProfileList(profiles);
@@ -28,14 +38,36 @@ XmppConfigDialog::XmppConfigDialog()
 
 XmppConfigDialog::~XmppConfigDialog()
 {
-
+	delete wcw;
 }
 
 void XmppConfigDialog::tabChanged(int newTab)
 {
-	if (newTab != 2)
+	if (newTab == 2)
+		initWebcam();
+	else
+		stopWebcam();
+}
+
+void XmppConfigDialog::initWebcam()
+{
+	if (wcw != NULL)
+		return;
+
+	qDebug() << "Init webcam...";
+	wcw = new WebcamConfigWidget(ui.tabWidget->currentWidget());
+	/*QLayout *layout = dynamic_cast<QLayout*>(ui.tabWidget->currentWidget());
+	if (layout == 0)
 		return;
 	
+	layout->addWidget(wcw);
+	wcw->show();*/
+	//ui.tabWidget->setCurrentWidget(wcw);
+	//wcw->show();
+}
+
+void XmppConfigDialog::stopWebcam()
+{
 }
 
 void XmppConfigDialog::saveConfig()

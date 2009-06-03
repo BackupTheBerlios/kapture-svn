@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>754</width>
-    <height>462</height>
+    <width>827</width>
+    <height>491</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -16,7 +16,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget" >
      <property name="currentIndex" >
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab" >
       <attribute name="title" >
@@ -99,7 +99,7 @@
            <property name="orientation" >
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0" >
             <size>
              <width>21</width>
              <height>20</height>
@@ -170,7 +170,7 @@
            <property name="orientation" >
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0" >
             <size>
              <width>40</width>
              <height>20</height>
@@ -241,7 +241,7 @@
            <property name="orientation" >
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0" >
             <size>
              <width>40</width>
              <height>20</height>
@@ -306,7 +306,7 @@
            <property name="orientation" >
             <enum>Qt::Horizontal</enum>
            </property>
-           <property name="sizeHint" >
+           <property name="sizeHint" stdset="0" >
             <size>
              <width>40</width>
              <height>20</height>
@@ -353,7 +353,7 @@
          <property name="orientation" >
           <enum>Qt::Vertical</enum>
          </property>
-         <property name="sizeHint" >
+         <property name="sizeHint" stdset="0" >
           <size>
            <width>20</width>
            <height>40</height>
@@ -367,295 +367,6 @@
       <attribute name="title" >
        <string>Webcam</string>
       </attribute>
-      <layout class="QVBoxLayout" >
-       <item>
-        <layout class="QHBoxLayout" >
-         <item>
-          <layout class="QVBoxLayout" >
-           <item>
-            <layout class="QHBoxLayout" >
-             <item>
-              <widget class="QPushButton" name="btnVideo" >
-               <property name="sizePolicy" >
-                <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text" >
-                <string>Start video</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="comboBoxSize" >
-               <property name="sizeAdjustPolicy" >
-                <enum>QComboBox::AdjustToContents</enum>
-               </property>
-               <item>
-                <property name="text" >
-                 <string>Minimal</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item>
-              <widget class="QComboBox" name="comboBoxFormat" >
-               <property name="sizeAdjustPolicy" >
-                <enum>QComboBox::AdjustToContents</enum>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" >
-             <item>
-              <widget class="QGroupBox" name="groupBox_6" >
-               <property name="title" >
-                <string>Sharpness</string>
-               </property>
-               <widget class="QPushButton" name="sharpDefaultValueBtn" >
-                <property name="geometry" >
-                 <rect>
-                  <x>67</x>
-                  <y>21</y>
-                  <width>75</width>
-                  <height>24</height>
-                 </rect>
-                </property>
-                <property name="text" >
-                 <string>Default</string>
-                </property>
-               </widget>
-               <widget class="QSpinBox" name="sharpManualValueBox" >
-                <property name="geometry" >
-                 <rect>
-                  <x>11</x>
-                  <y>23</y>
-                  <width>46</width>
-                  <height>19</height>
-                 </rect>
-                </property>
-               </widget>
-              </widget>
-             </item>
-             <item>
-              <widget class="QGroupBox" name="groupBox_2" >
-               <property name="sizePolicy" >
-                <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="title" >
-                <string>Saturation</string>
-               </property>
-               <widget class="QSpinBox" name="satManualValueBox" >
-                <property name="geometry" >
-                 <rect>
-                  <x>11</x>
-                  <y>23</y>
-                  <width>46</width>
-                  <height>19</height>
-                 </rect>
-                </property>
-                <property name="maximum" >
-                 <number>255</number>
-                </property>
-                <property name="value" >
-                 <number>39</number>
-                </property>
-               </widget>
-               <widget class="QPushButton" name="satDefaultValueBtn" >
-                <property name="geometry" >
-                 <rect>
-                  <x>67</x>
-                  <y>21</y>
-                  <width>75</width>
-                  <height>24</height>
-                 </rect>
-                </property>
-                <property name="sizePolicy" >
-                 <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
-                  <horstretch>0</horstretch>
-                  <verstretch>0</verstretch>
-                 </sizepolicy>
-                </property>
-                <property name="text" >
-                 <string>Default</string>
-                </property>
-               </widget>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" >
-             <item>
-              <widget class="QGroupBox" name="groupBox_3" >
-               <property name="title" >
-                <string>Brightness</string>
-               </property>
-               <widget class="QSpinBox" name="brightManualValueBox" >
-                <property name="geometry" >
-                 <rect>
-                  <x>11</x>
-                  <y>23</y>
-                  <width>46</width>
-                  <height>19</height>
-                 </rect>
-                </property>
-                <property name="maximum" >
-                 <number>255</number>
-                </property>
-                <property name="value" >
-                 <number>127</number>
-                </property>
-               </widget>
-               <widget class="QPushButton" name="brightDefaultValueBtn" >
-                <property name="geometry" >
-                 <rect>
-                  <x>67</x>
-                  <y>21</y>
-                  <width>75</width>
-                  <height>24</height>
-                 </rect>
-                </property>
-                <property name="text" >
-                 <string>Default</string>
-                </property>
-               </widget>
-              </widget>
-             </item>
-             <item>
-              <widget class="QGroupBox" name="groupBox_4" >
-               <property name="title" >
-                <string>Contrast</string>
-               </property>
-               <widget class="QSpinBox" name="contManualValueBox" >
-                <property name="geometry" >
-                 <rect>
-                  <x>11</x>
-                  <y>23</y>
-                  <width>46</width>
-                  <height>19</height>
-                 </rect>
-                </property>
-                <property name="maximum" >
-                 <number>255</number>
-                </property>
-                <property name="value" >
-                 <number>32</number>
-                </property>
-               </widget>
-               <widget class="QPushButton" name="contDefaultValueBtn" >
-                <property name="geometry" >
-                 <rect>
-                  <x>67</x>
-                  <y>21</y>
-                  <width>75</width>
-                  <height>24</height>
-                 </rect>
-                </property>
-                <property name="text" >
-                 <string>Default</string>
-                </property>
-               </widget>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" >
-             <item>
-              <widget class="QGroupBox" name="groupBox_5" >
-               <property name="sizePolicy" >
-                <sizepolicy vsizetype="Preferred" hsizetype="Expanding" >
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="title" >
-                <string>Line Frequency</string>
-               </property>
-               <widget class="QCheckBox" name="freqBox" >
-                <property name="geometry" >
-                 <rect>
-                  <x>10</x>
-                  <y>20</y>
-                  <width>91</width>
-                  <height>17</height>
-                 </rect>
-                </property>
-                <property name="text" >
-                 <string>Correct Néon</string>
-                </property>
-               </widget>
-              </widget>
-             </item>
-             <item>
-              <spacer>
-               <property name="orientation" >
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" >
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="Line" name="line_2" >
-           <property name="orientation" >
-            <enum>Qt::Vertical</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="pictureLabel" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Minimum" hsizetype="Minimum" >
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize" >
-            <size>
-             <width>320</width>
-             <height>240</height>
-            </size>
-           </property>
-           <property name="frameShape" >
-            <enum>QFrame::Box</enum>
-           </property>
-           <property name="text" >
-            <string>PictureLabel</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <spacer>
-         <property name="orientation" >
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" >
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
      </widget>
      <widget class="QWidget" name="tab_4" >
       <attribute name="title" >
@@ -684,7 +395,7 @@
        <property name="orientation" >
         <enum>Qt::Horizontal</enum>
        </property>
-       <property name="sizeHint" >
+       <property name="sizeHint" stdset="0" >
         <size>
          <width>40</width>
          <height>20</height>

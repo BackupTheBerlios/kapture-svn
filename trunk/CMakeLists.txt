@@ -21,6 +21,7 @@ SET(Kapture_UIS
 	src/gui/chatwin.ui
 	src/gui/xmppconfigdialog.ui
 	src/gui/incomingfiledialog.ui
+	src/gui/webcamconfigwidget.ui
 )
 QT4_WRAP_UI(Kapture_UIS_H ${Kapture_UIS})
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -50,10 +51,13 @@ SET(Kapture_OBJECTS
 	include/rosterdelegate.h
 	include/jinglestanza.h
 	include/videowidget.h
+
+	src/gui/webcamconfigwidget.h
+	src/webcampool.h
 )
 QT_WRAP_CPP(Kapture MOC_FILES ${Kapture_OBJECTS})
 
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${QT_INCLUDE_DIR} ${QT_QTNETWORK_INCLUDE_DIR} ${QT_QTXML_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/src ${QT_INCLUDE_DIR} ${QT_QTNETWORK_INCLUDE_DIR} ${QT_QTXML_INCLUDE_DIR})
 #Search also in ${CMAKE_INSTALL_PREFIX}
 FIND_LIBRARY(SSL_LIBRARY NAME ssl PATHS /usr/lib /usr/local/lib)
 
@@ -65,6 +69,7 @@ SET(Kapture_SRCS
 	src/imageconvert.cpp
 	src/merror.cpp
 	src/webcam.cpp
+	src/webcampool.cpp
 	src/emoticons.cpp
 	src/config.cpp
 	src/profile.cpp
@@ -98,6 +103,7 @@ SET(Kapture_SRCS
 	src/gui/incomingfiledialog.cpp
 	src/gui/rosterdelegate.cpp
 	src/gui/videowidget.cpp
+	src/gui/webcamconfigwidget.cpp
 	src/net/tlshandler.cpp
 	src/net/socks5.cpp
 )
